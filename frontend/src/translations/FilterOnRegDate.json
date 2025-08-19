@@ -1,0 +1,14 @@
+{
+  "en": {
+    "billingatRegistration": "Billing At Registration",
+    "searchbynameorPhone": "Search by Name Or Phone",
+    "searchbyPatientNameorcontactNumber": "Search by Patient name or contact number",
+    "filterOnRegistrationDate": "Filter on Registration Date"
+  },
+  "fr": {
+    "billingatRegistration": "Facturation à l'inscription",
+    "searchbynameorPhone": "Recherche par nom ou téléphone",
+    "searchbyPatientNameorcontactNumber": "Recherche par nom de patient ou numéro de contact",
+    "filterOnRegistrationDate": "Filtrer sur la date d'inscription"
+  }
+}

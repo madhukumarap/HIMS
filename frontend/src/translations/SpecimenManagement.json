@@ -1,0 +1,50 @@
+{
+  "en": {
+    "DataSaved": "Data Saved",
+    "AreYouSureYouWanttoDeletethisData": "Are you sure you want to delete this data?",
+    "DeletedDataSuccessfully": "Deleted data Successfully",
+    "EnterSpecimenName": "Enter Specimen Name",
+    "EnterSpecimenCode": "Enter Specimen Code",
+    "CreatedDataSuccessfully": "Created data Successfully",
+    "SpecimenList": "Specimen List",
+    "CreateNew": "Create New",
+    "HideForm": "Hide Form",
+    "specimenManagementTable": {
+      "ID": "ID",
+      "SpecimenName": "Specimen Name",
+      "SpecimenCode": "Specimen Code",
+      "Actions": "Actions",
+      "Save": "Save",
+      "Cancel": "Cancel",
+      "Edit": "Edit",
+      "Delete": "Delete",
+      "EnterSpecimenName": "Enter Specimen Name",
+      "EnterSpecimenCode": "Enter Specimen Code",
+      "Create": "Create"
+    }
+  },
+  "fr": {
+    "DataSaved": "Données enregistrées",
+    "AreYouSureYouWanttoDeletethisData": "Êtes-vous sûr de vouloir supprimer ces données?",
+    "DeletedDataSuccessfully": "Données supprimées avec succès",
+    "EnterSpecimenName": "Entrez le nom de l'échantillon",
+    "EnterSpecimenCode": "Entrez le code de l'échantillon",
+    "CreatedDataSuccessfully": "Données créées avec succès",
+    "SpecimenList": "Liste des échantillons",
+    "CreateNew": "Créer un nouveau",
+    "HideForm": "Masquer le formulaire",
+    "specimenManagementTable": {
+      "ID": "ID",
+      "SpecimenName": "Nom de l'échantillon",
+      "SpecimenCode": "Code de l'échantillon",
+      "Actions": "Actions",
+      "Save": "Enregistrer",
+      "Cancel": "Annuler",
+      "Edit": "Éditer",
+      "Delete": "Supprimer",
+      "EnterSpecimenName": "Entrez le nom de l'échantillon",
+      "EnterSpecimenCode": "Entrez le code de l'échantillon",
+      "Create": "Créer"
+    }
+  }
+}

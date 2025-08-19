@@ -1,0 +1,36 @@
+{
+  "en": {
+    "GoBack": "Go Back",
+    "AdmissionList": "Admission List",
+    "BedStatus": "Bed Status",
+    "DischargePatients": "Discharge Patients",
+    "Admission&DischargeManagement": "Admission & Discharge Management",
+    "AllocateBed": "Allocate Bed",
+    "hospitalAdmissionDischargeTable": {
+      "SrNo": "Sr.No.",
+      "BedNumber": "Bed Number",
+      "BedType": "Bed Type",
+      "BedPrice": "Bed Price",
+      "BedStatus": "Bed Status",
+      "AllocationStatus": "Allocation Status",
+      "Action": "Action"
+    }
+  },
+  "fr": {
+    "GoBack": "Retour",
+    "AdmissionList": "Liste des admissions",
+    "BedStatus": "État des lits",
+    "DischargePatients": "Libérer les patients",
+    "Admission&DischargeManagement": "Gestion des admissions et des sorties",
+    "AllocateBed": "Attribuer un lit",
+    "hospitalAdmissionDischargeTable": {
+      "SrNo": "N°",
+      "BedNumber": "Numéro de lit",
+      "BedType": "Type de lit",
+      "BedPrice": "Prix du lit",
+      "BedStatus": "État du lit",
+      "AllocationStatus": "État d'allocation",
+      "Action": "Action"
+    }
+  }
+}

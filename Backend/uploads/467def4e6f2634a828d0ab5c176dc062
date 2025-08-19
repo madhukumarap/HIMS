@@ -1,0 +1,2 @@
+testName,fieldName,minimumRange,maximumRange,unitOfMeasurements,testPrice,Currency,code
+testDemo13,Blood,10,upto 100,mg/dl,100,INR,CD13

@@ -1,0 +1,42 @@
+SKU,itemName,composition,description,batchNo,expiryDate,unitPrice,unit,dateIn,quantityIn,dateOut,quantityOut,balanceQuantity
+MED001,Paracetamol,500mg tablet,For fever and pain relief,BT123,2024-06-30,10.50,Each,2023-06-01,100,0,0,100
+MED002,Aspirin,325mg tablet,For pain relief and inflammation,BT456,2024-08-31,8.75,Each,2023-06-01,50,0,0,50
+MED003,Ibuprofen,200mg capsule,For pain relief and inflammation,BT789,2023-12-31,15.25,Each,2023-06-01,75,0,0,75
+MED004,Ciprofloxacin,500mg tablet,For bacterial infections,BT101,2023-10-31,20.00,Each,2023-06-01,30,0,0,30
+MED005,Amoxicillin,250mg capsule,For bacterial infections,BT202,2024-04-30,12.50,Each,2023-06-01,40,0,0,40
+MED006,Atenolol,50mg tablet,For high blood pressure,BT303,2024-02-28,9.25,Each,2023-06-01,60,0,0,60
+MED007,Simvastatin,20mg tablet,For high cholesterol,BT404,2023-11-30,18.50,Each,2023-06-01,25,0,0,25
+MED008,Metformin,500mg tablet,For type 2 diabetes,BT505,2024-03-31,7.75,Each,2023-06-01,90,0,0,90
+MED009,Lisinopril,10mg tablet,For high blood pressure,BT606,2024-01-31,8.25,Each,2023-06-01,55,0,0,55
+MED010,Omeprazole,20mg capsule,For acid reflux,BT707,2024-05-31,12.00,Each,2023-06-01,70,0,0,70
+MED011,Morphine,10mg tablet,For severe pain relief,BT808,2023-09-30,32.50,Each,2023-06-01,20,0,0,20
+MED012,Codeine,30mg tablet,For mild to moderate pain relief,BT909,2023-12-31,15.75,Each,2023-06-01,35,0,0,35
+MED013,Tramadol,50mg tablet,For moderate to severe pain relief,BT010,2024-06-30,22.00,Each,2023-06-01,45,0,0,45
+MED014,Fluoxetine,20mg capsule,For depression and anxiety,BT121,2023-10-31,11.50,Each,2023-06-01,80,0,0,80
+MED015,Escitalopram,10mg tablet,For depression and anxiety,BT232,2024-03-31,9.75,Each,2023-06-01,65,0,0,65
+MED016,Alprazolam,0.5mg tablet,For anxiety and panic disorders,BT343,2024-07-31,8.00,Each,2023-06-01,95,0,0,95
+MED017,Haloperidol,1mg tablet,For schizophrenia,BT454,2023-11-30,17.00,Each,2023-06-01,30,0,0,30
+MED018,Quetiapine,50mg tablet,For bipolar disorder and schizophrenia,BT565,2024-02-28,14.25,Each,2023-06-01,50,0,0,50
+MED019,Risperidone,2mg tablet,For schizophrenia and bipolar disorder,BT676,2024-04-30,16.50,Each,2023-06-01,40,0,0,40
+MED020,Lorazepam,1mg tablet,For anxiety and panic disorders,BT787,2023-10-31,10.25,Each,2023-06-01,70,0,0,70
+MED021,Amitriptyline,25mg tablet,For depression,BT898,2023-12-31,6.00,Each,2023-06-01,120,0,0,120
+MED022,Trazodone,50mg tablet,For depression,BT999,2024-01-31,7.50,Each,2023-06-01,100,0,0,100
+MED023,Hydrochlorothiazide,25mg tablet,For high blood pressure,BT111,2024-05-31,5.75,Each,2023-06-01,150,0,0,150
+MED024,Warfarin,5mg tablet,For blood clot prevention,BT222,2023-08-31,12.50,Each,2023-06-01,40,0,0,40
+MED025,Heparin,5000 IU injection,For blood clot prevention,HI333,2023-11-30,25.00,Each,2023-06-01,15,0,0,15
+MED026,Insulin,10mL vial,For type 1 and type 2 diabetes,IV444,2024-06-30,50.00,Each,2023-06-01,10,0,0,10
+MED027,Epinephrine,1mg injection,For anaphylaxis,IE555,2023-12-31,45.00,Each,2023-06-01,5,0,0,5
+MED028,Atropine,0.5mg injection,For bradycardia,IA666,2023-10-31,22.50,Each,2023-06-01,20,0,0,20
+MED029,Naloxone,0.4mg injection,For opioid overdose,IN777,2024-02-28,27.50,Each,2023-06-01,25,0,0,25
+MED030,Midazolam,5mg injection,For sedation and anesthesia,IM888,2024-04-30,35.00,Each,2023-06-01,15,0,0,15
+MED031,Propofol,50mg injection,For sedation and anesthesia,IP999,2023-08-31,75.00,Each,2023-06-01,5,0,0,5
+MED032,Ceftriaxone,1g injection,For bacterial infections,CE111,2023-11-30,40.00,Each,2023-06-01,10,0,0,10
+MED033,Tobramycin,80mg injection,For bacterial infections,TO222,2024-01-31,55.00,Each,2023-06-01,8,0,0,8
+MED034,Amikacin,250mg injection,For bacterial infections,AM333,2024-05-31,60.00,Each,2023-06-01,7,0,0,7
+MED035,Meropenem,1g injection,For bacterial infections,ME444,2023-09-30,120.00,Each,2023-06-01,3,0,0,3
+MED036,Vancomycin,500mg injection,For bacterial infections,VA555,2023-12-31,70.00,Each,2023-06-01,15,0,0,15
+MED037,Azithromycin,500mg tablet,For bacterial infections,AZ666,2024-06-30,22.50,Each,2023-06-01,30,0,0,30
+MED038,Clarithromycin,250mg tablet,For bacterial infections,CL777,2023-10-31,18.25,Each,2023-06-01,50,0,0,50
+MED039,Metronidazole,500mg tablet,For bacterial and parasitic infections,ME888,2024-02-28,13.75,Each,2023-06-01,80,0,0,80
+MED040,Fluconazole,150mg capsule,For fungal infections,FL999,2024-04-30,25.00,Each,2023-06-01,20,0,0,20
+MED041,Rifampin,300mg capsule,For tuberculosis and bacterial infections,RI111,2023-08-31,30.00,Each,2023-06-01,15,0,0,15

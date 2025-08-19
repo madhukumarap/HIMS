@@ -1,0 +1,32 @@
+{
+  "en": {
+    "consultationPatientList": "Consultation Patient list",
+    "searchByNameOrPhone": "Search by name or phone number",
+    "filterOnRegistrationDate": "Filter on Registration Date",
+    "english": "English",
+    "patientTable": {
+      "serialNumber": "Sr.No",
+      "patientName": "Patient Name",
+      "patientNumber": "Patient Number",
+      "bookingDateTime": "Booking Date-time",
+      "bookingStatus": "Booking Status",
+      "registrationDate": "Registration Date",
+      "prescription": "Prescription"
+    }
+  },
+  "fr": {
+    "consultationPatientList": "Liste des patients en consultation",
+    "searchByNameOrPhone": "Recherche par nom ou numéro de téléphone",
+    "filterOnRegistrationDate": "Filtrer par date d'inscription",
+    "english": "Anglais",
+    "patientTable": {
+      "serialNumber": "N° de série",
+      "patientName": "Nom du patient",
+      "patientNumber": "Numéro du patient",
+      "bookingDateTime": "Date et heure de réservation",
+      "bookingStatus": "Statut de réservation",
+      "registrationDate": "Date d'inscription",
+      "prescription": "Ordonnance"
+    }
+  }
+}

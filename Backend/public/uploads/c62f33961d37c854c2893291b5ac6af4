@@ -1,0 +1,2 @@
+SKU,itemName,composition,description,unitPrice,batchNo,expiryDate,unit,dateIn,quantityIn,dateOut,balanceQuantity
+SKU123,sumo cold,Cold,cold,5,Batch0011,10/10/2024,Tablet,26/08/2023,100,12/09/2023,37

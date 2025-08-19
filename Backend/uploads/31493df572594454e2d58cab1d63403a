@@ -1,0 +1,7 @@
+testName,parameterName,minimumRange,maximumRange,unitOfMeasurements,testPrice
+Lipid Profile,Blood,10,upto 100,mg/dl,100
+Blood Sugar For Fasting,BloodNew,20,upto 200,mg/dl,150
+Platelet Count,Blood,10,upto 100,mg/dl,600
+UREE,Sugar_Level,,<100,mg/dl,200
+Cr?tinine,Sugar_Level,,<100,mg/dl,300
+UREE02,Sugar_Level,,<100,mg/dl,200

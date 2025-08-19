@@ -1,0 +1,7 @@
+testName,category,LabCategoryName,description,parameterName,testPrice
+Ultrasound Abdomen2,Blood,Pathology,lipid test,GALL_BLADDER,100
+Brain CT Scan2,Blood,Biochemistry,,TECHNIQUE,150
+XRay,Bone,Biochemistry,,GALL_BLADDER,600
+Heart,Vitals,Biochemistry,,Sugar_Level,200
+,,,,,
+,,,,,

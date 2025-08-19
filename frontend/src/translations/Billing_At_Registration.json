@@ -1,0 +1,86 @@
+{
+  "en": {
+    "TotalCollectedAmount": "Total Collected Amount",
+
+    "billingatRegistration": "Billing At Registration",
+    "searchbynameorPhone": "Search by Name Or Phone",
+    "searchbyPatientNameorcontactNumber": "Search by Patient name or contact number",
+    "filterOnRegistrationDate": "Filter on Registration Date",
+    "Receipt": {
+      "testBookingReceipt": "Test Booking Receipt",
+      "patientDetails": "Patient Details",
+      "patientName": "Patient Name",
+      "patientPhone": "Patient Phone",
+      "bookingDate": "Booking Date",
+      "doctorDetails": "Doctor Details",
+      "doctorName": "Doctor Name",
+      "doctorPhone": "Doctor Phone",
+      "selectedTest": "Selected Test",
+      "paymentStatus": "Payment Status",
+      "paymentDate": "Payment Date",
+      "amount": "Amount",
+      "poweredBymediAI": "Powered by mediAI",
+      "TestBookingReceipt": "Test Booking Receipt",
+      "PaymentNotPaid": "Payment Not Paid"
+    },
+    "billingRegistrationTable": {
+      "id": "ID",
+      "patientName": "Patient Name",
+      "contactNumber": "Contact Number",
+      "gender": "Gender",
+      "age": "Age",
+      "corporateID": "CorporateID",
+      "registrationDate": "Registration Date",
+      "registrationFees": "Registration Fees",
+      "paymentStatus": "Payment Status",
+      "paymentDate": "Payment Date",
+      "actions": "Actions",
+      "downloadAsPDF": "Download As PDF",
+      "updateBilling": "Update Billing",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "fr": {
+    "billingatRegistration": "Facturation à l'inscription",
+    "searchbynameorPhone": "Recherche par nom ou téléphone",
+    "searchbyPatientNameorcontactNumber": "Recherche par nom de patient ou numéro de contact",
+    "filterOnRegistrationDate": "Filtrer sur la date d'inscription",
+    "billingRegistrationTable": {
+      "id": "Identifiant",
+      "patientName": "Nom du patient",
+      "contactNumber": "Numéro de contact",
+      "gender": "Genre",
+      "age": "Âge",
+      "corporateID": "CorporateID",
+      "registrationDate": "Date d'inscription",
+      "registrationFees": "Frais d'inscription",
+      "paymentStatus": "Statut du paiement",
+      "paymentDate": "Date de paiement",
+      "actions": "Actions",
+      "downloadAsPDF": "Télécharger au format PDF",
+      "updateBilling": "Mettre à jour la facturation",
+      "previous": "Précédent",
+      "next": "Suivant"
+    },
+    "Receipt": {
+      "PaymentNotPaid": "Paiement non payé",
+      "testBookingReceipt": "Reçu de réservation test",
+      "patientDetails": "Détails du patient",
+      "patientName": "Nom du patient",
+      "patientPhone": "Téléphone du patient",
+      "bookingDate": "Date de réservation",
+      "doctorDetails": "Détails du médecin",
+      "doctorName": "Nom du médecin",
+      "doctorPhone": "Téléphone du médecin",
+      "selectedTest": "Test sélectionné",
+      "paymentStatus": "Statut de paiement",
+      "paymentDate": "Date de paiement",
+      "amount": "Montante",
+      "poweredBymediAI": "Propulsé par mediAI",
+
+      "TestBookingReceipt": "Reçu de réservation test"
+    },
+    "TotalCollectedAmount": "Montant total collecté"
+  }
+}

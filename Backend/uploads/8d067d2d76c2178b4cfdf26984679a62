@@ -1,0 +1,7 @@
+testName,parameterName,testPrice
+Ultrasound Abdomen,GALL_BLADDER,100
+Brain CT Scan,TECHNIQUE,150
+XRay,GALL_BLADDER,600
+Heart,Liver,200
+Heart1,Liver,200
+Heart2,Liver,200

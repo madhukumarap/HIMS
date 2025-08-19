@@ -1,0 +1,11 @@
+firstName,middleName,lastName,address,phoneNo,email,userName,password
+Amit,Kumar,Sharma,123 Main St,9876543210,amit.sharma@example.com,amit123,Pass@123
+Neha,,Gupta,456 Oak Ave,8765432109,neha.gupta@example.com,neha456,Pass@123
+Rajesh,Kumar,Verma,789 Elm St,7654321098,rajesh.verma@example.com,rajesh789,Pass@123
+Priya,Rani,Singh,101 Maple St,6543210987,priya.singh@example.com,priya101,Pass@123
+Ankit,,Patel,111 Pine Ave,5432109876,ankit.patel@example.com,ankit111,Pass@123
+Sneha,Arjun,Desai,12 Rosewood St,4321098765,sneha.desai@example.com,sneha12,Pass@123
+Rahul,Mohan,Kumar,34 Cherry Lane,3210987654,rahul.kumar@example.com,rahul34,Pass@123
+Smita,,Joshi,56 Maple Ave,2109876543,smita.joshi@example.com,smita56,Pass@123
+Aakash,Sandeep,Gupta,78 Oakwood Rd,1098765432,aakash.gupta@example.com,aakash78,Pass@123
+Shreya,Rajeev,Shah,90 Elmwood Dr,9876543210,shreya.shah@example.com,shreya90,Pass@123

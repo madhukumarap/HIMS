@@ -1,0 +1,48 @@
+{
+    "en": {
+      "dispensedReportsList": "Dispensed Reports List",
+      "searchByPatientName" : "Search by Patient Name",
+      "downloadAsPDF" : "Download as PDF",
+      "dispensedReportsListTable": {
+        "srNo": "Sr.No.",
+        "patientName" : "Patient Name",
+        "dispenseID" :"Dispense ID",
+        "prescriptionID" : "Prescription ID",
+        "prescriptionDate" : "Prescription Date",
+        "registrationDate" : "Registration Date",
+        "totalMedicineAmount" : "Total Medicine Amount",
+        "prescriptionType" : "Prescription Type",
+        "prescriptionImage" : "Prescription Image",
+        "view" : "View"   
+      },
+      "close" : "Close",
+      "previous" : "Previous",
+      "page" : "Page",
+      "of" : "of",
+      "next" : "Next"           
+    },
+    "fr": {
+        "dispensedReportsList": "Liste des rapports distribués",
+        "searchByPatientName" : "Recherche par nom de patient",
+        "downloadAsPDF" : "Télécharger au format PDF",
+        "dispensedReportsListTable": {
+          "srNo": "Sr.Non.",
+          "patientName" : "Nom du patient",
+          "dispenseID" :"ID de distribution",
+          "prescriptionID" : "Identifiant de l'ordonnance",
+          "prescriptionDate" : "Date de prescription",
+          "registrationDate" : "Date d'inscription",
+          "totalMedicineAmount" : "Quantité totale de médicament",
+          "prescriptionType" : "Type d'ordonnance",
+          "prescriptionImage" : "Image de prescription",
+          "view" : "Voir"   
+        },
+        "close" : "Fermer",
+        "previous" : "Précédente",
+        "page" : "Page",
+        "of" : "de",
+        "next" : "Suivante"
+
+    }
+  }
+  

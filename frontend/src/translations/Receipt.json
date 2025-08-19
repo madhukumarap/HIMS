@@ -1,0 +1,32 @@
+{
+    "en": {
+        "testBookingReceipt": "Test Booking Receipt",
+        "patientDetails": "Patient Details",
+        "patientName": "Patient Name",
+        "patientPhone": "Patient Phone",
+        "bookingDate": "Booking Date",
+        "doctorDetails": "Doctor Details",
+        "doctorName": "Doctor Name",
+        "doctorPhone": "Doctor Phone",
+        "selectedTest": "Selected Test",
+        "paymentStatus": "Payment Status",
+        "paymentDate": "Payment Date",
+        "amount": "Amount",
+        "poweredBymediAI": "Powered by mediAI"
+    },
+    "fr": {
+        "testBookingReceipt": "Reçu de réservation test",
+        "patientDetails": "Détails du patient",
+        "patientName": "Nom du patient",
+        "patientPhone": "Téléphone du patient",
+        "bookingDate": "Date de réservation",
+        "doctorDetails": "Détails du médecin",
+        "doctorName": "Nom du médecin",
+        "doctorPhone": "Téléphone du médecin",
+        "selectedTest": "Test sélectionné",
+        "paymentStatus": "Statut de paiement",
+        "paymentDate": "Date de paiement",
+        "amount": "Montante",
+        "poweredBymediAI": "Propulsé par mediAI"
+    }
+}

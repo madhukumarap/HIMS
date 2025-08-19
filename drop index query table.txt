@@ -1,0 +1,19 @@
+SELECT CONCAT('DROP INDEX ', INDEX_NAME, ' ON users;') AS drop_query FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = 'healthcare' AND TABLE_NAME = 'users';
+
+
+
+PRIMARY KEY (`id`),
+  UNIQUE KEY
+
+CreateVaccinationPatients
+Doctors
+HospitalAdminRegistrations
+HospitalMains
+Hospitals
+OTSchedulePatients
+diagnostictestlists
+nurses
+pathologytestmanages
+pharmacists
+samplecollections
+  users

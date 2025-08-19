@@ -1,0 +1,54 @@
+{
+  "en": {
+    "patientPrescriptionList": "Patient - Prescription List",
+    "patientNameOrPhoneNumber": "Patient Name or Phone Number",
+    "searchByPatientNameOrPhoneNumber": "Search By Patient Name or Phone Number",
+    "dispenseOutsidePrescription": "Dispense Outside Prescription",
+    "dispensedReports": "Dispensed Reports",
+    "downloadAsCSV": "Download as CSV",
+    "notDispensed": "Not Dispensed",
+    "partialDispensed": "Partial Dispensed",
+    "dispensed": "Dispensed",
+    "prescriptionTable": {
+      "id": "ID",
+      "prescriptionID": "Prescription ID",
+      "doctorID": "Doctor ID",
+      "patientName": "Patient Name",
+      "patientPhoneNo": "Patient PhoneNo",
+      "prescribedDoctor": "Prescribed Doctor",
+      "doctorPhoneNo": "Doctor PhoneNo",
+      "clinicalDiagnosis": "Clinical Diagnosis",
+      "registrationDate": "Registration Date",
+      "status": "Status",
+      "dispenseMedicine": "Dispense Medicine",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "fr": {
+    "patientPrescriptionList": "Patiente - Liste des ordonnances",
+    "patientNameOrPhoneNumber": "Nom du patient ou numéro de téléphone",
+    "searchByPatientNameOrPhoneNumber": "Rechercher par nom de patient ou numéro de téléphone",
+    "dispenseOutsidePrescription": "Distribuer en dehors de la prescription",
+    "dispensedReports": "Rapports distribués",
+    "downloadAsCSV": "Télécharger au format CSV",
+    "notDispensed": "Non distribué",
+    "partialDispensed": "Distribution partielle",
+    "dispensed": "distribué",
+    "prescriptionTable": {
+      "id": "ID",
+      "prescriptionID": "Identifiant de l'ordonnance",
+      "doctorID": "ID du médecin",
+      "patientName": "Nom du patient",
+      "patientPhoneNo": "Numéro de téléphone du patient",
+      "prescribedDoctor": "Médecin prescrit",
+      "doctorPhoneNo": "Numéro de téléphone du médecin",
+      "clinicalDiagnosis": "Diagnostic clinique",
+      "registrationDate": "Date d'inscription",
+      "status": "Statut",
+      "dispenseMedicine": "Distribuer des médicaments",
+      "previous": "Précédent",
+      "next": "Suivant"
+    }
+  }
+}

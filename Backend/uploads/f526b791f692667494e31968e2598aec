@@ -1,0 +1,6 @@
+testName,fieldName,minimumRange,maximumRange,unitOfMeasurements,testPrice,Currency
+testDemo,Blood,10,upto 100,mg/dl,100,INR
+T3 T4 TSH,BloodNew,20,upto 200,mg/dl,500,USD
+Platelet Count,Blood,10,upto 100,mg/dl,412,USD
+Blood Sugar For PP,Sugar_Level,,<100,mg/dl,150,INR
+Blood Sugar For ZZ,Sugar_Level,,<100,mg/dl,300,INR

@@ -1,0 +1,32 @@
+{
+    "en": {
+        "stockOutData": "Stock Out Data",
+        "searchbyItemName": "Search by Item Name",
+        "filteronRegistrationDate": "Filter on Registration Date",
+        "viewStockIn": "View Stock In",
+        "downloadAsCSV": "Download as CSV",
+        "stockOutDataTable": {
+            "srNo": "Sr.No.",
+            "itemName": "Item Name",
+            "batchNumber": "Batch Number",
+            "expiryDate": "Expiry Date",
+            "dateOut": "DateOut",
+            "quantityOut": "QuantityOut"
+        }
+    },
+    "fr": {
+        "stockOutData": "Données de rupture de stock",
+        "searchbyItemName": "Rechercher par nom d'article",
+        "filteronRegistrationDate": "Filtrer sur la date d'inscription",
+        "viewStockIn": "Afficher le stock",
+        "downloadAsCSV": "Télécharger au format CSV",
+        "stockOutDataTable": {
+            "srNo": "Sr. Non.",
+            "itemName": "Nom de l'article",
+            "batchNumber": "Numéro de lot",
+            "expiryDate": "Date d'expiration",
+            "dateOut": "Date de sortie",
+            "quantityOut": "QuantitéSortie"
+        }
+    }
+}

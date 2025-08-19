@@ -1,0 +1,6 @@
+id,Dr,FirstName,MiddleName,LastName,registrationNo,email,address,phoneNo
+6,Mr,John,,Doe,12345,johndoe@example.com,123 Main St,555-1234
+7,Mrs,Jane,Elizabeth,Smith,67890,janesmith@example.com,456 Oak Ave,555-5678
+3,Dr,Robert,James,Lee,24680,rjlee@example.com,789 Elm St,555-9012
+4,Ms,Susan,Lynn,Johnson,13579,susanjohnson@example.com,101 Maple St,555-3456
+5,Mr,David,Michael,Clark,86420,davidclark@example.com,111 Pine Ave,555-7890

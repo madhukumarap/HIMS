@@ -1,0 +1,4 @@
+firstName,middleName,lastName,registrationNo,phoneNo,username,password,email,address
+Rahul,Kumar,Gupta,REG2345678,8765432109,Rahul02,Pass@123,rahul.gupta@gmail.com,456 Oak Ave
+Kavita,,Sharma,REG3456789,7654321098,Kavita03,Pass@123,kavita.sharma@gmail.com,789 Elm St
+Suresh,,Patil,REG5678901,5432109876,Suresh05,Pass@123,suresh.patil@gmail.com,111 Pine Ave

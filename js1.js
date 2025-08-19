@@ -1,7 +1,8 @@
 import mssql from "mssql";
 import axios from "axios";
 import { Request, Response } from "express";
-// import config from "../db/dbConfig";
+// import config from "../db/dbConfig"; //new updates
+//updates about the new changesss 
 import { query } from "../db/db";
 import asyncHandler from "../middleware/asyncHandler";
 import fs from "fs";

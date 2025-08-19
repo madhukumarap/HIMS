@@ -1,0 +1,27 @@
+@media (max-width: 768px) {
+
+    /* Styles for mobile devices */
+    .card-view {
+        display: block;
+        /* Display cards in a block layout for mobile */
+    }
+
+    .table-view {
+        display: none;
+        /* Hide the table for mobile */
+    }
+}
+
+@media (min-width: 768px) {
+
+    /* Styles for screens 768 pixels and wider (desktop) */
+    .card-view {
+        display: none;
+        /* Hide cards for desktop */
+    }
+
+    .table-view {
+        display: table;
+        /* Display table for desktop */
+    }
+}

@@ -1,0 +1,7 @@
+testName,parameterName,testPrice,Currency
+T3 T4 TSH,Blood,100,INR
+T3 T4 TSH,BloodNew,150,INR
+Platelet Count,Blood,600,USD
+Blood Sugar For PP,Sugar_Level,200,INR
+Blood Sugar For ZZ,Sugar_Level,300,USD
+Platelet Count01,Blood,600,USD

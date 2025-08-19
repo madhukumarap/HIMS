@@ -1,0 +1,22 @@
+{
+  "en": {
+    "EnterPatientRegistrationFee": "Enter Patient Registration Fee",
+    "RegistrationAmount": "Montant de l'inscription",
+    "EnterRegistrationAmount": "Enter Registration Amount",
+    "SelectCurrency": "Select Currency",
+    "Currency": "Currency",
+    "Submit": "Submit",
+    "EnterRegistrationCurrency": "Enter Registration Currency",
+    "PleaseFillPatientRegistrationFeeCorrectly": "Please Fill Patient Registration Fee Correctly"
+  },
+  "fr": {
+    "EnterPatientRegistrationFee": "Saisir les frais d'inscription du patient",
+    "RegistrationAmount": "Montant de l'inscription",
+    "EnterRegistrationAmount": "Entrez le montant de l'inscription",
+    "SelectCurrency": "Sélectionnez la devise",
+    "Currency": "Devise",
+    "Submit": "Soumettre",
+    "EnterRegistrationCurrency": "Entrez la devise d'inscription",
+    "PleaseFillPatientRegistrationFeeCorrectly": "Veuillez remplir correctement les frais d'inscription du patient"
+  }
+}

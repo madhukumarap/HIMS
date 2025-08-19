@@ -1,0 +1,5 @@
+testName,parameterName,testPrice,Currency
+Ultrasound Abdomen,GALL_BLADDER,100,USD
+Brain CT Scan,TECHNIQUE,150,USD
+XRay,GALL_BLADDER,600,USD
+Heart,Liver,200,USD

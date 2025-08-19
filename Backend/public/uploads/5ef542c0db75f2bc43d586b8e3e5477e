@@ -1,0 +1,6 @@
+firstName,middleName,lastName,address,phoneNo,email,userName,password
+Amit,Kumar,Sharma,123 Main St,9876543210,amit.sharma@example.com,amit123,password123
+Neha,,Gupta,456 Oak Ave,8765432109,neha.gupta@example.com,neha456,mypassword
+Rajesh,Kumar,Verma,789 Elm St,7654321098,rajesh.verma@example.com,rajesh789,secure123
+Priya,Rani,Singh,101 Maple St,6543210987,priya.singh@example.com,priya101,mysecurepassword
+Ankit,,Patel,111 Pine Ave,5432109876,ankit.patel@example.com,ankit111,mysecretpass

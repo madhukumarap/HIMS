@@ -1,0 +1,67 @@
+{
+  "en": {
+    "TotalCollectedAmount": "Total Collected Amount",
+
+    "billingforconsultation": "Billing For Consultation",
+    "searchbyPatientName": "Search by Patient Name",
+    "filterOnRegistrationDate": "Filter on Registration Date",
+    "billingConsultationTable": {
+      "serialNumber": "Sr.No",
+      "patientName": "Patient Name",
+      "patientPhone": "Patient Phone",
+      "paymentStatus": "Payment Status",
+      "fees": "Fees",
+      "paymentdate&time": "Payment Date & Time",
+      "registrationDate": "Registration Date",
+      "printBill": "Print Bill",
+      "downloadAsPDF": "Download As PDF"
+    },
+    "Receipt": {
+      "ConsultantBookingReceipt": "Consultant Booking Receipt",
+      "patientDetails": "Patient Details",
+      "patientName": "Patient Name",
+      "patientPhone": "Patient Phone",
+      "bookingDate": "Booking Date",
+      "doctorDetails": "Doctor Details",
+      "doctorName": "Doctor Name",
+      "doctorPhone": "Doctor Phone",
+      "selectedTest": "Selected Test",
+      "paymentStatus": "Payment Status",
+      "paymentDate": "Payment Date",
+      "amount": "Amount",
+      "poweredBymediAI": "Powered by mediAI"
+    }
+  },
+  "fr": {
+    "billingforconsultation": "Facturation pour consultation",
+    "searchbyPatientName": "Recherche par nom de patient",
+    "filterOnRegistrationDate": "Filtrer sur la date d'enregistrement",
+    "Receipt": {
+      "ConsultantBookingReceipt": "Reçu de réservation du consultant",
+      "patientDetails": "Détails du patient",
+      "patientName": "Nom du patient",
+      "patientPhone": "Téléphone du patient",
+      "bookingDate": "Date de réservation",
+      "doctorDetails": "Détails du médecin",
+      "doctorName": "Nom du médecin",
+      "doctorPhone": "Téléphone du médecin",
+      "selectedTest": "Test sélectionné",
+      "paymentStatus": "Statut de paiement",
+      "paymentDate": "Date de paiement",
+      "amount": "Montante",
+      "poweredBymediAI": "Propulsé par mediAI"
+    },
+    "billingConsultationTable": {
+      "serialNumber": "Sr.No",
+      "patientName": "Nom du patient",
+      "patientPhone": "Téléphone du patient",
+      "paymentStatus": "Statut du paiement",
+      "fees": "Frais",
+      "paymentdate&time": "Date et heure de paiement",
+      "registrationDate": "Date d'inscription",
+      "printBill": "Imprimer la facture",
+      "downloadAsPDF": "Télécharger au format PDF"
+    },
+    "TotalCollectedAmount": "Montant total collecté"
+  }
+}

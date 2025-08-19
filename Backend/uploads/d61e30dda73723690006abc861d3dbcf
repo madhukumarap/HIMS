@@ -1,0 +1,7 @@
+testName,category,SpecimenName,LabCategoryName,description,parameterName,minimumRange,maximumRange,unitOfMeasurements,testPrice
+Lipid test,Blood,Plasma,Pathology,lipid test,Blood,10,upto 100,mg/dl,100
+Blood Sugar For Fasting,Blood,Blood,Biochemistry,,BloodNew,20,upto 200,mg/dl,150
+Platelet Count,Bone,Blood,Biochemistry,,Blood,10,upto 100,mg/dl,600
+UREE1,Vitals,serum,Biochemistry,,Sugar_Level,0,<100,mg/dl,200
+Creatininee,Bone,Blood,Biochemistry,,Sugar_Level,0,<100,mg/dl,300
+Lipid test,Blood,Plasma,Pathology,lipid test,Blood2,10,upto 100,mg/dl,100

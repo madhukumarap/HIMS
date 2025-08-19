@@ -1,0 +1,60 @@
+{
+  "en": {
+    "Areyousureyouwanttodeletethisdata": "Are you sure you want to delete this data?",
+    "DeleteddataSuccessfully": "Deleted data Successfully",
+    "Datasavedsuccessfully": "Data saved successfully",
+    "EnterCategoryName": "Enter Category Name",
+    "EnterLabCode": "Enter Lab Code",
+    "Active": "Active",
+    "In-Active": "In-Active",
+    "Create": "Create",
+    "CreateddataSuccessfully": "Created data Successfully",
+    "LabCategoryList": "Lab Category List",
+    "CreateNew": "Create New",
+    "HideForm": "Hide Form",
+    "LabCategoryTable": {
+      "ID": "ID",
+      "CategoryName": "Category Name",
+      "LabCode": "Lab Code",
+      "Status": "Status",
+      "CreatedAt": "Created At",
+      "Actions": "Actions",
+      "save": "Save",
+      "cancel": "Cancel",
+      "Edit": "Edit",
+      "Delete": "Delete",
+      "create": "Create",
+      "CreateNew": "Create New",
+      "HideForm": "Hide Form"
+    }
+  },
+  "fr": {
+    "Areyousureyouwanttodeletethisdata": "Êtes-vous sûr de vouloir supprimer ces données?",
+    "DeleteddataSuccessfully": "Données supprimées avec succès",
+    "EnterCategoryName": "Entrez le nom de la catégorie",
+    "EnterLabCode": "Entrez le code du laboratoire",
+    "Active": "Actif",
+    "In-Active": "En-Actif",
+    "Create": "Créer",
+    "CreateddataSuccessfully": "Données créées avec succès",
+    "LabCategoryList": "Liste des catégories de laboratoire",
+    "CreateNew": "Créer un nouveau",
+    "HideForm": "Masquer le formulaire",
+    "LabCategoryTable": {
+      "ID": "IDENTIFIANT",
+      "CategoryName": "Nom de la catégorie",
+      "LabCode": "Code de laboratoire",
+      "Status": "Statut",
+      "CreatedAt": "Créé à",
+      "Actions": "Actions",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "Edit": "Modifier",
+      "Delete": "Supprimer",
+      "create": "Créer",
+      "CreateNew": "Créer un nouveau",
+      "HideForm": "Masquer le formulaire"
+    },
+    "Datasavedsuccessfully": "Données enregistrées avec succès"
+  }
+}

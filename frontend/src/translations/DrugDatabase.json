@@ -1,0 +1,12 @@
+{
+  "en": {
+    "DrugDatabase": "Drug Database",
+    "EnterMedicineName": "Enter Medicine Name",
+    "Search": "Search"
+  },
+  "fr": {
+    "DrugDatabase": "Base de données sur les médicaments",
+    "EnterMedicineName": "Entrez le nom du médicament",
+    "Search": "Recherche"
+  }
+}

@@ -1,0 +1,57 @@
+{
+    "en": {
+      "Pathology" : "Pathology",
+      "Diagnostics" : "Diagnostics",
+      "PackageRevenuePathology" : "Package Revenue(Pathology)",
+      "PackageRevenueDiagnostic" : "Package Revenue(Diagnostic)",
+      "SelectDateRange" : "Select Date Range",
+      "SelectCorporateType" : "Select Corporate Type",
+      "All" : "All",
+      "Corporate" : "Corporate",
+      "NonCorporate" : "Non-Corporate",
+      "SelectCompany" : "Select Company",
+      "SelectaPackage" : "Select A Package",
+      "SelectedPackageDetails" : "Selected Package Details",
+      "PackageID" : "Package ID",
+      "PackageName" : "Package Name",
+      "PackagePrice" : "Package Price",
+      "Sellcount" : "Sell Count",
+      "PackageEarnings" : "Package Earnings",
+      "PatientListForPackage" : "Patient List For Package",
+      "PatientListForPackages" : "Patient List For Packages",
+      "PatientName" : "Patient Name",
+      "ReferralDoctor" : "Referral Doctor",
+      "RegistrationDate" : "Registration Date",
+      "PackageType" : "Package Type",
+      "NoDataFound" : "No Data Found"
+    },
+    "fr": {
+        "Pathology" : "Pathologie",
+        "Diagnostics" : "Diagnostique",
+        "PackageRevenuePathology" : "Revenus Des Packages (pathologie)",
+        "PackageRevenueDiagnostic" : "Revenus Des Packages (Diagnostic)",
+        "SelectDateRange" : "Sélectionnez Une Plage De Dates",
+        "SelectCorporateType" : "Sélectionnez Le Type D'entreprise",
+        "All" : "Toute",
+        "Corporate" : "Entreprise",
+        "NonCorporate" : "Non-Corporatif",
+        "SelectCompany" : "Sélectionnez Une Entreprise",
+        "SelectaPackage" : "Sélectionnez Un Forfait",
+        "SelectedPackageDetails" : "Détails Du Forfait Sélectionné",
+        "PackageID" : "ID Du Paquet",
+        "PackageName" : "Nom Du Paquet",
+        "PackagePrice" : "Prix ​​Du Coffret",
+        "Sellcount" : "Nombre De Ventes",
+        "PackageEarnings" : "Gains Du Forfait",
+        "PatientListForPackage" : "Liste Des Patients Pour Le Forfait",
+        "PatientListForPackages" : "Liste Des Patients Pour Le Forfait",
+        "PatientName" : "Nom Du Patient",
+        "ReferralDoctor" : "Médecin Référent",
+        "RegistrationDate" : "Date D'inscription",
+        "PackageType" : "Type D'emballage",
+        "NoDataFound" : "Aucune Donnée Disponible"
+        
+    }
+
+  }
+  

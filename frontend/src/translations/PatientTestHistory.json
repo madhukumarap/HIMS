@@ -1,0 +1,45 @@
+{
+  "en": {
+    "NoresultsavailabletodownloadasCSV": "No results available to download as CSV",
+    "Noresultsfound": "No results found",
+    "ResultFetchedSuccessfully": "Result Fetched Successfully",
+    "NoresultsavailabletodownloadasPDF": "No results available to download as PDF",
+    "PatientTestHistory(Pathology)": "Patient Test History (Pathology)",
+    "SelectDateRange": "Select Date Range",
+    "SelectPatient": "Select Patient",
+    "SelectTest": "Select Test",
+    "DownloadasCSV": "Download as CSV",
+    "DownloadasPDF": "Download as PDF",
+    "PatientTestHistory": "Patient Test History",
+    "TestCompletedDate": "Test Completed Date",
+    "patienttestHistoryTable": {
+      "SrNo": "Sr.No",
+      "TestName": "Test Name",
+      "TestCompletedDate": "Test Completed Date",
+      "Parameters": "Parameters",
+      "SelectedTestName": "SelectedTestName"
+    }
+  },
+
+  "fr": {
+    "NoresultsavailabletodownloadasCSV": "Aucun résultat disponible pour téléchargement au format CSV",
+    "Noresultsfound": "Aucun résultat trouvé",
+    "ResultFetchedSuccessfully": "Résultat récupéré avec succès",
+    "NoresultsavailabletodownloadasPDF": "Aucun résultat disponible pour téléchargement au format PDF",
+    "PatientTestHistory(Pathology)": "Historique des tests du patient (Pathologie)",
+    "SelectDateRange": "Sélectionner la plage de dates",
+    "SelectPatient": "Sélectionner le patient",
+    "SelectTest": "Sélectionner le test",
+    "DownloadasCSV": "Télécharger au format CSV",
+    "DownloadasPDF": "Télécharger au format PDF",
+    "PatientTestHistory": "Historique des tests du patient",
+    "TestCompletedDate": "Date de fin du test",
+    "patienttestHistoryTable": {
+      "SrNo": "N°",
+      "TestName": "Nom du test",
+      "TestCompletedDate": "Date de fin du test",
+      "Parameters": "Paramètres",
+      "SelectedTestName": "Nom du test sélectionné"
+    }
+  }
+}

@@ -1,0 +1,3 @@
+SKU,itemName,composition,description,unitPrice,batchNo,expiryDate,unit,dateIn,quantityIn,dateOut,balanceQuantity,Currency
+"SKU123","sumo cold","Cold","cold","5","Batch0011","10/10/2024","Tablet","26/08/2023","100","12/09/2023","37","USD"
+"SKU001","Insulin","Com. It helps your body turn food into energy and controls your blood sugar levels.","5","BT001","08/10/2023","Tablet","30/08/2023","100","12/09/2023","85","USD"

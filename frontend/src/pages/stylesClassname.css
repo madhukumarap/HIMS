@@ -1,0 +1,21 @@
+/* styles.css */
+
+.text-center {
+    text-align: center;
+    font-size: 12px;
+}
+.text-font {
+    
+    font-size: 12px;
+}
+.h2 {
+    font-size: 16px;
+}
+
+.withspace {
+    white-space: pre-wrap;
+}
+
+.nowrip {
+    white-space: nowrap;
+}

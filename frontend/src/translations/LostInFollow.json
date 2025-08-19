@@ -1,0 +1,43 @@
+{
+    "en": {
+        "LostInFollowUp" :"Lost In Follow Up",
+        "SelectOption" :"Select Option",
+        "Pathology" :"Pathology",
+        "Diagnostic" :"Diagnostic",
+        "Consultation" :"Consultation",
+        "SelectCorporateType" :"Select Corporate Type",
+        "All" :"All",
+        "Corporate" :"Corporate",
+        "NonCorporate" :"Non-Corporate",
+        "SelectCompany" :"Select Company",
+        "SearchByNamePhone" :"Search By Name/Phone",
+        "Patientlist" :"Patient List",
+        "PatientID" :"Patient ID",
+        "PatientName" :"Patient Name",
+        "PatientContact" :"Patient Contact",
+        "CorporateID" :"Corporate ID",
+        "PatientVisitingDate" :"Patient Visiting Date",
+        "EnterEitherNameOrContact" : "Enter either name or contact"
+    },
+    "fr": {
+        "LostInFollowUp" :"Perdu Dans Le Suivi",
+        "SelectOption" :"Sélectionnez Une Option",
+        "Pathology" :"Pathologie",
+        "Diagnostic" :"Diagnostique",
+        "Consultation" :"Consultation",
+        "SelectCorporateType" :"Sélectionnez Le Type D'entreprise",
+        "All" :"Toute",
+        "Corporate" :"Entreprise",
+        "NonCorporate" :"Non-Corporatif",
+        "SelectCompany" :"Sélectionnez Une Entreprise",
+        "SearchByNamePhone" :"Rechercher Par Nom/Téléphone",
+        "Patientlist" :"Liste Des Patients",
+        "PatientID" :"ID Du Patient",
+        "PatientName" :"Nom Du Patient",
+        "PatientContact" :"Contact Avec Les Patients",
+        "CorporateID" :"Identifiant D'entreprise",
+        "PatientVisitingDate" :"Date De Visite Du Patient",
+        "EnterEitherNameOrContact" : "Enter either name or contact"
+    }
+  }
+  

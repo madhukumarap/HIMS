@@ -1,0 +1,4 @@
+id,SKU,itemName,composition,description,unitPrice,batchNo,expiryDate,unit,dateIn,quantityIn,dateOut,quantityOut,balanceQuantity,AverageMonthlyQuantityOut,AverageWeeklyQuantityOut,createdAt,updatedAt
+1,SKU123,sumo cold,Cold,cold,5,Batch01,2024-10-10,Tablet,2023-08-26,100,2023-09-12,63,37,2,5,2023-08-26T13:19:57.000Z,2023-09-12T09:50:43.000Z
+2,SKU001,Insulin,Com., It helps your body turn food into energy and controls your blood sugar levels.,5,BT01,2023-10-08,Tablet,2023-08-30,100,2023-09-12,15,85,1,2,2023-08-30T13:39:55.000Z,2023-09-12T08:15:07.000Z
+3,lihkblh,hblhb,lhkjbkhj,bkhj,12,nlih,2023-09-12,b,2023-09-13,7654,2023-09-11,0,7654,0,0,2023-09-11T06:16:16.000Z,2023-09-11T06:16:16.000Z

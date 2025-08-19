@@ -1,0 +1,26 @@
+{
+  "en": {
+    "LoginSuccessful": "Login successful",
+    "LogIn": "Log In",
+    "Enteryourusername": "Enter your username",
+    "Username": "Username",
+    "Password": "Password",
+    "Enteryourpassword": "Enter your password",
+    "required": "required",
+    "ShowPassword": "Show Password",
+    "Login": "Login",
+    "ForgotPassword": "Forgot Password"
+  },
+  "fr": {
+    "LoginSuccessful": "Connexion réussie",
+    "LogIn": "Se connecter",
+    "Enteryourusername": "Entrez votre nom d'utilisateur",
+    "Username": "Nom d'utilisateur",
+    "Password": "Mot de passe",
+    "Enteryourpassword": "Entrez votre mot de passe",
+    "required": "requis",
+    "ShowPassword": "Afficher le mot de passe",
+    "Login": "Connexion",
+    "ForgotPassword": "Mot de passe oublié"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "en": {
+    "Welcome": "Welcome",
+    "ViewProfile": "View Profile",
+    "Logout": "Logout",
+    "Name": "Name",
+    "UserProfile": "User Profile",
+    "Username": "Username",
+    "Phone": "Phone",
+    "Roles": "Roles",
+    "Close": "Close",
+    "Save": "Save",
+    "NewPassword": "Password",
+    "Phoneerror": "Invalid phone number (10 digits required)",
+    "ProfileUpdated": "Profile Updated Successfully",
+    "PasswordError": " Password must contain at least 6 characters, including one    uppercase letter, one lowercase letter, one digit, and one    special character.",
+    "CreateNewPassWord": "Create New PassWord",
+    "UpdateProfile": "Update Profile",
+    "emailerror": "Enter Valid Email"
+  },
+  "fr": {
+    "Welcome": "Bienvenue",
+    "ProfileUpdated": "Mise à jour du profil réussie",
+
+    "PasswordError": "Le mot de passe doit contenir au moins 6 caractères, dont un lettre majuscule, une lettre minuscule, un chiffre et un  Caractère spécial.",
+    "Phoneerror": "Numéro de téléphone invalide (10 chiffres requis)",
+    "emailerror": "Entrez une adresse email valide",
+    "CreateNewPassWord": "Créer un nouveau mot de passe",
+    "ViewProfile": "Voir le profil",
+    "Logout": "Se déconnecter",
+    "Close": "Fermer",
+    "Save": "Sauvegarder",
+    "Phone": "Téléphone",
+    "Name": "Nom",
+    "NewPassword": "Mot de passe",
+    "UpdateProfile": "Mettre à jour le profil",
+    "Username": "Nom d'utilisateur",
+    "UserProfile": "Profil de l'utilisateur",
+    "Roles": "Les rôles"
+  }
+}

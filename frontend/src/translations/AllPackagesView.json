@@ -1,0 +1,28 @@
+{
+  "en": {
+    "Packages": "Packages",
+    "SelectPackage": "Select Package",
+    "HealthPackages": "Health Packages",
+    "PathologyPackages": "Pathology Packages",
+    "DiagnosticPackages": "Diagnostic Packages",
+    "PackageName": "Package Name",
+    "Tests": "Tests",
+    "MRP": "MRP",
+    "Discount": "Discount",
+    "FinalPrice": "Final Price",
+    "Close": "Close"
+  },
+  "fr": {
+    "Packages": "Forfaits",
+    "SelectPackage": "Sélectionner un forfait",
+    "HealthPackages": "Forfaits de santé",
+    "PathologyPackages": "Forfaits de pathologie",
+    "DiagnosticPackages": "Forfaits de diagnostic",
+    "PackageName": "Nom du forfait",
+    "Tests": "Tests",
+    "MRP": "PMP",
+    "Discount": "Remise",
+    "FinalPrice": "Prix final",
+    "Close": "Fermer"
+  }
+}

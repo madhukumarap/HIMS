@@ -1,0 +1,65 @@
+/* TestManagement.css */
+
+.test-management {
+    margin: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+.form-control {
+    width: 100%;
+}
+
+.btn {
+    margin-right: 5px;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+/* Example styling for the modal */
+.modal {
+    /* display: block; */
+    /* Display the modal */
+    /* position: fixed; */
+    /* top: 0; */
+    /* left: 0; */
+    /* width: 100%; */
+    /* height: 100%; */
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Semi-transparent background */
+    /* z-index: 1000; */
+}
+
+.modal-content {
+    /* background-color: white; */
+    /* width: 60%; */
+    /* margin: 10% auto;
+    padding: 20px; */
+}

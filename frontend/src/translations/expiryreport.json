@@ -1,0 +1,62 @@
+{
+  "en": {
+    "expiryreport": "Expiry Report",
+    "ExpiryReportExpiryinlessthan": "Expiry in less than",
+    "days": "days",
+    "EnterNumberofdaystoExpiry": "Enter Number of days to Expiry",
+    "Select": "Select",
+    "Week": "Week",
+    "Month": "Month",
+    "Year": "Year",
+    "1": "1",
+    "2": "2",
+    "3": "3",
+    "4": "4",
+    "5": "5",
+    "6": "6",
+    "ViewReport": "View Report",
+    "SearchbyMedicineName": "Search by Medicine Name",
+    "PrintReport": "Print Report",
+    "Composition": "Composition",
+    "BatchNo": "Batch No",
+    "ExpiryDate": "Expiry Date",
+    "BalanceQuantity": "Balance Quantity",
+    "expiryReportTable": {
+      "Composition": "Composition",
+      "BatchNo": "Batch No",
+      "ExpiryDate": "Expiry Date",
+      "BalanceQuantity": "Balance Quantity",
+      "MedicineName": "Medicine Name"
+    }
+  },
+  "fr": {
+    "expiryreport": "Rapport d'expiration",
+    "ExpiryReportExpiryinlessthan": "Expiration dans moins de",
+    "days": "jours",
+    "EnterNumberofdaystoExpiry": "Entrez le nombre de jours avant l'expiration",
+    "Select": "Sélectionner",
+    "Week": "Semaine",
+    "Month": "Mois",
+    "Year": "Année",
+    "1": "1",
+    "2": "2",
+    "3": "3",
+    "4": "4",
+    "5": "5",
+    "6": "6",
+    "ViewReport": "Voir le rapport",
+    "SearchbyMedicineName": "Rechercher par nom de médicament",
+    "PrintReport": "Imprimer le rapport",
+    "Composition": "Composition",
+    "BatchNo": "Numéro de lot",
+    "ExpiryDate": "Date d'expiration",
+    "BalanceQuantity": "Quantité en stock",
+    "expiryReportTable": {
+      "Composition": "Composition",
+      "BatchNo": "Numéro de lot",
+      "ExpiryDate": "Date d'expiration",
+      "BalanceQuantity": "Quantité en stock",
+      "MedicineName": "Nom du médicament"
+    }
+  }
+}

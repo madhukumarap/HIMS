@@ -1,0 +1,5 @@
+firstName,middleName,lastName,address,phoneNo,email,userName,password
+Amit,Kumar,Sharma,Mumbai,9876543210,amit.sharma@gmail.com,Amit123,Pass@123
+Ankit,,Patel,mumbai,5432109876,ankit.patel@gmail.com,Ankit123,Pass@123
+Rahul,Mohan,Kumar,mumbai,3210987654,rahul.kumar@gmail.com,Rahul23,Pass@123
+Datta,,Kumar,mumbai,2109876543,datta.kumar@gmail.com,Datta02,Pass@123

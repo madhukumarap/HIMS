@@ -1,0 +1,6 @@
+firstName,middleName,lastName,registrationNo,phoneNo,username,password,email,address
+nitesh,,giri,12345,55512345,Nitesh02,Pass@123,nitesh@example.com,123 Main St
+vijay,,Kumar,67890,55255678,janesmith2,secretpass,janesmithh@example.com,456 Oak Ave
+Robert,James,Lee,24680,5559012,rjlee,letmein,rjlee@example.com,789 Elm St
+Susan,Lynn,Johnson,13579,5553456,susanj,susan123,susanjohnson@example.com,101 Maple St
+David,Michael,Clark,86420,5557890,davidc,david123,davidclark@example.com,111 Pine Ave

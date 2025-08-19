@@ -1,0 +1,5 @@
+firstName,middleName,lastName,registrationNo,phoneNo,username,password,email,address
+Rajesh,Arjun,Kumar,REG2345,9876543210,Rajesh123,Pass@123,rajesh@gmail.com,Mumbai
+Rahul,Mohan,Kumar,REG67890,8765432109,Rahul123,Pass@123,rahul.kumar@gmail.com,Mumbai
+Smita,,Joshi,REG24680,7654321098,Smita123,Pass@123,smita.joshi@gmail.com,Mumbai
+Sanjay,,Gupta,REG13579,6543210987,Sanjay123,Pass@123,sanjay@gmail.com,Mumbai

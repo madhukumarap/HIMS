@@ -1,0 +1,45 @@
+{
+  "en": {
+    "searchByName": "Search by patient name",
+    "filterOnRegistrationDate": "Filter on Registration Date",
+    "doctorsAppointment": "Doctors Appointment",
+    "bookAppointment": "Book Appointment",
+    "patientTable": {
+      
+      "patientPhone": "Patient Phone",
+      "serialNumber": "Serial Number",
+      "patientName": "Patient Name",
+      "doctorName": "Doctor Name",
+      "doctorPhone": "Doctor Phone",
+      "bookingDateTime": "Booking Date-time",
+      "paymentStatus": "Payment Status",
+      "fees": "Fees",
+      "paymentDateTime": "Payment Date & Time",
+      "registrationDate": "Registration Date",
+      "action": "Action",
+      "delete": "Delete",
+      "downloadAsPdf": "Download as PDF"
+    }
+  },
+  "fr": {
+    "searchByName": "Recherche par nom du patient",
+    "filterOnRegistrationDate": "Filtrer par date d'inscription",
+    "doctorsAppointment": "Rendez-vous médical",
+    "bookAppointment": "Prendre rendez-vous",
+    "patientTable": {
+      "serialNumber": "N° de série",
+      "patientName": "Nom du patient",
+      "patientPhone": "Téléphone du patient",
+      "doctorName": "Nom du médecin",
+      "doctorPhone": "Téléphone du médecin",
+      "bookingDateTime": "Heure de début-fin de réservation",
+      "paymentStatus": "Statut de paiement",
+      "fees": "Frais",
+      "paymentDateTime": "Date et heure de paiement",
+      "registrationDate": "Date d'inscription",
+      "action": "Action",
+      "delete": "Supprimer",
+      "downloadAsPdf": "Télécharger en PDF"
+    }
+  }
+}

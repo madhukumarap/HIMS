@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Adobe Acrobat Services PDF Embed API Sample</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+
+<body style="margin: 0px">
+    <div id="adobe-dc-view"></div>
+    <script src="https://acrobatservices.adobe.com/view-sdk/viewer.js"></script>
+    <script type="text/javascript">
+        document.addEventListener("adobe_dc_view_sdk.ready", function () {
+            var adobeDCView = new AdobeDC.View({ clientId: "ae2090f39ee4431aac470f49aa1d3614", divId: "adobe-dc-view" });
+            adobeDCView.previewFile(
+                {
+                    content: { location: { url: "https://acrobatservices.adobe.com/view-sdk-demo/PDFs/Bodea Brochure.pdf" } },
+                    metaData: { fileName: "Bodea Brochure.pdf" },
+                    defaultViewMode: "FIT_WIDTH",
+                    showDownloadPDF: false, // false removes the download PDF button from the viewer
+                    showPrintPDF: false, // false removes the print PDF button from the viewer
+                    showLeftHandPanel: false,
+                    showAnnotationTools: false,
+                    showRightHandPanel: false, // false removes the right-side toolbar
+                });
+
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,145 @@
+/* print-styles.css */
+
+@media print {
+  #print-button {
+      display: none;
+  }
+}
+/* 
+@media print {
+  .actions-header {
+      display: none;
+  }
+} */
+
+
+/* @media print {
+  body *:not(#print-section) {
+    display: none !important;
+  }
+} */
+
+
+#print-section {
+  background-color: rgb(252, 247, 247);
+  font-family: Arial, sans-serif;
+  margin: 10px;
+  padding: 20px;
+  /* ... */
+}
+
+
+
+/* .container {
+  margin-top: 5rem;
+  
+} */
+
+.form-select {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.btn-primary {
+  margin-top: 1rem;
+}
+
+.card {
+  margin-bottom: 1rem;
+}
+
+.table-bordered {
+  width: 100%;
+}
+
+.table-striped {
+  width: 100%;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.error-message {
+  color: red;
+}
+
+
+.btn-success {
+  padding: 10px;
+}
+
+@media print {
+  /* Styles for printing */
+  .btn,
+  .btn-primary,
+  .btn-success {
+    display: none;
+  }
+  
+  .card {
+    border: none;
+    box-shadow: none;
+    margin-bottom: 1rem;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th,
+  td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  th {
+    background-color: #f2f2f2;
+  }
+  
+  h1 {
+    background-color: lightblue;
+    padding: 10px;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  h2 {
+    background-color: lightgreen;
+    padding: 10px;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+}
+
+.custom-datetime-picker {
+  height: 34px;
+  
+  font-size: 10px;
+  font: 10px;
+}
+
+.custom-Select-picker {
+  font-size: 12px;
+  font: 10px;
+}
+
+.date-range-overlay {
+  position: absolute;
+  z-index: 999;
+  /* Ensure it's above other elements */
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  top: 100%;
+  /* Position it below the label */
+  left: 0;
+  width: 100%;
+}

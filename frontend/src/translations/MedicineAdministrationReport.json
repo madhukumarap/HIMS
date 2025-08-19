@@ -1,0 +1,42 @@
+{
+  "en": {
+    "patientPrescriptionRecords": "Patient - Prescription Records",
+    "searchByPatientNameOrPhoneNumber": "Search By Patient Name or Phone Number",
+    "downloadAsCSV": "Download as CSV",
+    "ViewReport": "View Report",
+    "prescriptionTable": {
+      "id": "ID",
+      "prescriptionID": "Prescription ID",
+      "patientName": "Patient Name",
+      "patientPhoneNo": "Patient PhoneNo",
+      "prescribedDoctor": "Prescribed Doctor",
+      "registrationNumber": "Registration No",
+      "doctorPhoneNo": "Doctor PhoneNo",
+      "clinicalDiagnosis": "Clinical Diagnosis",
+      "prescriptionDate": "Prescription Date",
+      "medicationAdministration": "Medication Administration",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "fr": {
+    "patientPrescriptionRecords": "Patiente - Liste des ordonnances",
+    "searchByPatientNameOrPhoneNumber": "Rechercher par nom de patient ou numéro de téléphone",
+    "downloadAsCSV": "Télécharger au format CSV",
+    "ViewReport": "Voir le rapport",
+    "prescriptionTable": {
+      "id": "ID",
+      "prescriptionID": "Identifiant de l'ordonnance",
+      "patientName": "Nom du patient",
+      "patientPhoneNo": "Numéro de téléphone du patient",
+      "prescribedDoctor": "Médecin prescrit",
+      "registrationNumber": "Numéro d'enregistrement",
+      "doctorPhoneNo": "Numéro de téléphone du médecin",
+      "clinicalDiagnosis": "Diagnostic clinique",
+      "prescriptionDate": "Date de prescription",
+      "medicationAdministration": "Administration des médicaments",
+      "previous": "Précédent",
+      "next": "Suivant"
+    }
+  }
+}

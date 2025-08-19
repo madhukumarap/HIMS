@@ -1,0 +1,6 @@
+SKU,itemName,composition,description,batchNo,expiryDate,unitPrice,unit,dateIn,quantityIn,dateOut,quantityOut,balanceQuantity
+MED001,Paracetamol,500mg tablet,For fever and pain relief,BT123,2024-06-30,10.50,Each,2023-06-01,100,0,0,100
+MED002,Aspirin,325mg tablet,For pain relief and inflammation,BT456,2024-08-31,8.75,Each,2023-06-01,50,0,0,50
+MED003,Ibuprofen,200mg capsule,For pain relief and inflammation,BT789,2023-12-31,15.25,Each,2023-06-01,75,0,0,75
+MED004,Ciprofloxacin,500mg tablet,For bacterial infections,BT101,2023-10-31,20.00,Each,2023-06-01,30,0,0,30
+MED005,Amoxicillin,250mg capsule,For bacterial infections,BT202,2024-04-30,12.50,Each,2023-06-01,40,0,0,40

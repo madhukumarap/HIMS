@@ -1,0 +1,7 @@
+testName,fieldName,testPrice,Currency,code
+T3 T4 TSH,Blood,100,INR,CD01
+T3 T4 TSH,BloodNew,150,INR,CD02
+Platelet Count,Blood,600,USD,CD03
+Blood Sugar For PP,Sugar_Level,200,INR,CD04
+Blood Sugar For ZZ,Sugar_Level,300,USD,CD05
+Platelet Count01,Blood,600,USD,CD06

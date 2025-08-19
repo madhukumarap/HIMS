@@ -277,7 +277,7 @@ app.use("/api/user-roles", userRoleRoutes);
 /////////////
 const hospitalRoutes = require("./routes/user.routes");
 app.use("/api/hospitals", hospitalRoutes);
-
+////already 07
 app.listen(7000, () => {
   console.log("Started on port 7000");
 });

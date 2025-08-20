@@ -93,6 +93,10 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue : "Doctor Visit"
     },
+    referraldoctorId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   });
 
   return DoctorsAppointment;

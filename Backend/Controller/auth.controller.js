@@ -167,6 +167,7 @@ exports.signup = async (req, res) => {
   const con = connectionList[RequestDatabase];
 
   const User = con.user;
+  console.log("con.user", con.user);
   const Role = con.role;
 
   // Save User to Database

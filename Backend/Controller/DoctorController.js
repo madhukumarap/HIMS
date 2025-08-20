@@ -42,7 +42,10 @@ const SaveDoctor = async (req, res) => {
       address,
       consultationFee,
       consultationCurrency,
-      discount
+      discount,
+      doctorsType,
+      referralFee,
+      
     } = req.body;
     console.log(req.body,"req.body")
     console.log("hii////////////////");
@@ -137,9 +140,11 @@ const SaveDoctor = async (req, res) => {
       signatureImage: imageBinaryData,
       consultationFee,
       consultationCurrency,
+      doctorsType,
+      referralFee : referralFee.length ==0 ? 0 : referralFee,
     });
 
-    // console.log(doctor);
+    console.log("doctorrrrrrrrrrrrrrrrrrrrrrr",doctor);
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log("Error sending  email:", error);
@@ -154,7 +159,8 @@ const SaveDoctor = async (req, res) => {
     res.status(200).json({ message: "Doctor saved successfully" });
   } catch (signupError) {
     // Handle any errors
-
+    console.log("Error during signup:", signupError);
+    console.log("Error during signup:", signupError.response);
     if (
       signupError.response &&
       signupError.response.data &&

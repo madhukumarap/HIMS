@@ -57,6 +57,9 @@ const DoctorRegistration = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [signatureImage, setSignatureImage] = useState(null);
   const currentUser = AuthService.getCurrentUser();
+  const [doctorsType, setDoctorsType] = useState("");
+  const [consultationFee, setConsultationFee] = useState("");
+  const [referralFee, setReferralFee] = useState("");
 
   const handleSignatureChange = (e) => {
     const file = e.target.files[0];
@@ -89,7 +92,34 @@ const DoctorRegistration = () => {
 
     setErrors({ username: errorMessage });
   };
+  const handleDoctorTypeChange = (e) => {
+    const value = e.target.value;
+    setDoctorsType(value);
 
+    let errorMessage = "";
+    if (value.length === 0) {
+      errorMessage = t("doctorTypeMissingError");
+    }
+
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      doctorType: errorMessage,
+    }));
+  }
+  const handleconsultationFee = (e) => {
+    const value = e.target.value;
+    setConsultationFee(value);
+    let errorMessage = "";
+    if (value.length === 0) {
+      errorMessage = t("consultationFeeMissingError");
+    } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+      errorMessage = t("consultationFeeValidationError");
+    }
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      consultationFee: errorMessage,
+    }));
+  }
   const handlePasswordChange = (e) => {
     const value = e.target.value;
     setPassword(value);
@@ -127,6 +157,20 @@ const DoctorRegistration = () => {
       confirmPassword: errorMessage,
     }));
   };
+  const handlereferralFee = (e) => {
+    const value = e.target.value;
+    setReferralFee(value);
+    let errorMessage = "";
+    if (value.length === 0) {
+      errorMessage = t("referralFeeMissingError");
+    } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+      errorMessage = t("referralFeeValidationError");
+    }
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      referralFee: errorMessage,
+    }));
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -234,6 +278,9 @@ const DoctorRegistration = () => {
     formData.append("email", email);
     formData.append("address", address);
     formData.append("countryCode", countryCode);
+    formData.append("doctorsType", doctorsType);
+    formData.append("referralFee", referralFee);
+    formData.append("consultationFee",consultationFee)
     if (signatureImage) {
       formData.append("signatureImage", signatureImage);
     }
@@ -283,6 +330,8 @@ const DoctorRegistration = () => {
     setAddress("");
     setErrors({});
     setCountryCode("");
+    setDoctorsType("");
+    setReferralFee("");
   };
 
   localStorage.setItem("reloadCount1", "0");
@@ -610,6 +659,98 @@ const DoctorRegistration = () => {
                       onChange={handleSignatureChange}
                     />
                   </div> */}
+                </div>
+                <br />
+                <div className="form-group row">
+                                
+                  <label htmlFor="doctortype" className="col-sm-2 col-form-label">
+                    <strong>{t("doctorType")}</strong>
+                    <span style={{ color: "red", marginLeft: "5px" }}>*</span>
+                  </label>
+                  <div className="col-sm-3  ">
+                    <select
+                      className="form-control"
+                      id="doctorsType"
+                      value={doctorsType}
+                      onChange={handleDoctorTypeChange}
+                      onBlur={handleDoctorTypeChange}
+                      required
+                      style={{ fontSize: "12px" }}
+                    >
+                      <option value="">{t("selectDoctorType")}</option>
+                      <option value="internal">{t("Internal")}</option>
+                      <option value="external">{t("External")}</option>
+                    </select>
+                    {errors.doctorType && (
+                      <span className="text-danger">{errors.doctorType}</span>
+                    )}
+                  </div>
+                  {
+                    doctorsType === "external" && (
+                      <>
+                        <label
+                    htmlFor="referralfee"
+                    className="col-sm-3 col-form-label"
+                  >
+                    <strong>{t("Referral Fee")}</strong>
+                    <span style={{ color: "red", marginLeft: "5px" }}>*</span>
+                  </label>
+                  <div className="col-sm-3">
+                    <div className="input-group">
+                      <input
+                        type= "text" 
+                        className="form-control"
+                        style={{ fontSize: "12px" }}
+                        id="referralfee"
+                        value={referralFee}
+                        onChange={handlereferralFee}
+                        placeholder={t("referralfee")}
+                        required
+                      />
+                      
+                    </div>
+                    {errors.confirmPassword && (
+                      <span className="text-danger">
+                        {errors.confirmPassword}
+                      </span>
+                    )}
+                  </div>
+                      </>
+                    )
+                  }
+                  {
+                    doctorsType === "internal" && (
+                      <>
+                        <label
+                    htmlFor="consultationFee"
+                    className="col-sm-3 col-form-label"
+                  >
+                    <strong>{t("consultation Fee")}</strong>
+                    <span style={{ color: "red", marginLeft: "5px" }}>*</span>
+                  </label>
+                  <div className="col-sm-3">
+                    <div className="input-group">
+                      <input
+                        type= "text" 
+                        className="form-control"
+                        style={{ fontSize: "12px" }}
+                        id="consultationFee"
+                        value={consultationFee}
+                        onChange={handleconsultationFee}
+                        placeholder={t("consultationFee")}
+                        required
+                      />
+                      
+                    </div>
+                    {errors.consultationFee && (
+                      <span className="text-danger">
+                        {errors.consultationFee}
+                      </span>
+                    )}
+                  </div>
+                      </>
+                    )
+                  }
                 </div>
                 <br />
                 <div className="form-group row">

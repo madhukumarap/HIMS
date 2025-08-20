@@ -43,6 +43,7 @@ function DiagnosticsBooking() {
   const [exchangeRates, setExchangeRates] = useState(null);
   const [inOutPatient, setInOutPatient] = useState(undefined);
   const [hospitalBookings, setHospitalBookings] = useState([]);
+
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/api/getallPaitents`, {
@@ -71,6 +72,8 @@ function DiagnosticsBooking() {
         console.error(error);
       });
   }, []);
+
+  
   const [totalFees, setTotalFees] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [bookings, setBookings] = useState([]);

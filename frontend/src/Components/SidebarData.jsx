@@ -279,6 +279,8 @@ const SidebarData = [
       },
     ],
   },
+
+
   {
     title: "Diagnostics",
 
@@ -316,6 +318,22 @@ const SidebarData = [
       {
         title: "PatientLists",
         path: "/DignosticPatientList",
+        icon: <IoIcons.IoIosPaper />,
+      },
+    ],
+  },
+
+  {
+    title: "Doctors Managment",
+
+    icon: <FaCog />,
+    iconClosed: <RiIcons.RiArrowDownSFill />,
+    iconOpened: <RiIcons.RiArrowUpSFill />,
+    isOpen: false,
+    subNav: [
+      {
+        title: "DoctorsList",
+        path: "/doctorsList",
         icon: <IoIcons.IoIosPaper />,
       },
     ],

@@ -1915,8 +1915,7 @@ function Pathologytest() {
         ReporttestName={ReporttestName}
       />
       <Modal
-        style={{ fontSize: "13px" }}
-        style={{ marginTop: "20px" }}
+        style={{ fontSize: "13px", marginTop: "20px" }}
         centered
         backdrop="static"
         show={showDeleteModal}

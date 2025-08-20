@@ -166,6 +166,7 @@ import ConsultationPriceSetup from "./pages/ConsultationComponent/ConsultationPr
 import PatientRegistrationFee from "./pages/PatientRegistrationFee";
 import { HospitalContext } from "./context/HospitalDataProvider";
 import { CurrencyContext } from "./context/CurrencyProvider";
+import ShowDoctorList from "./pages/Doctor/ShowDoctorList";
 const Container = styled.div``;
 
 const Content = styled.div`
@@ -1096,16 +1097,6 @@ function App() {
               overflowY: "auto",
             }}
           >
-            {/* <h6
-              style={{
-                marginTop: "-20px",
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-              Backup is shedule at time{" time "} all users will logout on this
-              time.
-            </h6> */}
             <Routes>
               {hospitals && (
                 <>
@@ -1788,6 +1779,10 @@ function App() {
                   <Route
                     path={`/${hospitals[0]?.name}/UploadTestDataFromCsvDiagnostic`}
                     element={<UploadTestDataFromCsvDiagnostic />}
+                  />
+                  <Route
+                    path={`/${hospitals[0]?.name}/doctorsList`}
+                    element={<ShowDoctorList />}
                   />
                 </>
               )}

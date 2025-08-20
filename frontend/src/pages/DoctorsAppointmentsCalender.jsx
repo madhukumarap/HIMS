@@ -1,6 +1,6 @@
 import Webcam from "react-webcam";
 import Select from "react-select"; // Add this line at the top of your file
-import React, { useState, useEffect, useRef, Component } from "react";
+import React, { useState, useEffect, useRef, } from "react";
 import axios from "axios";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -14,12 +14,11 @@ import { useNavigate } from "react-router-dom";
 import AuthService from "../services/auth.service";
 import { toast } from "react-toastify";
 import "./print-styles.css";
-import App from "../App";
 import Translation from "../translations/DoctorsAppointmentsCalender.json";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { format as formatDate, isDate } from "date-fns";
+import { format as isDate } from "date-fns";
 import { fr, enIN } from "date-fns/locale";
 import "moment/locale/fr";
 import { registerLocale } from "react-datepicker";

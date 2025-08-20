@@ -336,6 +336,7 @@ const SidebarData = [
         path: "/doctorsList",
         icon: <IoIcons.IoIosPaper />,
       },
+     
     ],
   },
 

@@ -906,7 +906,9 @@ const BookingCalendar = () => {
     //alert(selectedPatient);
     const selectedDoctorId = document.getElementById("doctor")?.value;
     const selectedRefDoctorId = document.getElementById("referraldoctorId")?.value;
-    if (isNaN(registrationFeeCurrency) || registrationFeeCurrency <= 0) {
+    console.log(registrationFeeCurrency,"registrationFeeCurrencyregistrationFeeCurrency")
+    if (isNaN(registrationFeeAmount) || registrationFeeAmount <= 0) {
+      console.log(registrationFeeAmount,"registrationFeeCurrencyregistratioadfasafsafsafafafanFeeCurrency")
       toast.error("Please enter a valid amount");
       return;
     }
@@ -921,11 +923,11 @@ const BookingCalendar = () => {
       toast.error("Please Select Paymentstatus.");
       return;
     }
-    if (paymentStatus === "paid" && amount < 1) {
+    if (paymentStatus === "paid" && registrationFeeAmount < 1) {
       toast.error("Please Enter Valid Amount.");
       return;
     }
-    if (paymentStatus === "notPaid" && (amount < 0 || amount !== 0)) {
+    if (paymentStatus === "notPaid" && (registrationFeeAmount < 0 || registrationFeeAmount !== 0)) {
       setAmount("0");
     }
     if (paymentStatus === "paid" && !paymentDateTime) {
@@ -1719,7 +1721,7 @@ const BookingCalendar = () => {
               </>
             )}
 
-            {eventType === "hospitalAdmission" && (
+            {eventType === "diagnosticsTest" && (
               <Form.Group controlId="additionalInfo">
                 <div className="row">
                   <div className="col-md-6">

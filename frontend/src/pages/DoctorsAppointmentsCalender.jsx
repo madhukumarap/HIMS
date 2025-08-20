@@ -245,7 +245,7 @@ const BookingCalendar = () => {
   const [doctorConsultancyCurrency, setDoctorConsultancyCurrency] =
     useState("");
 
-  const [show, setShow] = useState(false);
+  // const [show, setShow] = useState(false);
 
   const [selectedTests, setSelectedTests] = useState([]);
   const [currency, setCurrency] = useState(Hospitals[0]?.baseCurrency || "USD");
@@ -795,6 +795,7 @@ const BookingCalendar = () => {
   const handleDoctorConsultationSubmit = async () => {
     const selectedPatientId = selectedPatient;
     const selectedDoctorId = document.getElementById("doctor")?.value;
+    const selectedRefDoctorId = document.getElementById("referraldoctorId")?.value;
     const newBookingStartDate = moment(newEventStart)
       .add(30 * selectedSlotValue, "minutes")
       .toDate();
@@ -802,6 +803,7 @@ const BookingCalendar = () => {
       !selectedPatientId ||
       !selectedDoctorId ||
       !newEventStart ||
+      !selectedRefDoctorId||
       !paymentStatus
     ) {
       toast.error("Please fill in all required fields.", {
@@ -840,7 +842,7 @@ const BookingCalendar = () => {
     const formData = new FormData();
     formData.append("patientId", selectedPatientId);
     formData.append("doctorId", selectedDoctorId);
-
+    formData.append("referraldoctorId", selectedRefDoctorId);
     formData.append("amount", registrationFeeAmount);
     formData.append("paymentDateTime", paymentDateTime);
     formData.append(
@@ -904,7 +906,7 @@ const BookingCalendar = () => {
   const handlePathologistTestSubmit = async () => {
     //alert(selectedPatient);
     const selectedDoctorId = document.getElementById("doctor")?.value;
-
+    const selectedRefDoctorId = document.getElementById("referraldoctorId")?.value;
     if (isNaN(registrationFeeCurrency) || registrationFeeCurrency <= 0) {
       toast.error("Please enter a valid amount");
       return;
@@ -955,6 +957,7 @@ const BookingCalendar = () => {
     const eventData = {
       patientId: selectedPatient,
       doctorId: selectedDoctorId,
+      referraldoctorId: selectedRefDoctorId,
       tests: [...new Set(updatedSelectedTests.map((test) => test.value))],
 
       selectedPackageID: selectedPackageID,
@@ -1209,7 +1212,8 @@ const BookingCalendar = () => {
                 <option value="doctorConsultation">
                   {t("doctorConsultation")}
                 </option>
-                {/* <option value="pathologistTest">{t("pathologistTest")}</option> */}
+                <option value="pathologistTest">{t("Pathology ")}</option>
+                <option value="diagnosticsTest">{t("Diagnostics")}</option>
                 {/* <option value="hospitalAdmission">Hospital Admission</option> */}
               </Form.Control>
             </Form.Group>
@@ -1339,16 +1343,18 @@ const BookingCalendar = () => {
                         }}
                       >
                         <option value="">{t("selectADoctor")}</option>
-                        {doctorList.map((doctor) => (
-                          <option key={doctor.id} value={doctor.id}>
-                            Dr {doctor.FirstName} {doctor.MiddleName}{" "}
-                            {doctor.LastName} ({doctor.phoneNo})
-                          </option>
-                        ))}
+                        {doctorList
+                          .filter((doctor) => doctor.doctorsType === "internal" || doctor.doctorsType === null)
+                          .map((doctor) => (
+                            <option key={doctor.id} value={doctor.id}>
+                              Dr {doctor.FirstName} {doctor.MiddleName} {doctor.LastName} ({doctor.phoneNo})
+                            </option>
+                          ))}
                       </Form.Control>
                     </Form.Group>
                   </div>
                 </div>
+                
                 <br></br>
 
                 <div className="row">
@@ -1531,6 +1537,7 @@ const BookingCalendar = () => {
                       )}
                     </div>
                   </div>
+                  
                 </div>
                 <div className="row">
                   <div className="col-md-6">
@@ -1852,7 +1859,63 @@ const BookingCalendar = () => {
                     />
                   </Form.Group>
                 </div>
+                <div className="col-md-6">
+                    <Form.Group controlId="referraldoctorId">
+                      <Form.Label
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: "bold",
+                          marginTop: "10px",
+                        }}
+                      >
+                        {t("selectReferralDoctor")}{" "}
+                        <span style={{ color: "red" }}>*</span>
+                      </Form.Label>
+                      <Form.Control
+                        as="select"
+                        style={{ fontSize: "13px", marginTop: "10px" }}
+                        onChange={(e) => {
+                          const selectedId = parseInt(e.target.value, 10); // convert string to number
+                          const selectedDoctor = doctorList.find(
+                            (doc) => doc.id === selectedId
+                          );
 
+                          if (selectedDoctor) {
+                            if (selectedDoctor.consultationFee) {
+                              const finalFee =
+                                selectedDoctor.consultationFee -
+                                (selectedDoctor.consultationFee *
+                                  selectedDoctor.discount) /
+                                  100;
+
+                              setDoctorConsultancyAmount(finalFee);
+                              // Only set amount if registrationFees is not available
+                              if (!registrationFees) {
+                                setAmount(finalFee);
+                              }
+                            }
+
+                            if (selectedDoctor.consultationCurrency) {
+                              setDoctorConsultancyCurrency(
+                                selectedDoctor.consultationCurrency
+                              );
+                            }
+                          } else {
+                            console.log("No doctor selected");
+                          }
+                        }}
+                      >
+                        <option value="">{t("selectReferralDoctor")}</option>
+                        {doctorList
+                          // .filter((doctor) => doctor.doctorsType === "external" )
+                          .map((doctor) => (
+                            <option key={doctor.id} value={doctor.id}>
+                              Dr {doctor.FirstName} {doctor.MiddleName} {doctor.LastName} ({doctor.phoneNo}) {doctor.doctorsType }
+                            </option>
+                          ))}
+                      </Form.Control>
+                    </Form.Group>
+                  </div>
                 {eventType === "pathologistTest" && (
                   <div className="col-6">
                     <Form.Group controlId="eventStart">
@@ -1893,6 +1956,8 @@ const BookingCalendar = () => {
                   </div>
                 )}
               </div>
+              {/* referral doc */}
+              
             </>
           </Form>
         </Modal.Body>

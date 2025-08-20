@@ -74,6 +74,23 @@ module.exports = (sequelize, DataTypes) => {
         max: 100,
       },
     },
+    doctorsType: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "internal",
+      validate: {
+        isIn: [["internal", "external"]]
+      }
+    },
+    referralFee: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0.0,
+      validate: {
+        min: 0,
+      },
+    },
+
   });
 
   return Doctor;

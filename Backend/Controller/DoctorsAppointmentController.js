@@ -57,6 +57,7 @@ const createDoctorsAppointment = async (req, res) => {
       reason,
       Currency,
       admissionID,
+      referraldoctorId,
     } = req.body;
     console.log("res.body=", req.body);
     // return;
@@ -160,6 +161,7 @@ const createDoctorsAppointment = async (req, res) => {
       reason,
       Currency,
       admissionID,
+      referraldoctorId,
     });
 
     res.status(200).json({ success: true, appointment: newAppointment });

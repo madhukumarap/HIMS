@@ -42,11 +42,11 @@ const BookingCalendar = () => {
   tomorrow.setDate(today.getDate());
   const { t } = useTranslation();
   const locales = { enIN, fr };
-  const [currency, setCurrency] = useState("");
 
   registerLocale("fr", fr);
   registerLocale("en", enIN);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
+
   useEffect(() => {
     const initializei18n = () => {
       const resources = {
@@ -77,10 +77,13 @@ const BookingCalendar = () => {
       });
     };
 
+    // Initialize only once when component mounts
     initializei18n();
-    const intervalId = setInterval(initializei18n, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
+
+    // Remove the setInterval completely
+    // No need to keep re-initializing i18n
+  }, []); // Empty dependency array ensures this runs only once
+
   const formatDateInSelectedLanguage = (date) => {
     const selectedLanguage = i18n.language || "en";
     const format = "PPPP";
@@ -139,20 +142,12 @@ const BookingCalendar = () => {
           }
         )
         .then((response) => {
-          console.log("PackageData List" + JSON.stringify(response.data));
           setPackageSelectedTests(response.data);
           const transformedOptions = PackageSelectedTests.map((test) => ({
             value: test.TestName,
             label: test.TestName,
             TestManagementID: test.TestId,
           }));
-
-          // setSelectedTests(transformedOptions);
-          // // alert(transformedOptions[0].TestManagementID);
-          // setFormData((prevFormData) => ({
-          //   ...prevFormData,
-          //   selectedTests: transformedOptions.map((option) => option.value),
-          // }));
         })
         .catch((error) => {
           console.error(error);
@@ -171,10 +166,6 @@ const BookingCalendar = () => {
       .then((data) => {
         setHospitals(data.data);
         setOptionalCurrencies(data.data[0].OptionalCurrency.split(","));
-        console.log(
-          "OptionalCurrencies :",
-          data.data[0].OptionalCurrency.split(",")
-        );
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -211,7 +202,6 @@ const BookingCalendar = () => {
   }, []);
   const capture = async () => {
     const imageSrc = webcamRef.current.getScreenshot();
-    console.log("imgSrc=", imageSrc);
     // setCapturedImage(imageSrc);
     // Convert the image to a Blob
     const response = await fetch(imageSrc);
@@ -227,8 +217,6 @@ const BookingCalendar = () => {
 
     setShowCamera(false);
   };
-  console.log("capture=", capture);
-  console.log("captureImage=", capturedImage);
   const closeCamera = () => {
     setShowCamera(false);
   };
@@ -260,21 +248,94 @@ const BookingCalendar = () => {
   const [show, setShow] = useState(false);
 
   const [selectedTests, setSelectedTests] = useState([]);
+  const [currency, setCurrency] = useState(Hospitals[0]?.baseCurrency || "USD");
+  const [registrationFeeAmount, setRegistrationFeeAmount] = useState();
+  const [registrationFeeCurrency, setRegistrationFeeCurrency] = useState("");
+  const [registrationFees, setRegistrationFees] = useState(null);
+
+  const convertCurrency = (amount, fromCurrency, toCurrency, rates) => {
+    if (!amount || !fromCurrency || !toCurrency || !rates) return amount;
+
+    // If same currency, no conversion needed
+    if (fromCurrency === toCurrency) return parseFloat(amount);
+
+    try {
+      const fromRate = rates[fromCurrency];
+      const toRate = rates[toCurrency];
+
+      if (!fromRate || !toRate) return parseFloat(amount);
+
+      const converted =
+        (parseFloat(amount) / parseFloat(fromRate)) * parseFloat(toRate);
+      return isNaN(converted) ? parseFloat(amount) : converted;
+    } catch (error) {
+      console.error("Conversion error:", error);
+      return parseFloat(amount);
+    }
+  };
+
+  async function fetchAndSetHospital() {
+    try {
+      if (!currentUser || !currentUser.Token) {
+        return;
+      }
+      const token = currentUser.Token;
+
+      const base64Payload = token.split(".")[1];
+      const payload = JSON.parse(atob(base64Payload));
+
+      const API_BASE_URL = import.meta.env.VITE_API_URL;
+      const REMOTE_URL = `${API_BASE_URL}/api/getHospital/${payload.hospitalID}`;
+
+      const res = await axios.get(REMOTE_URL, {
+        headers: {
+          Authorization: currentUser?.Token,
+        },
+      });
+
+      const { patientRegistrationFee, patientRegistrationCurrency } =
+        res.data.data;
+
+      setRegistrationFeeAmount(patientRegistrationFee);
+      setRegistrationFeeCurrency(patientRegistrationCurrency || "");
+      setCurrency(patientRegistrationCurrency || "");
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  useEffect(() => {
+    fetchAndSetHospital();
+  }, []);
+
+  useEffect(() => {
+    if (eventType === "doctorConsultation") {
+      setAmount(registrationFees || 0);
+    }
+  }, [eventType, registrationFees]);
+
   const handleTestChange = (selectedOptions) => {
+    // Calculate total test fees in base currency (sum of all selected test prices)
     const totalTestFees = selectedOptions.reduce((acc, option) => {
       const selectedTest = pathologyTests.find(
-        (test) => test.label === option.label
+        (test) => test.value === option.value
       );
-
-      console.log("Selected Test:", selectedTest);
-      console.log("Accumulator:", acc);
-
-      return acc + (selectedTest ? selectedTest.testPrice : 0);
+      return acc + (selectedTest ? parseFloat(selectedTest.testPrice) : 0);
     }, 0);
 
-    console.log("Total Test Fees:", totalTestFees);
+    // Convert to selected currency if needed
+    if (doctorConsultancyCurrency && currency && totalTestFees > 0) {
+      const convertedAmount = convertCurrency(
+        totalTestFees,
+        doctorConsultancyCurrency, // from currency
+        currency // to currency
+      );
 
-    setAmount(totalTestFees);
+      setAmount(convertedAmount.toFixed(2));
+    } else {
+      setAmount(totalTestFees.toFixed(2));
+    }
+
     setSelectedTests(selectedOptions);
   };
 
@@ -284,8 +345,6 @@ const BookingCalendar = () => {
   const handleEventTypeChange = (event) => {
     setEventType(event.target.value);
   };
-  console.log("pathologyTests:", pathologyTests);
-  console.log("selectedTests:", selectedTests);
 
   useEffect(() => {
     if (true) {
@@ -361,13 +420,14 @@ const BookingCalendar = () => {
   const fetchDoctorList = async () => {
     try {
       // THIS IS IT
-      const response = await axios.get("http://localhost:8080/api/getDoctors", {
-        headers: {
-          Authorization: `${currentUser?.Token}`,
-        },
-      });
-
-      // setOptionalCurrencies(res.)
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/getDoctors`,
+        {
+          headers: {
+            Authorization: `${currentUser?.Token}`,
+          },
+        }
+      );
       setDoctorList(response.data);
     } catch (error) {
       console.log("Error fetching doctor list:", error);
@@ -384,7 +444,6 @@ const BookingCalendar = () => {
         })
         .then((response) => {
           setHospitalBookings(response.data.data);
-          console.log("540", response.data);
         })
         .catch((error) => {
           console.error(error);
@@ -462,7 +521,6 @@ const BookingCalendar = () => {
         (end > event.start && end <= event.end) ||
         (start <= event.start && end >= event.end)
     );
-    console.log(overlapEvent);
     if (overlapEvent) {
       // Slot is already booked, show alert
       //  toast.error('This slot is already booked.');
@@ -579,8 +637,6 @@ const BookingCalendar = () => {
         return;
       }
 
-      console.log("ALID amount: ", amount);
-
       if (paymentStatus === "paid" && amount < 1) {
         toast.error("Please Enter Valid Amount.");
         return;
@@ -674,18 +730,6 @@ const BookingCalendar = () => {
       closeCamera();
     }
   };
-  // const handleImageChange = (e) => {
-  //   const file = e.target.files[0];
-  //   // console.log(e.target.file)
-  //   // setCapturedImage(file);
-  //   // setUploadFile(file)
-  //   const imageUrl = {
-  //     preview: URL.createObjectURL(e.target.files[0]),
-  //     data: e.target.files[0],
-  //   };
-  //   // setCapturedImage(imageUrl);
-  //   setUploadFile(imageUrl)
-  // };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -694,28 +738,8 @@ const BookingCalendar = () => {
       data: e.target.files[0],
     };
     setUploadFile(imageUrl);
-    //   };    // const reader = new FileReader();
-
-    // reader.onload = () => {
-    //   const base64String = reader.result.split(",")[1];
-    //   const imageUrl = {
-    //     name: file.name,
-    //     type: file.type,
-    //     size: file.size,
-    //     lastModified: file.lastModified,
-    //     preview: URL.createObjectURL(file),
-    //     data: base64String,
-    //   };
-
-    //   // alert(JSON.stringify(imageUrl));
-    //   setUploadFile(imageUrl);
-    // };
-
-    // reader.readAsDataURL(file);
   };
 
-  // console.log("capture Image2=", URL.createObjectURL(capturedImage))
-  //
   const handleEventModalSubmit = async () => {
     const selectedEventType = document.getElementById("eventType")?.value;
     // alert(selectedEventType);
@@ -761,20 +785,16 @@ const BookingCalendar = () => {
   const handleChange = (e) => {
     if (inOutPatient == "OutPatient") {
       setSelectedPatient(e.target.value);
-      console.log("value 664:", e.target.value);
     } else {
       let patient = JSON.parse(e.target.value);
       setAdmissionID(patient.id);
       setSelectedPatient(patient.PatientID);
-      console.log("value 669:", patient);
     }
   };
 
   const handleDoctorConsultationSubmit = async () => {
-    // const selectedPatientId = document.getElementById("patient")?.value;
     const selectedPatientId = selectedPatient;
     const selectedDoctorId = document.getElementById("doctor")?.value;
-    // alert(selectedPatientId)
     const newBookingStartDate = moment(newEventStart)
       .add(30 * selectedSlotValue, "minutes")
       .toDate();
@@ -789,10 +809,10 @@ const BookingCalendar = () => {
       });
       return;
     }
-    if (paymentStatus === "paid" && amount < 1) {
-      toast.error("Please Enter Valid Amount.");
-      return;
-    }
+    // if (paymentStatus === "paid" && amount < 1) {
+    //   toast.error("Please Enter Valid Amount.");
+    //   return;
+    // }
     if (paymentStatus === "notPaid" && (amount < 0 || amount !== 0)) {
       setAmount("0");
     }
@@ -821,7 +841,7 @@ const BookingCalendar = () => {
     formData.append("patientId", selectedPatientId);
     formData.append("doctorId", selectedDoctorId);
 
-    formData.append("amount", doctorConsultancyAmount);
+    formData.append("amount", registrationFeeAmount);
     formData.append("paymentDateTime", paymentDateTime);
     formData.append(
       "bookingStartDate",
@@ -835,55 +855,17 @@ const BookingCalendar = () => {
     formData.append("reason", reason);
     formData.append("Currency", doctorConsultancyCurrency);
     formData.append("admissionID", admissionId);
-
-    console.log("capturedImage=", capturedImage);
     if (capturedImage) {
-      // alert("1")
-      // sendingImage = capturedImage
       formData.append("capturedImage", capturedImage);
     } else {
-      // alert("2")
-      // let formData = new FormData()
-      // alert(JSON.stringify(uploadFile.data))
-      // console.log("line 491=", uploadFile.data)
-      // formData.append('File', uploadFile.data)
       formData.append("capturedImage", uploadFile.data);
-
-      console.log("formData=", formData);
-
-      // sendingImage = formData
     }
-    // formData.append('capturedImage', uploadFile.data)
 
-    // alert(sendingImage);
-    // console.log("sendingImage=", sendingImage)
-    // alert(currency);
-    // return;
-    const eventData = {
-      patientId: selectedPatientId,
-      doctorId: selectedDoctorId,
-      capturedImage: capturedImage,
-      paymentStatus: paymentStatus,
-      amount: doctorConsultancyAmount,
-      paymentDateTime: paymentDateTime,
-      bookingStartDate: moment(newEventStart).utcOffset("+05:30").toDate(),
-      bookingEndDate: newBookingStartDate,
-      Currency: currency,
-    };
-
-    console.log("eventData=", eventData);
-
-    //alert(newBookingStartDate);
-    // alert(JSON.stringify(eventData));
-    //return;
-    // Add the logic to send data to the server for doctor consultation
-    console.log("payment Status=", paymentStatus);
-    if (amount > 0 && paymentStatus == "paid") {
+    if (registrationFeeAmount > 0 && paymentStatus == "paid") {
       try {
-        const OLD_URL = `${
+        const NEW_URL = `${
           import.meta.env.VITE_API_URL
         }/api/createDoctorsAppointment`;
-        const NEW_URL = "http://localhost:8080/api/createDoctorsAppointment";
         const response = await axios.post(NEW_URL, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -922,6 +904,11 @@ const BookingCalendar = () => {
   const handlePathologistTestSubmit = async () => {
     //alert(selectedPatient);
     const selectedDoctorId = document.getElementById("doctor")?.value;
+
+    if (isNaN(registrationFeeCurrency) || registrationFeeCurrency <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
 
     if (!selectedPatient || !selectedTests.length) {
       toast.error("Please select a patient and at least one test.", {
@@ -1005,7 +992,6 @@ const BookingCalendar = () => {
         // Handle error response...
       }
     } catch (error) {
-      console.log("Error creating Pathologist Test:", error);
       toast.error("Failed to create Pathologist Test." + error, {
         style: { fontSize: "13px" },
       });
@@ -1336,7 +1322,10 @@ const BookingCalendar = () => {
                                   100;
 
                               setDoctorConsultancyAmount(finalFee);
-                              setAmount(finalFee);
+                              // Only set amount if registrationFees is not available
+                              if (!registrationFees) {
+                                setAmount(finalFee);
+                              }
                             }
 
                             if (selectedDoctor.consultationCurrency) {
@@ -1461,10 +1450,6 @@ const BookingCalendar = () => {
                           onChange={(e) => handleImageChange(e)}
                         />
                       )}
-                      {/* 
-                      {capturedImage && (
-                        <button style={{ fontSize: "12px" }} onClick={viewImage}>View Image</button>
-                      )} */}
 
                       {showCamera && (
                         <>
@@ -1547,93 +1532,6 @@ const BookingCalendar = () => {
                     </div>
                   </div>
                 </div>
-                {/* dropdown for chosen image */}
-                {/* <div className="row">
-                  <br></br>
-                  <div className="col-md-6">
-                    <label
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: "bold",
-                        marginRight: "20px",
-                        marginTop: "10px",
-                      }}
-                    >
-                      Capture Image:{" "}
-                    </label>
-                    {!showCamera && !capturedImage && (
-                      <Button
-                        style={{ fontSize: "12px" }}
-                        variant="secondary"
-                        onClick={openCamera}
-                      >
-                        Open Camera
-                      </Button>
-                    )}
-
-                    {capturedImage && (
-                      <Button
-                        style={{ fontSize: "12px" }}
-                        variant="success"
-                        onClick={viewImage}
-                      >
-                        View Image
-                      </Button>
-                    )}
-
-                    {showCamera && (
-                      <>
-                        <br></br>
-                        <Webcam
-                          audio={false}
-                          ref={webcamRef}
-                          style={{
-                            width: "100%",
-                            maxWidth: "600px", // Adjust max-width as needed
-                            margin: "0 auto", // Center the webcam
-                          }}
-                          screenshotFormat="image/png"
-                          videoConstraints={{ facingMode, frameRate: 30 }}
-                        />
-                        {!capturedImage ? (
-                          <>
-                            <Button
-                              variant="secondary"
-                              style={{ fontSize: "12px", marginTop: "0px" }}
-                              onClick={capture}
-                            >
-                              Capture Photo
-                            </Button>
-
-                             <Button
-                              style={{ fontSize: "12px" }}
-                              variant="secondary"
-                              onClick={toggleCamera}
-                            >
-                              Switch Camera
-                            </Button> 
-                            
-                          </>
-                        ) : (
-                          <Button
-                            style={{ fontSize: "12px" }}
-                            variant="success"
-                            onClick={viewImage}
-                          >
-                            View Image
-                          </Button>
-                        )}
-                        <Button
-                          style={{ fontSize: "12px" }}
-                          variant="danger"
-                          onClick={closeCamera}
-                        >
-                          Close Camera
-                        </Button>{" "}
-                      </>
-                    )}
-                  </div>
-                </div> */}
                 <div className="row">
                   <div className="col-md-6">
                     <Form.Group controlId="eventStart">
@@ -1698,22 +1596,6 @@ const BookingCalendar = () => {
                     </Form.Group>
                   </div>
                 </div>
-                {/* <Form.Group controlId="eventEnd">
-                  <Form.Label style={{ fontSize: "13px", marginTop: "10px" }}>
-                    End Date <span style={{ color: "red" }}>*</span>
-                  </Form.Label>
-                  <DatePicker
-                    style={datePickerStyle}
-                    selected={newEventEnd}
-                    onChange={handleEndChange}
-                    showTimeSelect
-                    timeFormat="hh:mm a"
-                    timeIntervals={15}
-                    dateFormat="yyyy-MM-dd hh:mm a"
-                    className="form-control custom-datetime-picker"
-                    placeholderText="Select end date and time"
-                  />
-                </Form.Group> */}
               </>
             )}
 
@@ -1927,14 +1809,12 @@ const BookingCalendar = () => {
                           {t("amount")}
                         </Form.Label>
                         <Form.Control
-                          disabled={true}
-                          type="text"
-                          style={{ fontSize: "13px", marginTop: "10px" }}
-                          // placeholder={t("enterFees")}
-                          value={`${doctorConsultancyCurrency || ""} ${
-                            doctorConsultancyAmount || ""
-                          }`}
-                          // onChange={(e) => setAmount(e.target.value)}
+                          type="text" // Changed from number to text
+                          required
+                          style={{ fontSize: "13px" }}
+                          value={`${registrationFeeCurrency} ${registrationFeeAmount}`}
+                          disabled
+                          className="form-control col-4"
                         />
                       </Form.Group>
                     </div>
@@ -2014,56 +1894,6 @@ const BookingCalendar = () => {
                 )}
               </div>
             </>
-
-            {/* {eventType === "hospitalAdmission" && (
-              <>
-                <Form.Group controlId="paymentStatus">
-                  <Form.Label style={{ fontSize: "13px", marginTop: "10px" }}>
-                    Select Payment Status{" "}
-                    <span style={{ color: "red" }}>*</span>
-                  </Form.Label>
-                  <Form.Control
-                    as="select"
-                    style={{ fontSize: "13px", marginTop: "10px" }}
-                    s
-                    value={paymentStatus}
-                    onChange={(e) => setPaymentStatus(e.target.value)}
-                  >
-                    <option value="">Select Status</option>
-                    <option value="paid">Paid</option>
-                    <option value="notPaid">Not Paid</option>
-                  </Form.Control>
-                </Form.Group>
-
-                <Form.Group controlId="amount">
-                  <Form.Label style={{ fontSize: "13px", marginTop: "10px" }}>
-                    Amount
-                  </Form.Label>
-                  <Form.Control
-                    style={{ fontSize: "13px", marginTop: "10px" }}
-                    type="number"
-                    placeholder="Enter Fees"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
-                </Form.Group>
-
-                <Form.Group controlId="paymentDateTime">
-                  <Form.Label style={{ fontSize: "13px", marginTop: "10px" }}>
-                    Payment Date and Time
-                  </Form.Label>
-                  <DatePicker
-                    selected={paymentDateTime}
-                    onChange={(date) => setPaymentDateTime(date)}
-                    showTimeSelect
-                    timeFormat="hh:mm a"
-                    dateFormat="yyyy-MM-dd hh:mm a"
-                    className="form-control custom-datetime-picker"
-                    placeholderText="Select payment date and time"
-                  />
-                </Form.Group>
-              </>
-            )} */}
           </Form>
         </Modal.Body>
         <Modal.Footer>
@@ -2085,9 +1915,8 @@ const BookingCalendar = () => {
       </Modal>
 
       <Modal
-        style={{ marginTop: "20px" }}
+        style={{ marginTop: "20px", fontSize: "13px" }}
         centered
-        style={{ fontSize: "13px" }}
         show={showEventModal2}
         size="lg"
         onHide={handleEventModalCancel2}
@@ -2232,20 +2061,20 @@ const BookingCalendar = () => {
                   <Form.Group controlId="amount">
                     <Form.Label
                       style={{
-                        fontSize: "14px",
+                        fontSize: "13px",
                         fontWeight: "bold",
                         marginTop: "10px",
                       }}
                     >
-                      {t("amount")} <span style={{ color: "red" }}>*</span>
+                      {t("amount")}
                     </Form.Label>
                     <Form.Control
-                      type="number"
-                      required
-                      style={{ fontSize: "13px" }}
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="form-control col-4"
+                      disabled={true}
+                      type="text"
+                      style={{ fontSize: "13px", marginTop: "10px" }}
+                      value={`${registrationFeeCurrency || ""} ${
+                        registrationFeeAmount || ""
+                      }`}
                     />
                   </Form.Group>
                 </div>
@@ -2371,9 +2200,8 @@ const BookingCalendar = () => {
         </Modal.Body>
         <Modal.Footer>
           <Button
-            style={{ marginTop: "20px" }}
+            style={{ marginTop: "20px", fontSize: "12px" }}
             centered
-            style={{ fontSize: "12px" }}
             variant="secondary"
             onClick={retakePicture}
           >

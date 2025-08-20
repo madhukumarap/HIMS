@@ -343,13 +343,6 @@ const DoctorsAppointments = () => {
     };
   };
 
-  // const formatDate = (dateString) => {
-  //   const formattedDate = moment(
-  //     dateString,
-  //     "ddd MMM DD YYYY HH:mm:ss [GMT] ZZ"
-  //   ).format("MM/DD/YYYY, hh:mm A");
-  //   return formattedDate;
-  // };
   const fetchAppointments = async () => {
     try {
       const response = await axios.get(
@@ -360,7 +353,6 @@ const DoctorsAppointments = () => {
           },
         }
       );
-      console.log("Fetched appointments:", response.data.appointments); // Log fetched data
       setAppointments(response.data.appointments);
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -412,7 +404,7 @@ const DoctorsAppointments = () => {
     indexOfFirstReport,
     indexOfLastReport
   );
-  console.log("currentReports=", currentReports);
+
   const handlePrevPage = () => {
     setCurrentPage(currentPage - 1);
   };
@@ -816,10 +808,9 @@ const DoctorsAppointments = () => {
         </Table>
       )}
       <Modal
-        style={{ fontSize: "12px" }}
+        style={{ fontSize: "12px" , marginTop: "20px"}}
         show={showDeleteModal}
         onHide={() => setShowDeleteModal(false)}
-        style={{ marginTop: "20px" }}
         centered
       >
         <Modal.Header closeButton>

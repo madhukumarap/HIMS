@@ -193,14 +193,12 @@ function App() {
   let extractedPart;
   if (matchResult && matchResult[1]) {
     extractedPart = matchResult[1].toLocaleLowerCase();
-    console.log(extractedPart);
   }
   // alert(extractedPart);
 
   const { hospitalData } = useContext(HospitalContext);
   const { selectedGlobalCurrency, setSelectedGlobalCurrency } =
     useContext(CurrencyContext);
-  console.log("hospitalData ", hospitalData);
 
   useEffect(() => {
     if (hospitalData) {
@@ -331,12 +329,6 @@ function App() {
     // Function to make the API call
     const getLoggedInStatus = async () => {
       try {
-        console.log(
-          "Calling URL:",
-          `${import.meta.env.VITE_API_URL}/api/get-logged-in-status-by-userid`
-        );
-
-        // alert("Hello");
         const currentUser = AuthService.getCurrentUser();
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/get-logged-in-status-by-userid`,
@@ -635,7 +627,7 @@ function App() {
   if (currentUser && extractedPart) {
     //alert(currentUser?.HospitalName);
     if (currentUser?.HospitalName.toLowerCase() !== extractedPart) {
-      window.location.replace('/')
+      window.location.replace("/");
     }
   }
   setTimeout(function () {

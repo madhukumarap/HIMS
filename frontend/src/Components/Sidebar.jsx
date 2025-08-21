@@ -93,6 +93,7 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }) => {
       );
     } else if (userRoleADMIN) {
       return (
+        item.title === "ReferalDoctorsList" ||
         item.title === "DoctorsList" ||
         item.title === "Doctors Managment" ||
         item.title === "HospitalConfiguration" ||

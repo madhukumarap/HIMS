@@ -79,6 +79,7 @@
     "Prescription": "Prescription",
     "ConsultationPatientlist": "Consultation Patient list",
     "VaccinationPatient": "Vaccination Patient",
+    "ReferalDoctorsList": "Referal Doctors List",
 
     "Packages": "Packages",
     "ViewPackages": "View Packages",
@@ -99,7 +100,6 @@
     "PatientRegistrationFee": "Patient Registration Fee",
     "DoctorsList": "Doctors List",
     "Doctors Managment": "Doctors Managment"
-    
   },
   "fr": {
     "Hospital-Rooms": "Chambres d'hôpital",
@@ -200,6 +200,7 @@
     "SetDoctorConsultationPrice": "Fixer le prix de la consultation médicale",
     "PatientRegistrationFee": "Frais d'inscription des patients",
     "DoctorsList": "Doctors List",
-    "Doctors Managment": "Doctors Managment"
+    "Doctors Managment": "Doctors Managment",
+    "ReferalDoctorsList": "Referal Doctors List"
   }
 }

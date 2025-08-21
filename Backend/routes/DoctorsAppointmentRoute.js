@@ -145,9 +145,6 @@ router.get("/ConsultantTotalfees", async (req, res) => {
       if (!isNaN(convertedAmountCDF)) {
         totalFeesCDF += convertedAmountCDF;
       }
-      // console.log("totalFeesINR: " + totalFeesINR);
-      // console.log("totalFeesUSD: " + totalFeesUSD);
-      // console.log("totalFeesEUR: " + totalFeesEUR);
     }
 
     res.json({
@@ -162,19 +159,45 @@ router.get("/ConsultantTotalfees", async (req, res) => {
   }
 });
 
-async function getExchangeRates() {
+// async function getExchangeRates() {
+//   try {
+//     const response = await axios.get(
+//       `${process.env.REMOTE_SERVER_BASE_URL}/api/GetExchangeRates/INR`
+//     );
+
+//     const exchangeRatesData = response.data.exchangeRatesData;
+//     const firstCurrencyData = exchangeRatesData[0].data;
+//     const rates = firstCurrencyData.rates;
+//     return rates;
+//   } catch (error) {
+//     console.error(error);
+//     throw new Error(`Error fetching exchange rates: ${error}`);
+//   }
+// }
+
+async function getExchangeRates(currency = "INR") {
   try {
+    // Try hitting your local exchange rate service
     const response = await axios.get(
       `${process.env.REMOTE_SERVER_BASE_URL}/api/GetExchangeRates/INR`
     );
-
-    const exchangeRatesData = response.data.exchangeRatesData;
-    const firstCurrencyData = exchangeRatesData[0].data;
-    const rates = firstCurrencyData.rates;
-    return rates;
+    return response.data;
   } catch (error) {
-    console.error(error);
-    throw new Error(`Error fetching exchange rates: ${error}`);
+    console.error("⚠️ Error fetching exchange rates:", error.message);
+
+    // 🔹 Fallback: return default exchange rates
+    // You can adjust this depending on your needs
+    const fallbackRates = {
+      INR: 1, // Base currency
+      USD: 83, // Example INR → USD
+      EUR: 90, // Example INR → EUR
+    };
+
+    return {
+      base: currency,
+      rates: fallbackRates,
+      source: "fallback", // so you know it came from default
+    };
   }
 }
 

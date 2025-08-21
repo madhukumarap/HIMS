@@ -243,15 +243,12 @@ const getAllDoctorsAppointments = async (req, res) => {
   const database = req.headers.userDatabase;
   const connectionList = await getConnectionList(database);
   const db = connectionList[database];
-  const Patient = db.paitentReg;
-  const Doctor = db.doctor;
   const DoctorsAppointment = db.DoctorsAppointment;
-  const pathologistTestBookingAppointment =
-    db.pathologistTestBookingAppointment;
 
   try {
     const appointments = await DoctorsAppointment.findAll({
       order: [["createdAt", "DESC"]],
+      attributes: { include: ["referralDoctorId"] }, // ensure Sequelize fetches it
     });
 
     const imagesWithBase64 = await Promise.all(
@@ -259,35 +256,35 @@ const getAllDoctorsAppointments = async (req, res) => {
         let imageBase64;
 
         if (image && image.image && image.image.startsWith("images")) {
-          // If the imagePath starts with "images", treat it as a file path
           const imageBuffer = fs.readFileSync(image.image);
           imageBase64 = imageBuffer.toString("base64");
         } else {
-          // If the imagePath already contains a base64 string
           imageBase64 = image?.image;
         }
 
         return {
-          id: image ? image.id : null,
-          image: `data:image/png;base64,${imageBase64}`,
-          doctorId: image ? image.doctorId : null,
-          patientId: image ? image.patientId : null,
-          PatientName: image ? image.PatientName : null,
-          PatientPhone: image ? image.PatientPhone : null,
-          DoctorName: image ? image.DoctorName : null,
-          DoctorPhone: image ? image.DoctorPhone : null,
-          DoctorEmail: image ? image.DoctorEmail : null,
-          amount: image ? image.amount : null,
-          paymentStatus: image ? image.paymentStatus : null,
-          visitType: image ? image.visitType : null,
-          reason: image ? image.reason : null,
-          paymentDateTime: image ? image.paymentDateTime : null,
-          bookingStartDate: image ? image.bookingStartDate : null,
-          bookingEndDate: image ? image.bookingEndDate : null,
-          remarks: image ? image.remarks : null,
-          createdAt: image ? image.createdAt : null,
-          CorporateID: image ? image.CorporateID : null,
-          Currency: image ? image.Currency : null,
+          id: image?.id ?? null,
+          image: imageBase64 ? `data:image/png;base64,${imageBase64}` : null,
+          doctorId: image?.doctorId ?? null,
+          patientId: image?.patientId ?? null,
+          PatientName: image?.PatientName ?? null,
+          PatientPhone: image?.PatientPhone ?? null,
+          DoctorName: image?.DoctorName ?? null,
+          DoctorPhone: image?.DoctorPhone ?? null,
+          DoctorEmail: image?.DoctorEmail ?? null,
+          amount: image?.amount ?? null,
+          paymentStatus: image?.paymentStatus ?? null,
+          visitType: image?.visitType ?? null,
+          reason: image?.reason ?? null,
+          paymentDateTime: image?.paymentDateTime ?? null,
+          bookingStartDate: image?.bookingStartDate ?? null,
+          bookingEndDate: image?.bookingEndDate ?? null,
+          remarks: image?.remarks ?? null,
+          createdAt: image?.createdAt ?? null,
+          CorporateID: image?.CorporateID ?? null,
+          Currency: image?.Currency ?? null,
+          referralDoctorId:
+            image?.referralDoctorId ?? image?.referraldoctorId ?? null,
         };
       })
     );

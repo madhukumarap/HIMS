@@ -167,6 +167,7 @@ import PatientRegistrationFee from "./pages/PatientRegistrationFee";
 import { HospitalContext } from "./context/HospitalDataProvider";
 import { CurrencyContext } from "./context/CurrencyProvider";
 import ShowDoctorList from "./pages/Doctor/ShowDoctorList";
+import ShowReferalList from "./pages/Doctor/ShowReferalList";
 const Container = styled.div``;
 
 const Content = styled.div`
@@ -1783,6 +1784,10 @@ function App() {
                   <Route
                     path={`/${hospitals[0]?.name}/doctorsList`}
                     element={<ShowDoctorList />}
+                  />
+                  <Route
+                    path={`/${hospitals[0]?.name}/referaldoctorsList`}
+                    element={<ShowReferalList />}
                   />
                 </>
               )}

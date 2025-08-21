@@ -7,7 +7,7 @@
 node_modules/
 dist/
 Backend/.env
-Backend/config/db.config.g
+Backend/config/
 
 # Compiled Java class files
 *.class

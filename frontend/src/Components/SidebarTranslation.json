@@ -99,7 +99,9 @@
     "SetDoctorConsultationPrice": "Set Doctor's Consultation Price",
     "PatientRegistrationFee": "Patient Registration Fee",
     "DoctorsList": "Doctors List",
-    "Doctors Managment": "Doctors Managment"
+    "Doctors Managment": "Doctors Managment",
+    "Hospital Earnings":"Hospital Earnings"
+
   },
   "fr": {
     "Hospital-Rooms": "Chambres d'hôpital",

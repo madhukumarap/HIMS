@@ -167,8 +167,7 @@ import PatientRegistrationFee from "./pages/PatientRegistrationFee";
 import { HospitalContext } from "./context/HospitalDataProvider";
 import { CurrencyContext } from "./context/CurrencyProvider";
 import ShowDoctorList from "./pages/Doctor/ShowDoctorList";
-
-=======
+import ShowReferalList from "./pages/Doctor/ShowReferalList";
 import HospitalAnalytics from "./pages/Reports/HospitalAnalytics"
 const Container = styled.div``;
 

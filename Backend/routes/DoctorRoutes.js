@@ -58,6 +58,7 @@ router.get("/getDoctors", async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
+
 router.get("/getDoctorData", async (req, res) => {
   const database = req.headers.userDatabase;
   const connectionList = await getConnectionList(database);

@@ -43,6 +43,33 @@ function DiagnosticsBooking() {
   const [exchangeRates, setExchangeRates] = useState(null);
   const [inOutPatient, setInOutPatient] = useState(undefined);
   const [hospitalBookings, setHospitalBookings] = useState([]);
+  const [
+    showReportModalBloodSugarFasting,
+    setShowReportModalBloodSugarFasting,
+  ] = useState(false);
+  const [reportselectedTest, setReportSelectedTest] = useState("");
+  const [PatientNapeStatus, setPatientNapeStatus] = useState("");
+  const [showAuthorizationModal, setShowAuthorizationModal] = useState(false);
+  const [selectedRowId, setSelectedRowId] = useState(null);
+  const [authorizationStatus, setAuthorizationStatus] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [testNames, setTestNames] = useState([]);
+  const [enterCodeData, setEnterCodeData] = useState([]);
+  const [selectedReportData, setSelectedReportData] = useState(null);
+  const [selectedTestBooking, setSelectedTestBooking] = useState(null);
+  const [showTestNamesModal, setShowTestNamesModal] = useState(false);
+  const [testStatuses, setTestStatuses] = useState([]);
+  const [selectedViewPackageID, setSelectedViewPackageID] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState("");
+  const [selectedPackageObject, setSelectedPackageObject] = useState("");
+  const [patients, setPatients] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [SelectedTests, setSelectedTests] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState(null); // To store the ID of the booking being deleted
 
   useEffect(() => {
     axios
@@ -73,7 +100,6 @@ function DiagnosticsBooking() {
       });
   }, []);
 
-  
   const [totalFees, setTotalFees] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [bookings, setBookings] = useState([]);
@@ -96,6 +122,7 @@ function DiagnosticsBooking() {
     Currency: "",
     TotalFees: "",
   });
+
   localStorage.removeItem("reloadCounts");
 
   const handleChange1 = (e) => {
@@ -116,6 +143,7 @@ function DiagnosticsBooking() {
       });
     }
   };
+
   useEffect(() => {
     const fetchExchangeRates = async () => {
       try {
@@ -137,12 +165,7 @@ function DiagnosticsBooking() {
   }, []);
 
   //update autorization
-  const [PatientNapeStatus, setPatientNapeStatus] = useState("");
 
-  const [showAuthorizationModal, setShowAuthorizationModal] = useState(false);
-  const [selectedRowId, setSelectedRowId] = useState(null);
-  const [authorizationStatus, setAuthorizationStatus] = useState("");
-  const [feedback, setFeedback] = useState("");
   const handleUpdateAuthorizationStatus = (row) => {
     setSelectedRowId(row.id);
     setAuthorizationStatus(row?.Authorization);
@@ -150,6 +173,7 @@ function DiagnosticsBooking() {
     setPatientNapeStatus(row.PatientName + " (" + row.PatientPhoneNo + ")");
     setShowAuthorizationModal(true);
   };
+
   const handleUpdateAuthorization = () => {
     if (!authorizationStatus) {
       toast.error(t("PleaseSelectStatus"));
@@ -197,6 +221,7 @@ function DiagnosticsBooking() {
         setFeedback("");
       });
   };
+
   useEffect(() => {
     if (formData.paymentStatus === "Paid" && currency && exchangeRates) {
       const selectedCurrencyRate = exchangeRates[currency];
@@ -214,18 +239,6 @@ function DiagnosticsBooking() {
       setTotalFees(null);
     }
   }, [currency, formData.testFees]);
-
-  const [testNames, setTestNames] = useState([]);
-  const [enterCodeData, setEnterCodeData] = useState([]);
-  const [selectedReportData, setSelectedReportData] = useState(null);
-  //////////////////////////////////////////////////////////////////////////////////
-  const [selectedTestBooking, setSelectedTestBooking] = useState(null);
-  const [showTestNamesModal, setShowTestNamesModal] = useState(false);
-
-  // Create a function to handle the View button click
-  const [testStatuses, setTestStatuses] = useState([]);
-
-  ///
 
   const { t } = useTranslation();
 
@@ -265,6 +278,7 @@ function DiagnosticsBooking() {
     const intervalId = setInterval(initializei18n, 1000);
     return () => clearInterval(intervalId);
   }, []);
+
   const formatDateInSelectedLanguage = (date) => {
     const selectedLanguage = i18n.language || "en";
     const format = "PPPP";
@@ -361,9 +375,6 @@ function DiagnosticsBooking() {
     }
   }, [selectedPackageID]);
 
-  const [selectedViewPackageID, setSelectedViewPackageID] = useState(null);
-
-  const [isMobile, setIsMobile] = useState(false);
   // Function to check if the screen size is mobile
   const checkIsMobile = () => {
     setIsMobile(window.innerWidth <= 200);
@@ -377,16 +388,6 @@ function DiagnosticsBooking() {
       window.removeEventListener("resize", checkIsMobile);
     };
   }, []);
-
-  const [selectedPackage, setSelectedPackage] = useState("");
-  // const handlePackageSelection = (e) => {
-  //   const selectedPackageID = e.target.value;
-
-  //   setSelectedPackage(selectedPackageID);
-  //   setSelectedPackageID(selectedPackageID);
-  //   // alert(JSON.stringify(transformedOptions));
-  // };
-  const [selectedPackageObject, setSelectedPackageObject] = useState("");
 
   const handlePackageSelection = (e) => {
     const selectedPackageID = e.target.value;
@@ -444,10 +445,7 @@ function DiagnosticsBooking() {
     }
     setTestBookingID(testBookingID.id);
   };
-  const [
-    showReportModalBloodSugarFasting,
-    setShowReportModalBloodSugarFasting,
-  ] = useState(false);
+
   useEffect(() => {
     if (true && selectedReportData?.selectedTests) {
       setShowReportModalBloodSugarFasting(true);
@@ -477,14 +475,6 @@ function DiagnosticsBooking() {
     fetchEnterCodeData();
   }, []);
 
-  function formatDate2(inputDate) {
-    const date = new Date(inputDate);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-
   const fetchEnterCodeData = async () => {
     try {
       const response = await fetch(
@@ -502,14 +492,6 @@ function DiagnosticsBooking() {
     }
   };
 
-  const [patients, setPatients] = useState([]);
-  const [doctors, setDoctors] = useState([]);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [SelectedTests, setSelectedTests] = useState("");
-
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedBookingId, setSelectedBookingId] = useState(null); // To store the ID of the booking being deleted
   const today = new Date();
 
   const currentDate = new Date();
@@ -565,8 +547,6 @@ function DiagnosticsBooking() {
       console.error("Error fetching doctors:", error);
     }
   };
-
-  const [reportselectedTest, setReportSelectedTest] = useState("");
 
   const fetchBookings = () => {
     axios
@@ -1645,7 +1625,6 @@ function DiagnosticsBooking() {
                         style={{
                           whiteSpace: "nowrap",
                           textAlign: "center",
-                          textAlign: "center",
                         }}
                       >
                         {booking.commissionValue}
@@ -1827,6 +1806,7 @@ function DiagnosticsBooking() {
         selectedReportData={selectedReportData}
       />
       {testBookingID && <DownloadPDFButton testBookingID={testBookingID} />}
+
       <Modal
         style={{ marginTop: "20px" }}
         centered
@@ -1915,12 +1895,14 @@ function DiagnosticsBooking() {
           )}
         </Modal.Body>
       </Modal>
+
       {selectedViewPackageID && (
         <DiagnosticPackageView
           selectedPackageID={selectedViewPackageID}
           handleClose={() => setSelectedViewPackageID(null)}
         />
       )}
+      
       <Modal
         style={{ marginTop: "20px" }}
         centered

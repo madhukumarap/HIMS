@@ -484,9 +484,8 @@ const BookingCalendar = () => {
         messages={messages} // Provide the custom messages
       />
       <Modal
-        style={{ marginTop: "20px" }}
+        style={{ marginTop: "20px", fontSize: "13px" }}
         centered
-        style={{ fontSize: "13px" }}
         show={showEventModal}
         onHide={handleEventModalCancel}
       >
@@ -580,10 +579,9 @@ const BookingCalendar = () => {
       </Modal>
 
       <Modal
-        style={{ marginTop: "20px" }}
+        style={{ marginTop: "20px", fontSize: "13px" }}
         centered
         size="lg"
-        style={{ fontSize: "13px" }}
         show={showEventModal2}
         onHide={handleEventModalCancel2}
       >

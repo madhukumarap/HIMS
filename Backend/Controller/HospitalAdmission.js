@@ -52,22 +52,23 @@ const createHospitalAdmission = async (req, res) => {
       totalAmount,
       paymentType,
       dueAmount,
+      refDoctorId
     } = req.body;
 
-    console.log(req.body);
+    console.log("hospitaladminid",req.body);
     // return;
     // Validate required fields
     if (
       !patientId ||
       !doctorId ||
-      !referringPhysician ||
-      !AdmissionType ||
+      !refDoctorId ||
+      // !AdmissionType ||
       !admissionDate ||
       // !paymentStatus ||
-      !paymentType ||
+      // !paymentType ||
       // !amount ||
       !currency ||
-      !paymentOption ||
+      // !paymentOption ||
       !paymentDateTime
     ) {
       return res.status(400).json({ error: "All fields are required." });
@@ -75,7 +76,7 @@ const createHospitalAdmission = async (req, res) => {
 
     const fetchedPatient = await Patient.findByPk(patientId);
     const fetchedDoctor = await Doctor.findByPk(doctorId);
-    const referringPhysicianDoctor = await Doctor.findByPk(referringPhysician);
+    const referringPhysicianDoctor = await Doctor.findByPk(refDoctorId);
     const getBedDetails = await BedsHospitalRoom.findOne({
       where: { BedNumber: BedNumber },
     });

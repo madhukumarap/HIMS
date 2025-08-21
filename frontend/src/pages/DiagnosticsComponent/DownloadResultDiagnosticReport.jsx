@@ -16,7 +16,6 @@ import AuthService from "../../services/auth.service";
 
 const DownloadPDFButton = ({ testBookingID }) => {
   let newtestBookingID = testBookingID;
-  // alert(newtestBookingID);
   const currentUser = AuthService.getCurrentUser();
 
   const { t } = useTranslation();
@@ -54,9 +53,8 @@ const DownloadPDFButton = ({ testBookingID }) => {
     };
 
     initializei18n();
-    // const intervalId = setInterval(initializei18n, 1000);
-    // return () => clearInterval(intervalId);
   }, []);
+
   const formatDateInSelectedLanguage = (date) => {
     const selectedLanguage = i18n.language || "en";
     const format = "PPPP";
@@ -175,6 +173,7 @@ const DownloadPDFButton = ({ testBookingID }) => {
       fetchDataUploadImagesforSelectedTest(testBookingID, selectedTest); // Call fetchColumns with selectedTest
     }
   }, [testBookingID, selectedTest]);
+
   const handleTestSelect = (e) => {
     const selectedTest = e.target.value;
     setSelectedTest(selectedTest);
@@ -256,30 +255,6 @@ const DownloadPDFButton = ({ testBookingID }) => {
     } catch (error) {
       console.error("Error fetching hospital data:", error);
     }
-    // try {
-    //   // alert(JSON.stringify(PathologyTest));
-    //   const response = await fetch(
-    //     `${import.meta.env.VITE_API_URL}/api/getDoctorByIdsign/${Doctor.id}`,
-    //     {
-    //       headers: {
-    //         Authorization: `${currentUser?.Token}`,
-    //       },
-    //     }
-    //   );
-
-    //   if (!response.ok) {
-    //     throw new Error(`HTTP error! status: ${response.status}`);
-    //   }
-
-    //   const data = await response.json();
-    //   // alert(JSON.stringify(data));
-    //   setDoctor(data);
-    //   setDoctorSign(Doctor.signatureImage);
-    //   //alert(JSON.stringify(Doctor.signatureImage.data));
-    // } catch (error) {
-    //   toast.error("error: " + error);
-    //   console.error("Error fetching hospital data:", error);
-    // }
   };
 
   useEffect(() => {
@@ -409,11 +384,6 @@ const DownloadPDFButton = ({ testBookingID }) => {
               doc.internal.pageSize.getWidth() - 70,
               doc.internal.pageSize.getHeight() - 17
             );
-            // doc.text(
-            //   `${Doctor?.registrationNo}`,
-            //   doc.internal.pageSize.getWidth() - 70,
-            //   doc.internal.pageSize.getHeight() - 22
-            // );
             if (DoctorSign) {
               const DoctorSigns = new Image();
               DoctorSigns.src = `data:image/png;base64,${DoctorSign}`; // Embed the base64 image data
@@ -655,14 +625,6 @@ const DownloadPDFButton = ({ testBookingID }) => {
               </Form>
               <hr />
               <br></br>
-
-              {/* {DoctorSign && (
-                <img
-                  src={`data:image/jpg;base64,${DoctorSign}`}
-                  alt="Captured"
-                  style={{ width: "100%" }}
-                />
-              )} */}
             </div>
           )}
         </Modal.Body>

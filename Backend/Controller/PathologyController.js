@@ -271,6 +271,7 @@ const createBookingEvent = async (req, res) => {
         PatientName:
           patient.mr + " " + patient.firstName + " " + patient.lastName,
         PatientID: patient.id,
+        PaidAmount:amount,
         CorporateID: patient?.CorporateID || null,
         DoctorName:
           (doctor?.FirstName || "NA") + " " + (doctor?.LastName || "NA"),

@@ -48,7 +48,6 @@ const createBooking = async (req, res) => {
       testFees,
       paymentDate,
       paymentStatus,
-      commissionType,
       commissionValue,
       selectedPackageID,
       TestManagementID,
@@ -60,21 +59,24 @@ const createBooking = async (req, res) => {
     // if (paymentStatus == "Paid") {
     //   PaidAmount = TotalFees;
     // }
-    console.log(req.body);
+    const commissionType = "A"
+    console.log(selectedPackageID[0].value,"selectedPackageID")
+    console.log("asdfghjkljhjkl",req.body);
     // return;
     const selectedTestArray = new Set(req.body.selectedTest);
     const selectedTest = [...selectedTestArray];
 
-    const selectedTestsArray = new Set(req.body.selectedTests);
-    const selectedTests = [...selectedTestsArray];
+    // const selectedTestsArray = new Set(req.body.selectedTests);
+    // const selectedTests = [...selectedTestsArray];
 
     console.log(req.body);
     console.log("selectedTest: " + selectedTest);
     /// return;
+    console.log("commissionType: " + commissionType);
     const enterCodeTypeValue = await EnterCodeTypeValue.findByPk(
-      commissionType
+      1
     );
-
+       console.log("enterCodeTypeValueenterCodeTypeValue",enterCodeTypeValue);
     if (!enterCodeTypeValue) {
       return res.status(404).json({ error: "EnterCodeTypeValue not found" });
     }
@@ -102,7 +104,7 @@ const createBooking = async (req, res) => {
 
       //return;
       // Create a new pathology test record
-
+      console.log("Creating DiagnosticsBookingModel with patientId:", patientId);
       const DiagnosticsBookingModels = await DiagnosticsBookingModel.create({
         PatientName:
           patient.mr +
@@ -113,7 +115,7 @@ const createBooking = async (req, res) => {
           " " +
           patient.lastName,
         PatientID: patient.id,
-        selectedPackageID: selectedPackageID,
+        selectedPackageID: selectedPackageID[0].value,
         CorporateID: patient?.CorporateID || null,
         DoctorName:
           (doctor?.FirstName || "NA") + " " + (doctor?.LastName || "NA"),
@@ -122,24 +124,24 @@ const createBooking = async (req, res) => {
         doctorId: doctorID || "0",
         Address: "Null",
         PatientPhoneNo: patient?.phoneNumberP,
-        status,
-        lapName,
-        remarks,
+        status : status? status : "Registered",
+        lapName : lapName || "NA",
+        remarks : PaidAmount || "NA",
         PaidAmount: paymentStatus === "Paid" ? TotalFees : PaidAmount || 0,
         commissionType: enterCodeTypeValue.id,
         commissionValue: enterCodeTypeValue.codeType,
-        TestManagementID: TestManagementID,
+        TestManagementID: TestManagementID || 0,
         results: "pending",
         instrumentsUsed,
         PaymentStatus: paymentStatus,
         PaymentDate: paymentDate || new Date("2000-01-01"),
         selectedTests: selectedTestsString,
-        testFees: req.body.testFees,
-        TotalFees,
+        testFees: PaidAmount,
+        TotalFees:PaidAmount == 0 ? TotalFees : PaidAmount,
         Currency,
         admissionID,
       });
-
+      console.log(DiagnosticsBookingModels,"DiagnosticsBookingModels")
       const admission = await HospitalAdmission.findByPk(admissionID);
 
       // if(admission){
@@ -175,8 +177,8 @@ const createBooking = async (req, res) => {
           admissionID,
         });
       }
-      res.status(201).json({
-        message: "Pathology test created successfully",
+      res.status(200).json({
+        message: "Diagnosis test created successfully",
         DiagnosticsBookingModels,
       });
     }

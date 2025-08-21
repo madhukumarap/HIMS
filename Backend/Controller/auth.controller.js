@@ -313,8 +313,9 @@ exports.signin = async (req, res) => {
 
       console.log("✅ User found:", user.username);
       console.log("🔐 Hashed password in DB:", user.password);
-
+      
       try {
+
         const passwordIsValid = bcrypt.compareSync(
           req.body.password,
           user.password

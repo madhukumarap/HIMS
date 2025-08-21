@@ -756,7 +756,7 @@ const BookingCalendar = () => {
       case "pathologistTest":
         handlePathologistTestSubmit();
         break;
-      case "hospitalAdmission":
+      case "diagnosticsTest":
         handleHospitalAdmissionSubmit();
         break;
       default:
@@ -765,7 +765,6 @@ const BookingCalendar = () => {
         });
     }
   };
-
   const slotToMinutes = {
     "1 slot": 30,
     "2 slots": 60,
@@ -790,10 +789,11 @@ const BookingCalendar = () => {
       setSelectedPatient(patient.PatientID);
     }
   };
-
+  const [filterdoctorId ,setFilterDoctorId] = useState(null);
   const handleDoctorConsultationSubmit = async () => {
     const selectedPatientId = selectedPatient;
     const selectedDoctorId = document.getElementById("doctor")?.value;
+    setFilterDoctorId(selectedDoctorId);
     const selectedRefDoctorId = document.getElementById("referraldoctorId")?.value;
     const newBookingStartDate = moment(newEventStart)
       .add(30 * selectedSlotValue, "minutes")
@@ -901,12 +901,13 @@ const BookingCalendar = () => {
       toast.error("Payment Status Must be Paid");
     }
   };
-
   const handlePathologistTestSubmit = async () => {
     //alert(selectedPatient);
     const selectedDoctorId = document.getElementById("doctor")?.value;
     const selectedRefDoctorId = document.getElementById("referraldoctorId")?.value;
-    if (isNaN(registrationFeeCurrency) || registrationFeeCurrency <= 0) {
+    console.log(registrationFeeCurrency,"registrationFeeCurrencyregistrationFeeCurrency")
+    if (isNaN(registrationFeeAmount) || registrationFeeAmount <= 0) {
+      console.log(registrationFeeAmount,"registrationFeeCurrencyregistratioadfasafsafsafafafanFeeCurrency")
       toast.error("Please enter a valid amount");
       return;
     }
@@ -921,11 +922,11 @@ const BookingCalendar = () => {
       toast.error("Please Select Paymentstatus.");
       return;
     }
-    if (paymentStatus === "paid" && amount < 1) {
+    if (paymentStatus === "paid" && registrationFeeAmount < 1) {
       toast.error("Please Enter Valid Amount.");
       return;
     }
-    if (paymentStatus === "notPaid" && (amount < 0 || amount !== 0)) {
+    if (paymentStatus === "notPaid" && (registrationFeeAmount < 0 || registrationFeeAmount !== 0)) {
       setAmount("0");
     }
     if (paymentStatus === "paid" && !paymentDateTime) {
@@ -1000,7 +1001,12 @@ const BookingCalendar = () => {
     }
   };
 
-  const handleHospitalAdmissionSubmit = async () => {
+   const handleHospitalAdmissionSubmit = async () => {
+  try {
+    // Validation checks
+    const selectedDoctorId = document.getElementById("doctor")?.value;
+    const selectedRefDoctorId = document.getElementById("referraldoctorId")?.value;
+    console.log(selectedRefDoctorId,"selectedRefDoctorId")
     if (!selectedPatient || !additionalInfo) {
       toast.error("Please fill in all required fields.", {
         style: { fontSize: "13px" },
@@ -1008,52 +1014,66 @@ const BookingCalendar = () => {
       return;
     }
 
+    if (paymentStatus === "paid") {
+      if (registrationFeeAmount < 1) {
+        toast.error("Please Enter Valid Amount.");
+        return;
+      }
+      if (!paymentDateTime) {
+        toast.error("Please Select Payment DateTime.");
+        return;
+      }
+    }
+
+    // Prepare event data
     const eventData = {
       patientId: selectedPatient,
+      refDoctorId:selectedRefDoctorId,
+      doctorId:selectedDoctorId,
       additionalInfo,
+      paymentStatus,
+      PaidAmount: paymentStatus === "notPaid" ? 0 : registrationFeeAmount,
+      paymentDateTime: paymentStatus === "paid" ? paymentDateTime : null,
+      currency:doctorConsultancyCurrency,
+      admissionDate:newEventStart,
+      selectedPackageID:selectedTests
       // Add other fields specific to this event type
     };
-    // alert(JSON.stringify(eventData));
-    if (paymentStatus === "paid" && amount < 1) {
-      toast.error("Please Enter Valid Amount.");
-      return;
-    }
-    if (paymentStatus === "notPaid" && (amount < 0 || amount !== 0)) {
-      setAmount("0");
-    }
-    if (paymentStatus === "paid" && !paymentDateTime) {
-      toast.error("Please Select PaymentDateTime.");
-      return;
-    }
-    setShowEventModal(false);
-    return;
-    try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/createHospitalAdmission`, // Replace with your actual endpoint
-        eventData,
-        {
-          headers: {
-            Authorization: `${currentUser?.Token}`,
-          },
-        }
-      );
-      if (response.status === 200) {
-        toast.success("Hospital Admission created successfully.", {
-          style: { fontSize: "13px" },
-        });
-        // Reset state and close the modal
-        setShowEventModal(false);
-        setAdditionalInfo("");
-      } else {
-        // Handle error response...
+
+    // API call
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_URL}/api/createDiagnosticsBooking`,
+      eventData,
+      {
+        headers: {
+          Authorization: `${currentUser?.Token}`,
+        },
       }
-    } catch (error) {
-      console.log("Error creating Hospital Admission:", error);
-      toast.error("Failed to create Hospital Admission.", {
+    );
+    console.log("Response:", response);
+    if (response.status === 200) {
+      toast.success("Hospital Admission created successfully.", {
+        style: { fontSize: "13px" },
+      });
+      
+      // Reset state and close the modal
+      setShowEventModal(false);
+      setAdditionalInfo("");
+      // setRegistrationFeeAmount(0);
+      setPaymentDateTime(null);
+      // Reset other state variables as needed
+    } else {
+      toast.error("Unexpected response from server.", {
         style: { fontSize: "13px" },
       });
     }
-  };
+  } catch (error) {
+    console.error("Error creating Hospital Admission:", error);
+    toast.error("Failed to create Hospital Admission.", {
+      style: { fontSize: "13px" },
+    });
+  }
+};  
 
   const handleEventModalCancel = () => {
     setShowEventModal(false);
@@ -1084,16 +1104,6 @@ const BookingCalendar = () => {
     setNewEventStart(date);
   };
 
-  const handleEndChange = (date) => {
-    const currentTime = new Date();
-
-    // Check if the selected date is in the past
-    if (date < currentTime) {
-      toast.error(t("PastDateError"));
-      return;
-    }
-    setNewEventEnd(date);
-  };
 
   const calendarStyle = {
     height: 500, // Set the desired height of the calendar
@@ -1108,17 +1118,6 @@ const BookingCalendar = () => {
     fontSize: "12px" /* Adjust the font size as per your requirement */,
   };
 
-  const h1Style = {
-    fontSize: "16px" /* Adjust the font size for <h1> */,
-  };
-
-  const h2Style = {
-    fontSize: "14px" /* Adjust the font size for <h2> */,
-  };
-
-  const h3Style = {
-    fontSize: "13px" /* Adjust the font size for <h3> */,
-  };
 
   // Listen for the storage event
   window.addEventListener("storage", (event) => {
@@ -1144,16 +1143,6 @@ const BookingCalendar = () => {
     // You can handle the redirection or error message display as per your requirement
   }
 
-  const customStyles = {
-    control: (provided) => ({
-      ...provided,
-      minHeight: "15px", // Adjust the height as per your requirement
-    }),
-    input: (provided) => ({
-      ...provided,
-      minHeight: "15px", // Adjust the height as per your requirement
-    }),
-  };
 
   return (
     <div style={style}>
@@ -1211,8 +1200,8 @@ const BookingCalendar = () => {
                 <option value="doctorConsultation">
                   {t("doctorConsultation")}
                 </option>
-                <option value="pathologistTest">{t("Pathology ")}</option>
-                <option value="diagnosticsTest">{t("Diagnostics")}</option>
+                {/* <option value="pathologistTest">{t("Pathology ")}</option> */}
+                {/* <option value="diagnosticsTest">{t("Diagnostics")}</option> */}
                 {/* <option value="hospitalAdmission">Hospital Admission</option> */}
               </Form.Control>
             </Form.Group>
@@ -1312,6 +1301,7 @@ const BookingCalendar = () => {
                         style={{ fontSize: "13px", marginTop: "10px" }}
                         onChange={(e) => {
                           const selectedId = parseInt(e.target.value, 10); // convert string to number
+                            setFilterDoctorId(selectedId);
                           const selectedDoctor = doctorList.find(
                             (doc) => doc.id === selectedId
                           );
@@ -1719,60 +1709,191 @@ const BookingCalendar = () => {
               </>
             )}
 
-            {eventType === "hospitalAdmission" && (
-              <Form.Group controlId="additionalInfo">
-                <div className="row">
-                  <div className="col-md-6">
-                    <Form.Group controlId="patient">
-                      <Form.Label
-                        style={{
-                          fontSize: "13px",
-                          fontWeight: "bold",
-                          marginTop: "10px",
-                        }}
-                      >
-                        {t("selectPatient")}{" "}
-                        <span style={{ color: "red" }}>*</span>
-                      </Form.Label>
-                      <Form.Control
-                        as="select"
-                        style={{ fontSize: "13px", marginTop: "10px" }}
-                        required
-                        value={selectedPatient} // Set the value to the selectedPatient state
-                        onChange={(e) => setSelectedPatient(e.target.value)} // Handle onChange event
-                      >
-                        <option value="">{t("selectaPatient")}</option>
-                        {patientList.map((patient) => (
-                          <option key={patient.id} value={patient.id}>
-                            {patient.mr} {patient.firstName} {patient.lastName}{" "}
-                            ({patient.phoneNumberP})
-                          </option>
-                        ))}
-                      </Form.Control>
-                    </Form.Group>
-                  </div>
-                  <div className="col-md-6">
-                    <Form.Label
-                      style={{
-                        fontSize: "13px",
-                        fontWeight: "bold",
-                        marginTop: "10px",
-                      }}
-                    >
-                      {t("additionalInformation")}{" "}
-                      <span style={{ color: "red" }}>*</span>
-                    </Form.Label>
-                    <Form.Control
-                      style={{ fontSize: "13px", marginTop: "10px" }}
-                      placeholder="Enter Additional info"
-                      type="text"
-                      value={additionalInfo}
-                      onChange={(e) => setAdditionalInfo(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </Form.Group>
-            )}
+            {eventType === "diagnosticsTest" && (
+  <Form.Group controlId="additionalInfo">
+    <div className="row">
+      {/* Patient Selection */}
+      <div className="col-md-6">
+        <Form.Group controlId="patient">
+          <Form.Label
+            style={{
+              fontSize: "13px",
+              fontWeight: "bold",
+              marginTop: "10px",
+            }}
+          >
+            {t("selectPatient")} <span style={{ color: "red" }}>*</span>
+          </Form.Label>
+          <Form.Control
+            as="select"
+            style={{ fontSize: "13px", marginTop: "10px" }}
+            required
+            value={selectedPatient}
+            onChange={(e) => setSelectedPatient(e.target.value)}
+          >
+            <option value="">{t("selectaPatient")}</option>
+            {patientList.map((patient) => (
+              <option key={patient.id} value={patient.id}>
+                {patient.mr} {patient.firstName} {patient.lastName} (
+                {patient.phoneNumberP})
+              </option>
+            ))}
+          </Form.Control>
+        </Form.Group>
+      </div>
+
+      {/* Additional Information */}
+      <div className="col-md-6">
+        <Form.Group controlId="additionalInfoField">
+          <Form.Label
+            style={{
+              fontSize: "13px",
+              fontWeight: "bold",
+              marginTop: "10px",
+            }}
+          >
+            {t("additionalInformation")}{" "}
+            <span style={{ color: "red" }}>*</span>
+          </Form.Label>
+          <Form.Control
+            style={{ fontSize: "13px", marginTop: "10px" }}
+            placeholder="Enter Additional info"
+            type="text"
+            value={additionalInfo}
+            onChange={(e) => setAdditionalInfo(e.target.value)}
+          />
+        </Form.Group>
+      </div>
+    </div>
+
+    <div className="row">
+      {/* Doctor Selection */}
+      <div className="col-md-6">
+        <Form.Group controlId="doctor">
+          <Form.Label
+            style={{
+              fontSize: "13px",
+              fontWeight: "bold",
+              marginTop: "10px",
+            }}
+          >
+            {t("selectDoctor")} <span style={{ color: "red" }}>*</span>
+          </Form.Label>
+          <Form.Control
+            as="select"
+            style={{ fontSize: "13px", marginTop: "10px" }}
+            onChange={(e) => {
+              const selectedId = parseInt(e.target.value, 10);
+              setFilterDoctorId(selectedId);
+              const selectedDoctor = doctorList.find(
+                (doc) => doc.id === selectedId
+              );
+
+              if (selectedDoctor) {
+                if (selectedDoctor.consultationFee) {
+                  const finalFee =
+                    selectedDoctor.consultationFee -
+                    (selectedDoctor.consultationFee *
+                      selectedDoctor.discount) /
+                      100;
+
+                  setDoctorConsultancyAmount(finalFee);
+                  if (!registrationFees) {
+                    setAmount(finalFee);
+                  }
+                }
+
+                if (selectedDoctor.consultationCurrency) {
+                  setDoctorConsultancyCurrency(
+                    selectedDoctor.consultationCurrency
+                  );
+                }
+              } else {
+                console.log("No doctor selected");
+              }
+            }}
+          >
+            <option value="">{t("selectADoctor")}</option>
+            {doctorList
+              .filter(
+                (doctor) =>
+                  doctor.doctorsType === "internal" ||
+                  doctor.doctorsType === null
+              )
+              .map((doctor) => (
+                <option key={doctor.id} value={doctor.id}>
+                  Dr {doctor.FirstName} {doctor.MiddleName} {doctor.LastName} (
+                  {doctor.phoneNo})
+                </option>
+              ))}
+          </Form.Control>
+        </Form.Group>
+      </div>
+
+      {/* Test Selection */}
+      <div className="col-md-6">
+        <Form.Group controlId="test">
+          <Form.Label
+            style={{
+              fontSize: "13px",
+              fontWeight: "bold",
+              marginTop: "10px",
+            }}
+          >
+            {t("SelectTests")} <span style={{ color: "red" }}>*</span>
+          </Form.Label>
+          <Select
+            required
+            className=" custom-datetime-picker"
+            isMulti
+            options={pathologyTests}
+            value={selectedTests}
+            onChange={handleTestChange}
+          />
+        </Form.Group>
+      </div>
+    </div>
+
+    <div className="row">
+      {/* Date and Time Selection */}
+      <div className="col-md-6">
+        <Form.Group controlId="eventStart">
+          <Form.Label
+            style={{
+              fontSize: "13px",
+              fontWeight: "bold",
+              marginTop: "10px",
+            }}
+          >
+            {t("consultationDateandTime")}{" "}
+            <span style={{ color: "red" }}>*</span>
+          </Form.Label>
+          <DatePicker
+            locale={selectedLanguage}
+            selected={newEventStart}
+            onChange={handleStartChange}
+            showTimeSelect
+            timeFormat="hh:mm a"
+            timeIntervals={15}
+            minDate={new Date()}
+            minTime={
+              newEventStart &&
+              newEventStart.getDate() === tomorrow.getDate()
+                ? today
+                : today.setHours(0, 0, 0, 0)
+            }
+            maxTime={new Date().setHours(23, 59, 59, 999)}
+            dateFormat="yyyy-MM-dd hh:mm a"
+            className="form-control "
+            placeholderText={
+              t("selectstartDateTime") || "Select start Date & Time"
+            }
+          />
+        </Form.Group>
+      </div>
+    </div>
+  </Form.Group>
+)}
 
             <>
               <div className="row">
@@ -1906,7 +2027,7 @@ const BookingCalendar = () => {
                       >
                         <option value="">{t("selectReferralDoctor")}</option>
                         {doctorList
-                          // .filter((doctor) => doctor.doctorsType === "external" )
+                          .filter((doctor) => doctor.id !== filterdoctorId )
                           .map((doctor) => (
                             <option key={doctor.id} value={doctor.id}>
                               Dr {doctor.FirstName} {doctor.MiddleName} {doctor.LastName} ({doctor.phoneNo}) {doctor.doctorsType }

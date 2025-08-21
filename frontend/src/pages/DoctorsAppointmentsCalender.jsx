@@ -1988,8 +1988,8 @@ const BookingCalendar = () => {
                           marginTop: "10px",
                         }}
                       >
-                        {t("selectReferralDoctor")}{" "}
-                        <span style={{ color: "red" }}>*</span>
+                        {t("Select Referral Doctor")}{" "}
+                        {/* <span style={{ color: "red" }}>*</span> */}
                       </Form.Label>
                       <Form.Control
                         as="select"
@@ -2025,7 +2025,7 @@ const BookingCalendar = () => {
                           }
                         }}
                       >
-                        <option value="">{t("selectReferralDoctor")}</option>
+                        <option value="">{t("Select Referral Doctor")}</option>
                         {doctorList
                           .filter((doctor) => doctor.id !== filterdoctorId )
                           .map((doctor) => (

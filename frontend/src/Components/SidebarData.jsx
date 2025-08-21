@@ -207,6 +207,11 @@ const SidebarData = [
     isOpen: false,
     subNav: [
       {
+        title: "Hospital Earnings",
+        path: "/HospitalAnalytics",
+        icon: <IoIcons.IoIosPaper />,
+      },
+      {
         title: "PatientTrends",
         path: "/PatientTrendsReport",
         icon: <IoIcons.IoIosPaper />,

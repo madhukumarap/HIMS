@@ -345,6 +345,15 @@ const ConsultationAnalytics = () => {
           fontSize: "14px",
         }}
       >
+        {/* <Button
+          style={{ fontSize: "12px", padding: "4px 5px" }}
+          variant="secondary"
+          onClick={() => {
+            navigate(`/${extractedPart}/HospitalAnalytics`);
+          }}
+        >
+          Hospital Earnings
+        </Button>{" "} */}
         <Button
           style={{ fontSize: "12px", padding: "4px 5px" }}
           variant="secondary"
@@ -372,6 +381,7 @@ const ConsultationAnalytics = () => {
         >
           Consultation Spends
         </Button>{" "}
+        
       </div>
 
       <header

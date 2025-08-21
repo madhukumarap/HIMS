@@ -669,7 +669,7 @@ const HospitalAnalytics = () => {
                   <td>{formatDate(booking.createdAt)}</td>
                   <td>{booking.selectedTests ?booking.selectedTests :"NA"}</td>
                   <td>{currencySymbols[selectedGlobalCurrency]}{convertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency)}</td>
-                  <td>{booking.status}</td>
+                  <td>{booking.status ==="paid" ? "Pending" : booking.status}</td>
                 </tr>
               ))}
               
@@ -691,7 +691,7 @@ const HospitalAnalytics = () => {
                   <td>{formatDate(booking.paymentDateTime || booking.createdAt)}</td>
                   <td>{booking.reason ? booking.reason : "NA"}</td>
                   <td>{currencySymbols[selectedGlobalCurrency]}{convertCurrency(booking.amount, hospitalData.baseCurrency, selectedGlobalCurrency)}</td>
-                  <td>{booking.paymentStatus}</td>
+                  <td>{booking.paymentStatus ==="paid" ? "Pending" : booking.paymentStatus}</td>
                 </tr>
               ))}
             </tbody>

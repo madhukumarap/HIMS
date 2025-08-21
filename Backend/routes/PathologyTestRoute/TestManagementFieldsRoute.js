@@ -761,75 +761,91 @@ router.get(
     const TestArray = db.PathologyTestManage;
     const StatusOfPathologyTestsForTestBooking =
       db.StatusOfPathologyTestsForTestBooking;
+
     try {
       const { PatientTestBookingID } = req.params;
 
-      // const tableNames = ["LipidProfile", "PlateletCount", "BloodSugarForPP"];
-      // const PatientTestBookingID = 41;
-
+      // Get pathology test data
       const pathologyTest = await PathologyTest.findByPk(PatientTestBookingID);
-      const response = await axios.get(
-        `${process.env.REMOTE_SERVER_BASE_URL}/api/getDoctorByIdsign/${pathologyTest?.doctorId}`,
-        {
-          headers: {
-            Authorization: req.headers?.authorization,
-          },
+      if (!pathologyTest) {
+        return res.status(404).json({ error: "Test booking not found" });
+      }
+
+      // Get doctor data
+      let Doctor = null;
+      if (pathologyTest?.doctorId) {
+        // Only fetch if doctorId exists
+
+        try {
+          const response = await axios.get(
+            `${process.env.REMOTE_SERVER_BASE_URL}/api/getDoctorByIdsign/${pathologyTest.doctorId}`,
+            {
+              headers: {
+                Authorization: req.headers?.authorization,
+              },
+            }
+          );
+          Doctor = response?.data;
+        } catch (doctorError) {
+          console.error("Error fetching doctor data:", doctorError);
         }
-      );
-      const Doctor = response?.data;
-      console.log("Doctor//////////////", Doctor);
-      // return;
+      }
+
       const selectedTestsArray = pathologyTest.selectedTests
         .split(",")
         .map((test) => test.trim());
 
-      // console.log(selectedTestsArray);
-      // console.log(pathologyTest);
-      //return;
       if (!Array.isArray(selectedTestsArray)) {
         return res.status(400).json({ error: "Invalid input format" });
       }
 
-      const results = {};
-
-      for (const tableName of selectedTestsArray) {
-        //  console.log(tableName);
+      // Use Promise.all to execute all queries in parallel
+      const queryPromises = selectedTestsArray.map((tableName) => {
         const formattedTableName =
           tableName.replace(/\s+/g, "").toLowerCase() + "resultmodels";
 
-        const query = `
-          SELECT *
-          FROM ${formattedTableName}
-          WHERE PatientTestBookingID = ?
-          ORDER BY createdAt DESC
-          LIMIT 1
-        `;
+        return new Promise((resolve) => {
+          const query = `
+            SELECT *
+            FROM ${formattedTableName}
+            WHERE PatientTestBookingID = ?
+            ORDER BY createdAt DESC
+            LIMIT 1
+          `;
 
-        connection.query(query, [PatientTestBookingID], (err, rows) => {
-          if (err) {
-            console.error(
-              `Error executing query for table ${formattedTableName}: `,
-              err
-            );
-            results[formattedTableName] = null;
-          } else {
-            results[formattedTableName] = rows[0] || null;
-          }
-
-          const testResultData = {
-            results,
-            pathologyTest,
-            selectedTestsArray,
-            Doctor,
-          };
-          if (Object.keys(results).length === selectedTestsArray.length) {
-            // console.log("PatientTestBookingIDs: ", results);
-            return res.status(200).json(testResultData);
-          }
+          connection.query(query, [PatientTestBookingID], (err, rows) => {
+            if (err) {
+              console.error(
+                `Error executing query for table ${formattedTableName}:`,
+                err
+              );
+              resolve({ [formattedTableName]: null });
+            } else {
+              resolve({ [formattedTableName]: rows[0] || null });
+            }
+          });
         });
-      }
+      });
+
+      // Wait for all queries to complete
+      const queryResults = await Promise.all(queryPromises);
+
+      // Combine all results into a single object
+      const results = queryResults.reduce(
+        (acc, curr) => ({ ...acc, ...curr }),
+        {}
+      );
+
+      const testResultData = {
+        results,
+        pathologyTest,
+        selectedTestsArray,
+        Doctor,
+      };
+
+      return res.status(200).json(testResultData);
     } catch (error) {
-      console.error(error);
+      console.error("Server error:", error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   }

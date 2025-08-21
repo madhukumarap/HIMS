@@ -194,10 +194,9 @@ function ReportModal({ show, handleClose, reportData }) {
 
   return (
     <Modal
-      style={{ marginTop: "20px" }}
+      style={{ marginTop: "20px", fontSize: "13px" }}
       centered
       backdrop="static"
-      style={{ fontSize: "13px" }}
       show={show}
       onHide={() => {
         handleClose();

@@ -108,7 +108,6 @@ router.get("/DiagnosticTotalfees", async (req, res) => {
         exchangeRates,
         "INR"
       );
-      console.log("convertedAmountINR: " + convertedAmountINR);
       if (!isNaN(convertedAmountINR)) {
         totalFeesINR += convertedAmountINR;
       }

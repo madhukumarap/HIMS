@@ -53,12 +53,7 @@ const DownloadPDFButton = ({ testBookingID }) => {
     // const intervalId = setInterval(initializei18n, 1000);
     // return () => clearInterval(intervalId);
   }, []);
-  const formatDateInSelectedLanguage = (date) => {
-    const selectedLanguage = i18n.language || "en";
-    const format = "PPPP";
-    const locale = locales[selectedLanguage];
-    return formatDate(date, format, { locale });
-  };
+
   const [testResults, setTestResults] = useState(null);
   const [normalValues, setNormalValues] = useState(null);
   const [hospitalData, setHospitalData] = useState(null);
@@ -97,10 +92,11 @@ const DownloadPDFButton = ({ testBookingID }) => {
       // Handle error
     }
   };
+
   const fetchData = async (testBookingID) => {
     try {
-      // alert("hello");
-      const response = await fetch(
+      // Fetch test results (which already includes Doctor data)
+      const testResponse = await fetch(
         `${
           import.meta.env.VITE_API_URL
         }/api/getLastRecordByPatientTestBookingIDForMultipleTest/${testBookingID}`,
@@ -110,25 +106,32 @@ const DownloadPDFButton = ({ testBookingID }) => {
           },
         }
       );
-      const data = await response.json();
-      // alert(response);
-      setPathologyTest(data.pathologyTest);
-      setTestNames(data.selectedTestsArray);
-      const filteredResults = Object?.fromEntries(
-        Object.entries(data?.results)?.filter(([key, value]) => value !== null)
+
+      if (!testResponse.ok) {
+        throw new Error(`Failed to fetch test data: ${testResponse.status}`);
+      }
+
+      const testData = await testResponse.json();
+
+      console.log(testData, "testData");
+
+      setPathologyTest(testData.pathologyTest);
+      setTestNames(testData.selectedTestsArray);
+
+      const filteredResults = Object.fromEntries(
+        Object.entries(testData.results).filter(
+          ([key, value]) => value !== null
+        )
       );
 
-      //alert(JSON.stringify(filteredResults));
       setTestResults(filteredResults);
-      setDoctor(data?.Doctor);
-      setDoctorSign(data?.Doctor?.signatureImage);
-    } catch (error) {
-      toast.error(error);
-      console.error("Error fetching data:", error);
-    }
 
-    try {
-      const response = await fetch(
+      // Use the Doctor data that came with the test response
+      setDoctor(testData.Doctor);
+      setDoctorSign(testData.Doctor?.signatureImage);
+
+      // Fetch hospital data
+      const hospitalResponse = await fetch(
         `${import.meta.env.VITE_API_URL}/api/getLastCreatedHospital`,
         {
           headers: {
@@ -136,37 +139,16 @@ const DownloadPDFButton = ({ testBookingID }) => {
           },
         }
       );
-      const data = await response.json();
-      setHospitalData(data.data);
-    } catch (error) {
-      console.error("Error fetching hospital data:", error);
-    }
 
-    /////////
-    try {
-      //  alert(JSON.stringify(PathologyTest));
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/getDoctorByIdsign/${
-          PathologyTest.doctorId
-        }`,
-        {
-          headers: {
-            Authorization: `${currentUser?.Token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!hospitalResponse.ok) {
+        console.error("Failed to fetch hospital data");
+      } else {
+        const hospitalData = await hospitalResponse.json();
+        setHospitalData(hospitalData.data);
       }
-
-      const data = await response.json();
-      // alert(JSON.stringify(data));
-      setDoctor(data);
-      setDoctorSign(Doctor.signatureImage);
-      //alert(JSON.stringify(Doctor.signatureImage.data));
     } catch (error) {
-      console.error("Error fetching hospital data:", error);
+      console.error("Error in fetchData:", error);
+      toast.error(error.message || "Failed to fetch data");
     }
   };
 
@@ -186,32 +168,6 @@ const DownloadPDFButton = ({ testBookingID }) => {
     } catch (error) {
       console.error("Error fetching normal values:", error);
     }
-    try {
-      // alert(JSON.stringify(PathologyTest));
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/getDoctorByIdsign/${
-          PathologyTest?.doctorId
-        }`,
-        {
-          headers: {
-            Authorization: `${currentUser?.Token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        // alert(" Digital signature Fail to Fetch");
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      // alert(JSON.stringify(data));
-      setDoctor(data);
-      setDoctorSign(Doctor.signatureImage);
-      //  alert(JSON.stringify(Doctor.signatureImage));
-    } catch (error) {
-      console.error("Error fetching hospital data:", error);
-    }
   };
 
   useEffect(() => {
@@ -226,6 +182,7 @@ const DownloadPDFButton = ({ testBookingID }) => {
     const doc = new jsPDF();
     let pageNumber = 1;
     // alert(JSON.stringify(PathologyTest));
+
     if (testResults && normalValues) {
       let index = 0;
       //  testNames.forEach((testName) => {
@@ -266,20 +223,27 @@ const DownloadPDFButton = ({ testBookingID }) => {
             return [key, value !== null ? value : "N/A", "N/A", "N/A"];
           });
 
+          console.log(tableData, "tableData");
+
           if (tableData.length > 0) {
             doc.setFontSize(12);
 
-            // alert(index);
-            const hospitalLogoBase64 = hospitalData.logo; // Assuming the logo is provided as a base64 string
-            const hospitalLogo = new Image();
-            hospitalLogo.src = `data:image/png;base64,${hospitalLogoBase64}`; // Embed the base64 image data
             const addHospitalInfo = () => {
-              const hospitalName = hospitalData.hospitalName;
-              const hospitalAddressLine1 = hospitalData.address;
-              const hospitalAddressLine2 = `${hospitalData.pincode}, India`;
-              const email = `Mail: ${hospitalData.email}`;
-              const landline = `Tel: ${hospitalData.landline}`;
-              doc.addImage(hospitalLogo, "PNG", 160, 15, 30, 30);
+              const hospitalName = hospitalData?.hospitalName || "N/A";
+              const hospitalAddressLine1 = hospitalData?.address || "N/A";
+              const hospitalAddressLine2 = `${
+                hospitalData?.pincode || "N/A"
+              }, India`;
+              const email = `Mail: ${hospitalData?.email || "N/A"}`;
+              const landline = `Tel: ${hospitalData?.landline || "N/A"}`;
+
+              // Only add logo if it exists
+              if (hospitalData?.logo) {
+                const hospitalLogo = new Image();
+                hospitalLogo.src = `data:image/png;base64,${hospitalData.logo}`;
+                doc.addImage(hospitalLogo, "PNG", 160, 15, 30, 30);
+              }
+
               doc.text(hospitalName, 20, 20);
               doc.text(hospitalAddressLine1, 20, 30);
               doc.text(hospitalAddressLine2, 20, 35);
@@ -523,6 +487,9 @@ const DownloadPDFButton = ({ testBookingID }) => {
 
     doc.save("testResults.pdf");
   };
+
+  // console.log("testResults:", testResults);
+  // console.log("normalValues:", normalValues);
 
   return (
     <div>

@@ -107,10 +107,6 @@ function Pathologytest() {
       .then((data) => {
         setHospitals(data.data);
         setOptionalCurrencies(data.data[0].OptionalCurrency.split(","));
-        console.log(
-          "OptionalCurrencies :",
-          data.data[0].OptionalCurrency.split(",")
-        );
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -187,8 +183,6 @@ function Pathologytest() {
 
       const totalFeesInSelectedCurrency = baseFees * selectedRate;
       const formattedTotalFees = totalFeesInSelectedCurrency.toFixed(2);
-
-      console.log("formattedTotalFees: ", formattedTotalFees);
       setTotalFees(Number(formattedTotalFees));
     } else {
       setTotalFees(null);
@@ -217,7 +211,10 @@ function Pathologytest() {
       window.removeEventListener("resize", checkIsMobile);
     };
   }, []);
+
   const handleGenerateReportNew = (testBookingID) => {
+    console.log("Hellooooooooooooooo");
+
     if (testBookingID?.PaymentStatus === "Not-Paid") {
       toast.error(t("PaymentNotPaidforthisPatient"));
       return;
@@ -236,6 +233,7 @@ function Pathologytest() {
     }
     setTestBookingID(testBookingID.id);
   };
+
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/api/getAllPathologyTests`, {
@@ -271,7 +269,6 @@ function Pathologytest() {
           }
         )
         .then((response) => {
-          console.log("PackageData List" + JSON.stringify(response.data));
           setPackageSelectedTests(response.data);
 
           const transformedOptions = PackageSelectedTests.map((test) => ({
@@ -342,7 +339,6 @@ function Pathologytest() {
       const exchangeRatesData = response.data.exchangeRatesData;
       const firstCurrencyData = exchangeRatesData[0].data;
       const rates = firstCurrencyData.rates;
-      console.log("Rates:: " + JSON.stringify(rates));
       setExchangeRates(rates);
       //  alert(JSON.stringify(response.data.rates["CDF"]));
       return response.data?.rates;
@@ -380,12 +376,6 @@ function Pathologytest() {
         testPrice,
         selectedTest.Currency,
         exchangeRates
-      );
-      console.log(
-        "testPrice: " +
-          testPrice +
-          " selectedTest.Currency::" +
-          selectedTest.Currency
       );
       //alert(testPriceUSD);
       return Number(acc) + Number(testPriceUSD);
@@ -608,7 +598,6 @@ function Pathologytest() {
     //return;
     const bookingResultData = { bookings, lastRecord };
     // return;
-    console.log("testBookingData: " + testBookingData);
     // alert(JSON.stringify(bookings));
     // return;
     setSelectedReportData2(bookingResultData);
@@ -621,7 +610,6 @@ function Pathologytest() {
       !selectedReportData?.PlateletCountModelData ||
       !selectedReportData?.LipidProfileModelData
     ) {
-      console.log("Please add result first!");
       //toast.error("Please add result first!");
     }
   };
@@ -636,9 +624,7 @@ function Pathologytest() {
         return; // User canceled, do nothing
       }
     }
-    console.log("Selected Report Data:", booking);
     setSelectedReportData(booking);
-    //alert(JSON.stringify(booking));
   };
 
   useEffect(() => {
@@ -1075,8 +1061,6 @@ function Pathologytest() {
     fontSize: "12px",
   };
 
-  // console.log("???????????????????: " + testNames);
-  //alert(JSON.stringify(testNames));
   const filteredTestNames = PackageSelectedTests
     ? testNames.filter(
         (test) =>
@@ -1086,15 +1070,6 @@ function Pathologytest() {
       )
     : testNames;
 
-  console.log("Exchange rates:", rates);
-  console.log(
-    "Converting 86206.90 INR to USD:",
-    convertCurrency(86206.9, "INR", "USD")
-  );
-  console.log(
-    "Converting 1000 INR to USD:",
-    convertCurrency(1000, "INR", "USD")
-  );
   return (
     <div style={{ fontSize: "12px" }} className="container">
       <header

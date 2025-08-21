@@ -106,6 +106,7 @@ router.get("/getDoctorData", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 router.get("/getDoctorByIdsign/:id", async (req, res) => {
   const database = req.headers.userDatabase;
   const connectionList = await getConnectionList(database);
@@ -156,6 +157,7 @@ router.get("/getDoctorByIdsign/:id", async (req, res) => {
 const express = require("express");
 
 const app = express();
+
 const upload = multer({ dest: "public/uploads/" });
 
 const csv = require("csv-parser");

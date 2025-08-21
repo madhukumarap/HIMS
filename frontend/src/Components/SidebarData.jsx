@@ -285,7 +285,6 @@ const SidebarData = [
     ],
   },
 
-
   {
     title: "Diagnostics",
 
@@ -341,7 +340,11 @@ const SidebarData = [
         path: "/doctorsList",
         icon: <IoIcons.IoIosPaper />,
       },
-     
+      {
+        title: "ReferalDoctorsList",
+        path: "/referaldoctorsList",
+        icon: <IoIcons.IoIosPaper />,
+      },
     ],
   },
 

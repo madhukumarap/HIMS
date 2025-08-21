@@ -6,7 +6,7 @@ import { FaDownload } from "react-icons/fa";
 import axios from "axios";
 import AuthService from "../../services/auth.service";
 
-const DownloadDoctorEarningsReport = ({ doctor, patients }) => {
+const DownloadDoctorReferalEarningsReport = ({ doctor, patients }) => {
   const currentUser = AuthService.getCurrentUser();
   const [hospitalData, setHospitalData] = useState(null);
 
@@ -45,7 +45,7 @@ const DownloadDoctorEarningsReport = ({ doctor, patients }) => {
         addDoctorEarningsInfo();
         addPatientTable();
         addPageNumbers(doc, pageNumber);
-        doc.save(`Doctor_Earnings_Report_${doctor.id}.pdf`);
+        doc.save(`Doctor_Referal_Earnings_Report_${doctor.id}.pdf`);
       };
     } else {
       // Generate without logo if not available
@@ -53,7 +53,7 @@ const DownloadDoctorEarningsReport = ({ doctor, patients }) => {
       addDoctorEarningsInfo();
       addPatientTable();
       addPageNumbers(doc, pageNumber);
-      doc.save(`Doctor_Earnings_Report_${doctor.id}.pdf`);
+      doc.save(`Doctor_Referal_Earnings_Report_${doctor.id}.pdf`);
     }
 
     function addHospitalInfo(hospitalData) {
@@ -86,7 +86,7 @@ const DownloadDoctorEarningsReport = ({ doctor, patients }) => {
       doc.setTextColor("#ffffff");
       doc.setFontSize(16);
       doc.text(
-        "Doctor Earnings Report",
+        "Doctor Referal Earnings Report",
         doc.internal.pageSize.getWidth() / 2,
         55 + titleHeight / 2,
         { align: "center" }
@@ -107,7 +107,7 @@ const DownloadDoctorEarningsReport = ({ doctor, patients }) => {
       doc.text(`Phone: ${doctor.countryCode} ${doctor.phoneNo}`, 20, 90);
       doc.text(`Registration No: ${doctor.registrationNo}`, 20, 95);
       doc.text(
-        `Consultation Fee: ${doctor.consultationFee} ${doctor.consultationCurrency}`,
+        `Referal Fee: ${doctor.referralFee} ${doctor.consultationCurrency}`,
         20,
         100
       );
@@ -116,13 +116,13 @@ const DownloadDoctorEarningsReport = ({ doctor, patients }) => {
 
       // Calculate total earnings
       const totalEarnings = patients.reduce((sum, patient) => {
-        return sum + (parseFloat(doctor.consultationFee) || 0);
+        return sum + (parseFloat(doctor.referralFee) || 0);
       }, 0);
 
       doc.setFontSize(12);
       doc.text("Earnings Summary:", 20, 115);
       doc.setFontSize(9);
-      doc.text(`Total Consultations: ${patients.length}`, 20, 125);
+      doc.text(`Total Referals: ${patients.length}`, 20, 125);
       doc.text(
         `Total Earnings: ${totalEarnings.toFixed(2)} ${
           doctor.consultationCurrency
@@ -140,7 +140,7 @@ const DownloadDoctorEarningsReport = ({ doctor, patients }) => {
         patient.visitType,
         patient.reason,
         `${patient.amount} ${patient.Currency}`,
-        `${doctor.consultationFee} ${doctor.consultationCurrency}`,
+        `${doctor.referralFee} ${doctor.consultationCurrency}`,
         new Date(patient.bookingStartDate).toLocaleDateString(),
         // patient.paymentStatus,
       ]);
@@ -154,7 +154,7 @@ const DownloadDoctorEarningsReport = ({ doctor, patients }) => {
             "Visit Type",
             "Reason",
             "Amount Paid",
-            "Doctor's Fee",
+            "Doctor's Referal Fee",
             "Consultation Date",
             // "Payment Status",
           ],
@@ -211,7 +211,7 @@ const DownloadDoctorEarningsReport = ({ doctor, patients }) => {
 
   return (
     <button
-      title="Download Earnings Report"
+      title="Download Referal Earnings Report"
       style={{
         fontSize: "12px",
         padding: "4px 5px",
@@ -227,4 +227,4 @@ const DownloadDoctorEarningsReport = ({ doctor, patients }) => {
   );
 };
 
-export default DownloadDoctorEarningsReport;
+export default DownloadDoctorReferalEarningsReport;

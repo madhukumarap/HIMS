@@ -8,6 +8,7 @@ node_modules/
 dist/
 Backend/.env
 Backend/config/
+
 # Compiled Java class files
 *.class
 

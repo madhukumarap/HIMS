@@ -100,6 +100,7 @@ const DoctorsAppointments = () => {
 
     fetchData();
   }, []);
+
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [searchName, setSearchName] = useState("");
@@ -795,7 +796,7 @@ const DoctorsAppointments = () => {
                       backgroundColor: "#1111",
                       color: "black",
                     }}
-                    disabled={!(appointment?.image.length > 2000)}
+                    disabled={!(appointment?.image?.length > 2000)}
                     className="btn btn-secondary"
                     onClick={() => handleViewImage(appointment.id)}
                   >
@@ -808,7 +809,7 @@ const DoctorsAppointments = () => {
         </Table>
       )}
       <Modal
-        style={{ fontSize: "12px" , marginTop: "20px"}}
+        style={{ fontSize: "12px", marginTop: "20px" }}
         show={showDeleteModal}
         onHide={() => setShowDeleteModal(false)}
         centered

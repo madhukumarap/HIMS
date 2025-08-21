@@ -202,6 +202,7 @@ const SubMenu = ({ item, isActive, toggleSidebar, toggleSubMenu }) => {
       );
     } else if (userRoleADMIN) {
       return (
+        subItem.title === "ReferalDoctorsList" ||
         subItem.title === "DoctorsList" ||
         subItem.title === "Hospital Earnings" ||
         subItem.title === "Doctors Managment" ||

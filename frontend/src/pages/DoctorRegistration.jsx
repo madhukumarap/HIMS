@@ -642,6 +642,40 @@ const DoctorRegistration = () => {
                       <span className="text-danger">{errors.username}</span>
                     )}
                   </div>
+                  {
+                    doctorsType === "internal" && (
+                      
+                      <>
+                        <label
+                    htmlFor="consultationFee"
+                    className="col-sm-3 col-form-label"
+                  >
+                    <strong>{t("Consultation Fee")}</strong>
+                    <span style={{ color: "red", marginLeft: "5px" }}>*</span>
+                  </label>
+                  <div className="col-sm-3">
+                    <div className="input-group">
+                      <input
+                        type= "text" 
+                        className="form-control"
+                        style={{ fontSize: "12px" }}
+                        id="consultationFee"
+                        value={consultationFee}
+                        onChange={handleconsultationFee}
+                        placeholder={t("Consultation Fee")}
+                        required
+                      />
+                      
+                    </div>
+                    {errors.consultationFee && (
+                      <span className="text-danger">
+                        {errors.consultationFee}
+                      </span>
+                    )}
+                  </div>
+                      </>
+                    )
+                  }
                   {/* <div className="form-group row"> */}
                   {/* <label
                     htmlFor="signature"
@@ -664,7 +698,7 @@ const DoctorRegistration = () => {
                 <div className="form-group row">
                                 
                   <label htmlFor="doctortype" className="col-sm-2 col-form-label">
-                    <strong>{t("doctorType")}</strong>
+                    <strong>{t("Doctor Type")}</strong>
                     <span style={{ color: "red", marginLeft: "5px" }}>*</span>
                   </label>
                   <div className="col-sm-3  ">
@@ -677,7 +711,7 @@ const DoctorRegistration = () => {
                       required
                       style={{ fontSize: "12px" }}
                     >
-                      <option value="">{t("selectDoctorType")}</option>
+                      <option value="">{t("Select Doctor Type")}</option>
                       <option value="internal">{t("Internal")}</option>
                       <option value="external">{t("External")}</option>
                     </select>
@@ -704,7 +738,7 @@ const DoctorRegistration = () => {
                         id="referralfee"
                         value={referralFee}
                         onChange={handlereferralFee}
-                        placeholder={t("referralfee")}
+                        placeholder={t("Referral Fee")}
                         required
                       />
                       
@@ -722,11 +756,11 @@ const DoctorRegistration = () => {
                     doctorsType === "internal" && (
                       <>
                         <label
-                    htmlFor="consultationFee"
+                    htmlFor="referralfee"
                     className="col-sm-3 col-form-label"
                   >
-                    <strong>{t("consultation Fee")}</strong>
-                    <span style={{ color: "red", marginLeft: "5px" }}>*</span>
+                    <strong>{t("Referral Fee")}</strong>
+                    {/* <span style={{ color: "red", marginLeft: "5px" }}>*</span> */}
                   </label>
                   <div className="col-sm-3">
                     <div className="input-group">
@@ -734,17 +768,17 @@ const DoctorRegistration = () => {
                         type= "text" 
                         className="form-control"
                         style={{ fontSize: "12px" }}
-                        id="consultationFee"
-                        value={consultationFee}
-                        onChange={handleconsultationFee}
-                        placeholder={t("consultationFee")}
+                        id="referralfee"
+                        value={referralFee}
+                        onChange={handlereferralFee}
+                        placeholder={t("Referral Fee")}
                         required
                       />
                       
                     </div>
-                    {errors.consultationFee && (
+                    {errors.confirmPassword && (
                       <span className="text-danger">
-                        {errors.consultationFee}
+                        {errors.confirmPassword}
                       </span>
                     )}
                   </div>

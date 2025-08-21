@@ -429,7 +429,16 @@ const TestBookingAnalytics = () => {
           marginBottom: "10px",
           fontSize: "14px",
         }}
-      >
+      > 
+        {/* <Button
+          style={{ fontSize: "12px", padding: "4px 5px" }}
+          variant="secondary"
+          onClick={() => {
+            navigate(`/${extractedPart}/HospitalAnalytics`);
+          }}
+        >
+          {t("Hospital Earnings")}
+        </Button>{" "} */}
         <Button
           style={{ fontSize: "12px", padding: "4px 5px" }}
           variant="secondary"

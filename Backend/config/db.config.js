@@ -2,7 +2,7 @@ const mysql = require("mysql");
 module.exports = {
   HOST: "localhost",
   USER: "root",
-  PASSWORD: "root", // silfra123
+  PASSWORD: "1234", // silfra123
   DB: "healthcare", //database name
   dialect: "mysql",
 

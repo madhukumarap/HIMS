@@ -19,6 +19,116 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const GetDoctorsWithAllFees = async (req, res) => {
+  const database = req.headers.userDatabase;
+  const connectionList = await getConnectionList(database);
+  const db = connectionList[database];
+
+  try {
+    const doctorsWithFees = await db.sequelize.query(
+      `
+      SELECT 
+        d.id AS doctorId,
+        d.FirstName,
+        d.LastName,
+        d.email,
+        d.phoneNo,
+        d.registrationNo,
+        d.address,
+        d.Dr,
+        d.createdAt AS doctorCreatedAt,
+        f.id AS feeId,
+        f.consultationFee,
+        f.referralFee,
+        f.consultationCurrency,
+        f.createdAt AS feeCreatedAt,
+        f.updatedAt AS feeUpdatedAt
+      FROM doctors d
+      LEFT JOIN doctor_fees f
+        ON f.doctor_id = d.id
+      ORDER BY d.id, f.updatedAt DESC
+      `,
+      { type: QueryTypes.SELECT }
+    );
+
+    res.status(200).json(doctorsWithFees);
+  } catch (error) {
+    console.error("Error fetching doctors with all fees:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const UpdateDoctorFees = async (req, res) => {
+  const database = req.headers.userDatabase;
+  const connectionList = await getConnectionList(database);
+  const db = connectionList[database];
+
+  try {
+    const doctorId = req.params.id;
+    const {
+      consultationFee,
+      referralFee,
+      consultationCurrency = "INR",
+    } = req.body;
+
+    await db.sequelize.query(
+      `
+      INSERT INTO doctor_fees 
+      (doctor_id, consultationFee, consultationCurrency, referralFee, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, NOW(), NOW())
+      `,
+      {
+        replacements: [
+          doctorId,
+          consultationFee ?? 0,
+          consultationCurrency || "INR",
+          referralFee ?? 0,
+        ],
+        type: QueryTypes.INSERT,
+      }
+    );
+
+    res.json({ message: "Doctor fees updated successfully" });
+  } catch (error) {
+    console.error("Error updating doctor fees:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const GetAllDoctorFees = async (req, res) => {
+  const database = req.headers.userDatabase;
+  const connectionList = await getConnectionList(database);
+  const db = connectionList[database];
+
+  try {
+    const doctorId = req.params.id;
+
+    const doctorFees = await db.sequelize.query(
+      `
+      SELECT id, doctor_id, consultationFee, consultationCurrency, referralFee, createdAt, updatedAt
+      FROM doctor_fees
+      WHERE doctor_id = ?
+      ORDER BY updatedAt DESC
+      `,
+      {
+        replacements: [doctorId],
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    if (doctorFees.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No fee records found for this doctor" });
+    }
+
+    res.status(200).json(doctorFees);
+  } catch (error) {
+    console.error("Error fetching doctor fees:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 // This controller can update (if doc username exist) or create the doctor
 const SaveDoctor = async (req, res) => {
   const database = req.headers.userDatabase;
@@ -47,10 +157,7 @@ const SaveDoctor = async (req, res) => {
       discount,
       doctorsType,
       referralFee,
-      
     } = req.body;
-    console.log(req.body,"req.body")
-    console.log("hii////////////////");
 
     // check if user already exist in doctor table;
 
@@ -72,14 +179,13 @@ const SaveDoctor = async (req, res) => {
         res.status(200).json({ message: "Doctor updated successfully" });
         return;
       } catch (e) {
-        console.log("errr ", e)
+        console.log("errr ", e);
         res.status(400).json({ message: "Failed to update doctor!" });
         return;
       }
 
       return;
     }
-    console.log("hii////////////////2");
     const signatureImage = req.file;
     let imageBuffer;
     let imageBinaryData;
@@ -104,8 +210,6 @@ const SaveDoctor = async (req, res) => {
         roles: ["doctor"],
       }
     );
-    console.log("signupResponse: " + JSON.stringify(signupResponse.data));
-    console.log("///////2/////////////");
     const mailOptions = {
       from: "hims.pharmacy.tech@gmail.com",
       to: email,
@@ -142,38 +246,25 @@ const SaveDoctor = async (req, res) => {
       consultationFee: consultationFee ? consultationFee : 0,
       consultationCurrency,
       doctorsType,
-      referralFee : referralFee.length ==0 ? 0 : referralFee,
+      referralFee: referralFee.length == 0 ? 0 : referralFee,
     });
 
-
-    console.log("doctorrrrrrrrrrrrrrrrrrrrrrr",doctor);
-   const dataFee = await db.sequelize.query(
-  `
+    const dataFee = await db.sequelize.query(
+      `
     INSERT INTO doctor_fees 
     (doctor_id, consultationFee, consultationCurrency, referralFee, createdAt, updatedAt)
     VALUES (?, ?, ?, ?, NOW(), NOW())
   `,
-  {
-    replacements: [
-      doctor.id,                                 // doctor_id
-      consultationFee ? consultationFee : 0,     // consultationFee
-      consultationCurrency || "INR",            // consultationCurrency
-      referralFee.length === 0 ? 0 : referralFee, // referralFee
-    ],
-    type: QueryTypes.INSERT,
-  }
-);
-console.log("dataFeedataFeedataFee",dataFee)
-//     const doctorFee = await DoctorFee.create({
-//   doctor_id: doctor.id,
-//   consultationFee: consultationFee ? consultationFee : 0,
-//   consultationCurrency: consultationCurrency || "INR",
-//   referralFee: referralFee && referralFee.length === 0 ? 0 : referralFee,
-// });
-
-// console.log("Doctor Fee Created:", doctorFee.dataValues);
-
-    // console.log(doctorFee, "doctorFeeeeeeeeeeeeeeeeeeeeee")
+      {
+        replacements: [
+          doctor.id, // doctor_id
+          consultationFee ? consultationFee : 0, // consultationFee
+          consultationCurrency || "INR", // consultationCurrency
+          referralFee.length === 0 ? 0 : referralFee, // referralFee
+        ],
+        type: QueryTypes.INSERT,
+      }
+    );
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log("Error sending  email:", error);
@@ -403,4 +494,7 @@ module.exports = {
   updateDoctor,
   getDoctorById,
   updateDoctorSign,
+  UpdateDoctorFees,
+  GetAllDoctorFees,
+  GetDoctorsWithAllFees,
 };

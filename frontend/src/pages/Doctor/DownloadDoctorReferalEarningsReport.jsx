@@ -1,14 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { Button } from "react-bootstrap";
 import { FaDownload } from "react-icons/fa";
 import axios from "axios";
 import AuthService from "../../services/auth.service";
 
-const DownloadDoctorReferalEarningsReport = ({ doctor, patients }) => {
+const DownloadDoctorReferalEarningsReport = ({ doctor, patients, dateRange }) => {
   const currentUser = AuthService.getCurrentUser();
-  const [hospitalData, setHospitalData] = useState(null);
 
   const fetchHospitalData = async () => {
     try {
@@ -20,18 +18,44 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients }) => {
           },
         }
       );
-      return response.data.data; // return directly
+      return response.data.data;
     } catch (error) {
       console.error("Error fetching hospital data:", error);
       return null;
     }
   };
 
+  // Filter patients by date range if provided
+  const filterPatientsByDateRange = () => {
+    if (!dateRange.startDate && !dateRange.endDate) return patients;
+    
+    const start = dateRange.startDate ? new Date(dateRange.startDate) : null;
+    const end = dateRange.endDate ? new Date(dateRange.endDate) : null;
+    
+    return patients.filter(patient => {
+      const patientDate = new Date(patient.bookingStartDate);
+      
+      if (start && end) {
+        return patientDate >= start && patientDate <= end;
+      } else if (start) {
+        return patientDate >= start;
+      } else if (end) {
+        return patientDate <= end;
+      }
+      return true;
+    });
+  };
+
   const downloadDoctorEarningsReport = async () => {
-    const hospital = await fetchHospitalData(); // get hospital data here
+    const hospital = await fetchHospitalData();
+    const filteredPatients = filterPatientsByDateRange();
+
+    if (filteredPatients.length === 0) {
+      alert("No data available for the selected date range");
+      return;
+    }
 
     const doc = new jsPDF();
-    let pageNumber = 1;
 
     // If hospital and logo exist
     if (hospital && hospital.logo) {
@@ -42,18 +66,18 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients }) => {
       hospitalLogo.onload = () => {
         doc.addImage(hospitalLogo, "PNG", 160, 15, 30, 30);
         addHospitalInfo(hospital);
-        addDoctorEarningsInfo();
-        addPatientTable();
-        addPageNumbers(doc, pageNumber);
-        doc.save(`Doctor_Referal_Earnings_Report_${doctor.id}.pdf`);
+        addDoctorEarningsInfo(filteredPatients);
+        addPatientTable(filteredPatients);
+        addPageNumbers(doc);
+        doc.save(`Doctor_Referral_Earnings_Report_${doctor.id}.pdf`);
       };
     } else {
       // Generate without logo if not available
       addHospitalInfo(hospital);
-      addDoctorEarningsInfo();
-      addPatientTable();
-      addPageNumbers(doc, pageNumber);
-      doc.save(`Doctor_Referal_Earnings_Report_${doctor.id}.pdf`);
+      addDoctorEarningsInfo(filteredPatients);
+      addPatientTable(filteredPatients);
+      addPageNumbers(doc);
+      doc.save(`Doctor_Referral_Earnings_Report_${doctor.id}.pdf`);
     }
 
     function addHospitalInfo(hospitalData) {
@@ -78,7 +102,7 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients }) => {
       }
     }
 
-    function addDoctorEarningsInfo() {
+    function addDoctorEarningsInfo(filteredPatients) {
       // Add title
       doc.setFillColor("#48bcdf");
       const titleHeight = 10;
@@ -86,54 +110,60 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients }) => {
       doc.setTextColor("#ffffff");
       doc.setFontSize(16);
       doc.text(
-        "Doctor Referal Earnings Report",
+        "Doctor Referral Earnings Report",
         doc.internal.pageSize.getWidth() / 2,
         55 + titleHeight / 2,
         { align: "center" }
       );
 
+      // Add date range info if filtered
+      if (dateRange.startDate || dateRange.endDate) {
+        doc.setTextColor("#000000");
+        doc.setFontSize(10);
+        const dateRangeText = `Date Range: ${dateRange.startDate || 'Start'} to ${dateRange.endDate || 'End'}`;
+        doc.text(dateRangeText, 20, 70);
+      }
+
       doc.setTextColor("#000000");
       doc.setFontSize(12);
 
       // Add doctor information
-      doc.text("Doctor Information:", 20, 70);
+      doc.text("Doctor Information:", 20, 75);
       doc.setFontSize(9);
       doc.text(
         `Name: Dr. ${doctor.FirstName} ${doctor.MiddleName} ${doctor.LastName}`,
         20,
-        80
+        85
       );
-      doc.text(`Email: ${doctor.email}`, 20, 85);
-      doc.text(`Phone: ${doctor.countryCode} ${doctor.phoneNo}`, 20, 90);
-      doc.text(`Registration No: ${doctor.registrationNo}`, 20, 95);
+      doc.text(`Email: ${doctor.email}`, 20, 90);
+      doc.text(`Phone: ${doctor.countryCode} ${doctor.phoneNo}`, 20, 95);
+      doc.text(`Registration No: ${doctor.registrationNo}`, 20, 100);
       doc.text(
-        `Referal Fee: ${doctor.referralFee} ${doctor.consultationCurrency}`,
+        `Referral Fee: ${doctor.referralFee} ${doctor.consultationCurrency}`,
         20,
-        100
+        105
       );
 
-      doc.line(0, 105, doc.internal.pageSize.getWidth(), 105);
+      doc.line(0, 110, doc.internal.pageSize.getWidth(), 110);
 
       // Calculate total earnings
-      const totalEarnings = patients.reduce((sum, patient) => {
+      const totalEarnings = filteredPatients.reduce((sum, patient) => {
         return sum + (parseFloat(doctor.referralFee) || 0);
       }, 0);
 
       doc.setFontSize(12);
-      doc.text("Earnings Summary:", 20, 115);
+      doc.text("Earnings Summary:", 20, 120);
       doc.setFontSize(9);
-      doc.text(`Total Referals: ${patients.length}`, 20, 125);
+      doc.text(`Total Referrals: ${filteredPatients.length}`, 20, 130);
       doc.text(
-        `Total Earnings: ${totalEarnings.toFixed(2)} ${
-          doctor.consultationCurrency
-        }`,
+        `Total Earnings: ${totalEarnings.toFixed(2)} ${doctor.consultationCurrency}`,
         20,
-        130
+        135
       );
     }
 
-    function addPatientTable() {
-      const tableData = patients.map((patient, index) => [
+    function addPatientTable(filteredPatients) {
+      const tableData = filteredPatients.map((patient, index) => [
         index + 1,
         patient.PatientName,
         patient.PatientPhone,
@@ -142,7 +172,8 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients }) => {
         `${patient.amount} ${patient.Currency}`,
         `${doctor.referralFee} ${doctor.consultationCurrency}`,
         new Date(patient.bookingStartDate).toLocaleDateString(),
-        // patient.paymentStatus,
+        new Date(patient.paymentDateTime).toLocaleDateString(),
+        patient.paymentStatus,
       ]);
 
       doc.autoTable({
@@ -154,15 +185,16 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients }) => {
             "Visit Type",
             "Reason",
             "Amount Paid",
-            "Doctor's Referal Fee",
+            "Doctor's Referral Fee",
             "Consultation Date",
-            // "Payment Status",
+            "Payment Date",
+            "Payment Status",
           ],
         ],
         body: tableData,
-        startY: 140,
+        startY: 145,
         styles: {
-          fontSize: 10,
+          fontSize: 8,
           cellPadding: 2,
         },
         headStyles: {
@@ -176,7 +208,7 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients }) => {
       });
     }
 
-    function addPageNumbers(doc, pageNumber) {
+    function addPageNumbers(doc) {
       const totalPages = doc.internal.getNumberOfPages();
 
       for (let i = 1; i <= totalPages; i++) {
@@ -211,7 +243,7 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients }) => {
 
   return (
     <button
-      title="Download Referal Earnings Report"
+      title="Download Referral Earnings Report"
       style={{
         fontSize: "12px",
         padding: "4px 5px",

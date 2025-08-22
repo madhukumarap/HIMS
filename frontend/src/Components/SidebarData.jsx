@@ -341,11 +341,6 @@ const SidebarData = [
         icon: <IoIcons.IoIosPaper />,
       },
       {
-        title: "ReferalDoctorsList",
-        path: "/referaldoctorsList",
-        icon: <IoIcons.IoIosPaper />,
-      },
-      {
         title: "YourEarnings",
         path: "/showAllEarningDoctor",
         icon: <IoIcons.IoIosPaper />,

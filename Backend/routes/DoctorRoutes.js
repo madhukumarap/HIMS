@@ -28,6 +28,12 @@ router.post(
   DoctorController.SaveDoctor
 );
 
+router.post("/updateDoctorFees/:id", DoctorController.UpdateDoctorFees);
+
+router.get("/getDoctorFees/:id", DoctorController.GetAllDoctorFees);
+
+router.get("/getDoctorsWithFees", DoctorController.GetDoctorsWithAllFees);
+
 // router.get("/getDoctorData", DoctorController.getDoctorData);
 
 router.delete("/deleteDoctor/:id", DoctorController.deleteDoctor);

@@ -10,6 +10,8 @@ import Translation from "../translations/PaitentPrescriptionForm.json";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { fr, enIN } from "date-fns/locale";
+import { format as formatDate, isDate } from "date-fns";
 
 function PrescriptionForm() {
   const { id } = useParams();
@@ -25,6 +27,7 @@ function PrescriptionForm() {
   }
 
   const { t } = useTranslation();
+  const locales = { enIN, fr };
 
   useEffect(() => {
     const initializei18n = () => {
@@ -46,13 +49,29 @@ function PrescriptionForm() {
         fallbackLng: "en",
         interpolation: {
           escapeValue: false,
+          format: (value, format, lng) => {
+            if (isDate(value)) {
+              const locale = locales[lng];
+              return formatDate(value, format, { locale });
+            }
+          },
         },
       });
     };
 
+    // Initialize only once when component mounts
     initializei18n();
-    const intervalId = setInterval(initializei18n, 1000);
-    return () => clearInterval(intervalId);
+
+    // Remove the setInterval completely
+    // No need to keep re-initializing i18n
+  }, []); // Empty dependency array ensures this runs only once
+
+  useEffect(() => {
+    const reloadCount = localStorage.getItem("reloadCount2");
+    if (reloadCount !== "1") {
+      localStorage.setItem("reloadCount2", "1");
+      window.location.reload();
+    }
   }, []);
 
   const [firstName, setFirstName] = useState("");
@@ -211,6 +230,7 @@ function PrescriptionForm() {
   useEffect(() => {
     fetchMedicineData();
   }, []);
+
   const [InventoryitemNameID, SetInventoryitemNameID] = useState(0);
   const handleMedicineChange = (selectedOption) => {
     if (selectedOption) {
@@ -234,7 +254,9 @@ function PrescriptionForm() {
     const fetchPatient = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/api/getPatientDoctorDatabyBookingID/${id}`,
+          `${
+            import.meta.env.VITE_API_URL
+          }/api/getPatientDoctorDatabyBookingID/${id}`,
           {
             headers: {
               Authorization: `${currentUser?.Token}`,
@@ -513,13 +535,6 @@ function PrescriptionForm() {
 
     setDosageAmount(inputValue);
   };
-
-  localStorage.setItem("reloadCount1", "0");
-  const reloadCount = localStorage.getItem("reloadCount2");
-  if (reloadCount !== "1") {
-    window.location.reload();
-    localStorage.setItem("reloadCount2", "1");
-  }
 
   const customStyles = {};
   // Helper function to calculate the total

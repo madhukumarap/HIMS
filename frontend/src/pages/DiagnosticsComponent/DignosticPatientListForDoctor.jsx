@@ -241,7 +241,6 @@ function DiagnosticsBooking() {
   }, [currency, formData.testFees]);
 
   const { t } = useTranslation();
-
   const locales = { enIN, fr };
 
   useEffect(() => {
@@ -274,10 +273,12 @@ function DiagnosticsBooking() {
       });
     };
 
+    // Initialize only once when component mounts
     initializei18n();
-    const intervalId = setInterval(initializei18n, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
+
+    // Remove the setInterval completely
+    // No need to keep re-initializing i18n
+  }, []); // Empty dependency array ensures this runs only once
 
   const formatDateInSelectedLanguage = (date) => {
     const selectedLanguage = i18n.language || "en";
@@ -1806,7 +1807,6 @@ function DiagnosticsBooking() {
         selectedReportData={selectedReportData}
       />
       {testBookingID && <DownloadPDFButton testBookingID={testBookingID} />}
-
       <Modal
         style={{ marginTop: "20px" }}
         centered
@@ -1895,14 +1895,12 @@ function DiagnosticsBooking() {
           )}
         </Modal.Body>
       </Modal>
-
       {selectedViewPackageID && (
         <DiagnosticPackageView
           selectedPackageID={selectedViewPackageID}
           handleClose={() => setSelectedViewPackageID(null)}
         />
       )}
-      
       <Modal
         style={{ marginTop: "20px" }}
         centered

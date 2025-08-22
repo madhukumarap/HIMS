@@ -32,7 +32,7 @@ function PrescriptionDetails(props) {
 
   const locales = { enIN, fr };
 
-  useEffect(() => {
+useEffect(() => {
     const initializei18n = () => {
       const resources = {
         en: {
@@ -62,16 +62,21 @@ function PrescriptionDetails(props) {
       });
     };
 
+    // Initialize only once when component mounts
     initializei18n();
-    const intervalId = setInterval(initializei18n, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
+
+    // Remove the setInterval completely
+    // No need to keep re-initializing i18n
+  }, []); // Empty dependency array ensures this runs only once
+
   const formatDateInSelectedLanguage = (date) => {
     const selectedLanguage = i18n.language || "en";
     const format = "PPPP";
     const locale = locales[selectedLanguage];
     return formatDate(date, format, { locale });
   };
+
+
   const [showSocialLifestyle, setShowSocialLifestyle] = useState(false);
   const [showClinicalDiagnosis, setShowClinicalDiagnosis] = useState(false);
   const [showAllergies, setShowAllergies] = useState(false);

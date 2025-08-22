@@ -110,7 +110,9 @@ const SubMenu = ({ item, isActive, toggleSidebar, toggleSubMenu }) => {
   useEffect(() => {
     if (extractedPart !== "healthcare") {
       fetch(
-        `${import.meta.env.VITE_API_URL}/api/get-hospitalsMain/${extractedPart}`,
+        `${
+          import.meta.env.VITE_API_URL
+        }/api/get-hospitalsMain/${extractedPart}`,
         {
           headers: {
             Authorization: `${currentUser?.Token}`,
@@ -191,6 +193,9 @@ const SubMenu = ({ item, isActive, toggleSidebar, toggleSubMenu }) => {
   );
   const userReceptionist = currentUser?.roles.includes("ROLE_RECEPTIONIST");
   const userOTTechnician = currentUser?.roles.includes("ROLE_OTTECHNICIAN");
+
+  const storedLanguage = localStorage.getItem("SelectedLanguage");
+  const defaultLanguage = storedLanguage || "en";
 
   const filteredSubNav = item.subNav.filter((subItem) => {
     if (userRoleSUPERADMIN) {
@@ -321,7 +326,9 @@ const SubMenu = ({ item, isActive, toggleSidebar, toggleSubMenu }) => {
         subItem.title === "PatientLists" ||
         // subItem.title === t("PatientList") ||
         subItem.title === "PatientRegistration" ||
-        subItem.title === "DoctorsAppointment"
+        subItem.title === "DoctorsAppointment" ||
+        subItem.title === "Doctors Managment" ||
+        subItem.title === "YourEarnings"
       );
     } else if (userOTTechnician) {
       return true;
@@ -404,9 +411,6 @@ const SubMenu = ({ item, isActive, toggleSidebar, toggleSubMenu }) => {
       toggleSidebar();
     }
   };
-
-  const storedLanguage = localStorage.getItem("SelectedLanguage");
-  const defaultLanguage = storedLanguage || "en";
 
   return (
     <>

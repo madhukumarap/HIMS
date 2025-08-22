@@ -34,6 +34,7 @@ import { HospitalContext } from "../../context/HospitalDataProvider";
 import { CurrencyContext } from "../../context/CurrencyProvider";
 
 function DiagnosticsBooking() {
+  
   const navigate = useNavigate();
   const currentUser = AuthService.getCurrentUser();
 

@@ -167,7 +167,6 @@ import PatientRegistrationFee from "./pages/PatientRegistrationFee";
 import { HospitalContext } from "./context/HospitalDataProvider";
 import { CurrencyContext } from "./context/CurrencyProvider";
 import ShowDoctorList from "./pages/Doctor/ShowDoctorList";
-import ShowReferalList from "./pages/Doctor/ShowReferalList";
 import HospitalAnalytics from "./pages/Reports/HospitalAnalytics";
 import ShowEarningsDoctors from "./pages/Doctor/ShowEarningsDoctors";
 import AllPatientList from  "./pages/AllPatientList";
@@ -1791,10 +1790,6 @@ function App() {
                   <Route
                     path={`/${hospitals[0]?.name}/doctorsList`}
                     element={<ShowDoctorList />}
-                  />
-                  <Route
-                    path={`/${hospitals[0]?.name}/referaldoctorsList`}
-                    element={<ShowReferalList />}
                   />
                   <Route
                     path={`/${hospitals[0]?.name}/showAllEarningDoctor`}

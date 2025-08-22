@@ -100,8 +100,8 @@
     "PatientRegistrationFee": "Patient Registration Fee",
     "DoctorsList": "Doctors List",
     "Doctors Managment": "Doctors Managment",
-    "Hospital Earnings":"Hospital Earnings"
-
+    "Hospital Earnings": "Hospital Earnings",
+    "YourEarnings": "Your Earnings"
   },
   "fr": {
     "Hospital-Rooms": "Chambres d'hôpital",
@@ -203,6 +203,7 @@
     "PatientRegistrationFee": "Frais d'inscription des patients",
     "DoctorsList": "Doctors List",
     "Doctors Managment": "Doctors Managment",
-    "ReferalDoctorsList": "Referal Doctors List"
+    "ReferalDoctorsList": "Referal Doctors List",
+    "YourEarnings": "Your Earnings"
   }
 }

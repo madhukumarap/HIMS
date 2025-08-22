@@ -131,7 +131,8 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }) => {
         item.title === "OperationTheater" ||
         item.title === "Pathology" ||
         item.title === "Packages" ||
-        item.title === "OutPatient"
+        item.title === "OutPatient" ||
+        item.title === "Doctors Managment"
       );
     } else if (userOTTechnician) {
       return (

@@ -9,6 +9,7 @@ import {
   Col,
   Modal,
   Button,
+  Form,
 } from "react-bootstrap";
 import {
   FaRegEye,
@@ -24,6 +25,7 @@ const ShowDoctorList = () => {
   const [doctorList, setDoctorList] = useState([]);
   const [patients, setPatients] = useState([]);
   const [showPatientModal, setShowPatientModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedDoctorId, setSelectedDoctorId] = useState(null);
   const [selectedDoctorName, setSelectedDoctorName] = useState("");
   const [selectedDoctorFee, setSelectedDoctorFee] = useState(0);
@@ -31,6 +33,11 @@ const ShowDoctorList = () => {
   const [doctorPatients, setDoctorPatients] = useState([]);
   const [totalConsultationFees, setTotalConsultationFees] = useState(0);
   const [doctorEarnings, setDoctorEarnings] = useState(0);
+
+  // Edit form state
+  const [editConsultationFee, setEditConsultationFee] = useState("");
+  const [editReferralFee, setEditReferralFee] = useState("");
+  const [editingDoctor, setEditingDoctor] = useState(null);
 
   useEffect(() => {
     fetchDoctorList();
@@ -120,6 +127,58 @@ const ShowDoctorList = () => {
     setDoctorEarnings(0);
   };
 
+  const handleEditDoctor = (doctor) => {
+    setEditingDoctor(doctor);
+    setEditConsultationFee(doctor.consultationFee);
+    setEditReferralFee(doctor.referralFee);
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingDoctor(null);
+    setEditConsultationFee("");
+    setEditReferralFee("");
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_URL}/api/updateDoctorFees/${
+          editingDoctor.id
+        }`,
+        {
+          consultationFee: editConsultationFee,
+          referralFee: editReferralFee,
+        },
+        {
+          headers: {
+            Authorization: `${currentUser?.Token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Update the local state
+        const updatedDoctors = doctorList.map((doctor) =>
+          doctor.id === editingDoctor.id
+            ? {
+                ...doctor,
+                consultationFee: editConsultationFee,
+                referralFee: editReferralFee,
+              }
+            : doctor
+        );
+        setDoctorList(updatedDoctors);
+        handleCloseEditModal();
+        alert("Doctor fees updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error updating doctor fees:", error);
+      alert("Error updating doctor fees. Please try again.");
+    }
+  };
+
   return (
     <div style={{ padding: "2rem" }}>
       <header
@@ -153,6 +212,7 @@ const ShowDoctorList = () => {
                       <th style={{ whiteSpace: "nowrap" }}>Registration No</th>
                       <th style={{ whiteSpace: "nowrap" }}>Address</th>
                       <th style={{ whiteSpace: "nowrap" }}>Consultation Fee</th>
+                      <th style={{ whiteSpace: "nowrap" }}>Referal Fee</th>
                       <th style={{ whiteSpace: "nowrap" }}>
                         Registration Date
                       </th>
@@ -181,6 +241,9 @@ const ShowDoctorList = () => {
                           {doctor.consultationFee} {doctor.consultationCurrency}
                         </td>
                         <td style={{ whiteSpace: "nowrap" }}>
+                          {doctor.referralFee} {doctor.consultationCurrency}
+                        </td>
+                        <td style={{ whiteSpace: "nowrap" }}>
                           {formatDate(doctor.createdAt)}
                         </td>
                         <td>
@@ -194,7 +257,7 @@ const ShowDoctorList = () => {
                                 backgroundColor: "#1111",
                                 color: "black",
                               }}
-                              className="btn btn-secondary"
+                              className="btn btn-secondary mr-1"
                               onClick={() =>
                                 handleViewPatients(
                                   doctor.id,
@@ -207,7 +270,21 @@ const ShowDoctorList = () => {
                               <FaRegEye />
                             </button>
 
-                            {/* FIX: directly render the component */}
+                            <button
+                              title="Edit Doctor Fees"
+                              style={{
+                                fontSize: "12px",
+                                padding: "4px 5px",
+                                marginTop: "0px",
+                                backgroundColor: "#1111",
+                                color: "black",
+                              }}
+                              className="btn btn-warning mr-1"
+                              onClick={() => handleEditDoctor(doctor)}
+                            >
+                              <FaPencilAlt />
+                            </button>
+
                             <DownloadDoctorEarningsReport
                               doctor={{
                                 id: doctor.id,
@@ -340,6 +417,67 @@ const ShowDoctorList = () => {
               </Button>
             </div>
           </div>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Edit Doctor Fees Modal */}
+      <Modal
+        backdrop="static"
+        style={{ marginTop: "20px" }}
+        centered
+        show={showEditModal}
+        onHide={handleCloseEditModal}
+      >
+        <Modal.Header
+          style={{
+            backgroundColor: "#f8f9fa",
+            borderBottom: "1px solid #dee2e6",
+          }}
+        >
+          <Modal.Title style={{ fontSize: "18px", fontWeight: "bold" }}>
+            Edit Doctor Fees - Dr. {editingDoctor?.FirstName}{" "}
+            {editingDoctor?.LastName}
+          </Modal.Title>
+          <Button
+            variant="light"
+            onClick={handleCloseEditModal}
+            style={{ padding: "0.25rem 0.5rem" }}
+          >
+            <FaTimes />
+          </Button>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Consultation Fee</Form.Label>
+              <Form.Control
+                type="number"
+                value={editConsultationFee}
+                onChange={(e) => setEditConsultationFee(e.target.value)}
+                placeholder="Enter consultation fee"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Referral Fee</Form.Label>
+              <Form.Control
+                type="number"
+                value={editReferralFee}
+                onChange={(e) => setEditReferralFee(e.target.value)}
+                placeholder="Enter referral fee"
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer
+          style={{ backgroundColor: "#f8f9fa", borderTop: "1px solid #dee2e6" }}
+        >
+          <Button variant="secondary" onClick={handleCloseEditModal}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSaveEdit}>
+            Save Changes
+          </Button>
         </Modal.Footer>
       </Modal>
 

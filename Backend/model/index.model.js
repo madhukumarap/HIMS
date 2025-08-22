@@ -46,6 +46,7 @@ db.user = require("../model/user.model.js")(sequelize, Sequelize);
 db.pharmacist = require("./Pharmacist.js")(sequelize, DataTypes);
 db.nurse = require("./Nurse.js")(sequelize, DataTypes);
 db.doctor = require("./Doctor.js")(sequelize, DataTypes);
+db.DoctorFee  = require("./DoctorsFee.js")(sequelize, DataTypes);
 db.CompanyRegistration = require("./CompanyRegistration")(sequelize, DataTypes);
 
 db.PathologyTestManage = require("./PathologyTestManage")(sequelize, DataTypes);

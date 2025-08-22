@@ -1,4 +1,5 @@
 const db = require("../model/index.model.js");
+const { QueryTypes } = require("sequelize");
 const Doctor = db.doctor;
 const Test = db.DiagnosticsBookingModel;
 const { checkUser } = require("../middleware/checkUser.js");
@@ -24,6 +25,7 @@ const SaveDoctor = async (req, res) => {
   const connectionList = await getConnectionList(database);
   const db = connectionList[database];
   const Doctor = db.doctor;
+  const DoctorFee = db.DoctorFee;
   const User = db.user;
   const Test = db.DiagnosticsBookingModel;
 
@@ -85,7 +87,6 @@ const SaveDoctor = async (req, res) => {
       imageBuffer = fs.readFileSync(req.file.path);
       imageBinaryData = Buffer.from(imageBuffer).toString("base64");
     }
-    console.log("signatureImage: " + JSON.stringify(signatureImage));
     //return;
     // Call the signup API to create a new user
     const HospitalName = await checkUser(req, res);
@@ -138,13 +139,41 @@ const SaveDoctor = async (req, res) => {
       address: address,
       username: username,
       signatureImage: imageBinaryData,
-      consultationFee,
+      consultationFee: consultationFee ? consultationFee : 0,
       consultationCurrency,
       doctorsType,
       referralFee : referralFee.length ==0 ? 0 : referralFee,
     });
 
+
     console.log("doctorrrrrrrrrrrrrrrrrrrrrrr",doctor);
+   const dataFee = await db.sequelize.query(
+  `
+    INSERT INTO doctor_fees 
+    (doctor_id, consultationFee, consultationCurrency, referralFee, createdAt, updatedAt)
+    VALUES (?, ?, ?, ?, NOW(), NOW())
+  `,
+  {
+    replacements: [
+      doctor.id,                                 // doctor_id
+      consultationFee ? consultationFee : 0,     // consultationFee
+      consultationCurrency || "INR",            // consultationCurrency
+      referralFee.length === 0 ? 0 : referralFee, // referralFee
+    ],
+    type: QueryTypes.INSERT,
+  }
+);
+console.log("dataFeedataFeedataFee",dataFee)
+//     const doctorFee = await DoctorFee.create({
+//   doctor_id: doctor.id,
+//   consultationFee: consultationFee ? consultationFee : 0,
+//   consultationCurrency: consultationCurrency || "INR",
+//   referralFee: referralFee && referralFee.length === 0 ? 0 : referralFee,
+// });
+
+// console.log("Doctor Fee Created:", doctorFee.dataValues);
+
+    // console.log(doctorFee, "doctorFeeeeeeeeeeeeeeeeeeeeee")
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log("Error sending  email:", error);

@@ -170,6 +170,7 @@ import ShowDoctorList from "./pages/Doctor/ShowDoctorList";
 import ShowReferalList from "./pages/Doctor/ShowReferalList";
 import HospitalAnalytics from "./pages/Reports/HospitalAnalytics";
 import ShowEarningsDoctors from "./pages/Doctor/ShowEarningsDoctors";
+import AllPatientList from  "./pages/AllPatientList";
 const Container = styled.div``;
 
 const Content = styled.div`
@@ -1798,6 +1799,10 @@ function App() {
                   <Route
                     path={`/${hospitals[0]?.name}/showAllEarningDoctor`}
                     element={<ShowEarningsDoctors />}
+                  />
+                  <Route
+                    path={`/${hospitals[0]?.name}/OverAllPatientList`}
+                    element={<AllPatientList />}
                   />
                 </>
               )}

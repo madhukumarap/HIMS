@@ -96,6 +96,7 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }) => {
         item.title === "ReferalDoctorsList" ||
         item.title === "DoctorsList" ||
         item.title === "Hospital Earnings" ||
+        item.title === "All Patinent List" ||
         item.title === "Doctors Managment" ||
         item.title === "HospitalConfiguration" ||
         item.title === "BackUpRestore" ||

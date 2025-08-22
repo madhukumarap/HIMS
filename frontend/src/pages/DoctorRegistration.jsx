@@ -767,7 +767,7 @@ const DoctorRegistration = () => {
                         id="referralfee"
                         value={referralFee}
                         onChange={handlereferralFee}
-                        placeholder={t("Ex: 100INR or 10%")}
+                        placeholder={t("Ex: 100 INR or 10 %")}
                         required
                       />
                       
@@ -789,7 +789,7 @@ const DoctorRegistration = () => {
                     className="col-sm-3 col-form-label"
                   >
                     <strong>{t("Referral Fee")}</strong>
-                    {/* <span style={{ color: "red", marginLeft: "5px" }}>*</span> */}
+                    <span style={{ color: "red", marginLeft: "5px" }}>*</span>
                   </label>
                   <div className="col-sm-3">
                     <div className="input-group">
@@ -799,9 +799,9 @@ const DoctorRegistration = () => {
                         style={{ fontSize: "12px" }}
                         id="referralfee"
                         value={referralFee}
-                        // onChange={handlereferralFee}
-                        placeholder={t("Referral Fee")}
-                        // required
+                        onChange={handlereferralFee}
+                        placeholder={t("Ex: 100 INR or 10 %")}
+                        required
                       />
                       
                     </div>

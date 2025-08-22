@@ -228,36 +228,97 @@ router.put("/updateHospital/:id", upload.single("logo"), async (req, res) => {
   }
 });
 
+// router.get("/getLastCreatedHospital", async (req, res) => {
+//   const database = req.headers.userDatabase;
+//   const connectionList = await getConnectionList(database);
+//   const db = connectionList[database];
+//   const HospitalModel = db.Hospital;
+
+//   // console.log("res=", res.data);
+//   try {
+//     const lastCreatedHospital = await HospitalModel.findOne({
+//       order: [["createdAt", "DESC"]],
+//       limit: 1,
+//     });
+//     console.log("lastCreatedHospital=", lastCreatedHospital);
+//     if (!lastCreatedHospital) {
+//       return res
+//         .status(404)
+//         .json({ success: false, error: "No hospitals found" });
+//     }
+//     //
+
+//     const imagePath = lastCreatedHospital.logo;
+//     //
+//     console.log("imagePath=", imagePath);
+
+//     //
+//     let imageBase64;
+
+//     const imageBuffer = fs.readFileSync(imagePath);
+
+//     imageBase64 = imageBuffer.toString("base64");
+
+//     // Convert the hospital logo image from BLOB to base64
+//     const hospitalWithImage = {
+//       id: lastCreatedHospital.id,
+//       hospitalName: lastCreatedHospital.hospitalName,
+//       address: lastCreatedHospital.address,
+//       city: lastCreatedHospital.city,
+//       pincode: lastCreatedHospital.pincode,
+//       registrationNo: lastCreatedHospital.registrationNo,
+//       email: lastCreatedHospital.email,
+//       phone: lastCreatedHospital.phone,
+//       countryCode: lastCreatedHospital.countryCode,
+//       landline: lastCreatedHospital.landline,
+//       logo: imageBase64,
+//     };
+
+//     res.json({ success: true, data: hospitalWithImage });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, error: "Server error" });
+//   }
+// });
 router.get("/getLastCreatedHospital", async (req, res) => {
   const database = req.headers.userDatabase;
   const connectionList = await getConnectionList(database);
   const db = connectionList[database];
   const HospitalModel = db.Hospital;
 
-  // console.log("res=", res.data);
   try {
     const lastCreatedHospital = await HospitalModel.findOne({
       order: [["createdAt", "DESC"]],
       limit: 1,
     });
+    
     console.log("lastCreatedHospital=", lastCreatedHospital);
+    
     if (!lastCreatedHospital) {
       return res
         .status(404)
         .json({ success: false, error: "No hospitals found" });
     }
-    //
 
     const imagePath = lastCreatedHospital.logo;
-    //
     console.log("imagePath=", imagePath);
 
-    //
-    let imageBase64;
+    let logoData = null;
 
-    const imageBuffer = fs.readFileSync(imagePath);
-
-    imageBase64 = imageBuffer.toString("base64");
+    // If logo path exists and is valid, read the file
+    if (imagePath && typeof imagePath === 'string' && imagePath.trim() !== '') {
+      try {
+        const imageBuffer = fs.readFileSync(imagePath);
+        logoData = imageBuffer.toString("base64");
+      } catch (error) {
+        console.error("Error reading logo file:", error);
+        // Fall back to default URL if file reading fails
+        logoData = "https://silfratech.com/wp-content/uploads/2024/10/cropped-cropped-Screenshot_2024-10-04_131150_-_Copy-removebg-preview.png";
+      }
+    } else {
+      // Use default logo URL when no logo exists
+      logoData = "https://silfratech.com/wp-content/uploads/2024/10/cropped-cropped-Screenshot_2024-10-04_131150_-_Copy-removebg-preview.png";
+    }
 
     // Convert the hospital logo image from BLOB to base64
     const hospitalWithImage = {
@@ -271,7 +332,13 @@ router.get("/getLastCreatedHospital", async (req, res) => {
       phone: lastCreatedHospital.phone,
       countryCode: lastCreatedHospital.countryCode,
       landline: lastCreatedHospital.landline,
-      logo: imageBase64,
+      logo: logoData,
+      baseCurrency: lastCreatedHospital.baseCurrency,
+      baseCurrencyStatus: lastCreatedHospital.baseCurrencyStatus,
+      patientRegistrationFee: lastCreatedHospital.patientRegistrationFee,
+      patientRegistrationCurrency: lastCreatedHospital.patientRegistrationCurrency,
+      createdAt: lastCreatedHospital.createdAt,
+      updatedAt: lastCreatedHospital.updatedAt
     };
 
     res.json({ success: true, data: hospitalWithImage });
@@ -280,7 +347,6 @@ router.get("/getLastCreatedHospital", async (req, res) => {
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
-
 router.get("/getHospital/:id", async (req, res) => {
   const database = req.headers.userDatabase;
   const connectionList = await getConnectionList(database);

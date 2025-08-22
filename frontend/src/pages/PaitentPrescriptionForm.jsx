@@ -66,13 +66,14 @@ function PrescriptionForm() {
     // No need to keep re-initializing i18n
   }, []); // Empty dependency array ensures this runs only once
 
-  useEffect(() => {
-    const reloadCount = localStorage.getItem("reloadCount2");
-    if (reloadCount !== "1") {
-      localStorage.setItem("reloadCount2", "1");
-      window.location.reload();
-    }
-  }, []);
+useEffect(() => {
+  const hasReloaded = sessionStorage.getItem("hasReloaded");
+  if (!hasReloaded) {
+    sessionStorage.setItem("hasReloaded", "true");
+    window.location.replace(window.location.href);
+  }
+}, []);
+
 
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState(" ");
@@ -343,7 +344,16 @@ function PrescriptionForm() {
       DoctorEmail,
       doctor_Id,
     };
-
+    const newTablet = {
+        InventoryitemNameID,
+        medicineName: medicineName,
+        quantity: quantity,
+        dosageAmount: dosageAmount,
+        startDate: startDate,
+        food: food,
+        weekly: weekly,
+        timing: timing,
+      };
     const formdata = new FormData();
     formdata.append("image", image);
     const prescriptionData = {
@@ -367,7 +377,7 @@ function PrescriptionForm() {
     };
 
     formdata.append("prescriptionData", JSON.stringify(prescriptionData));
-
+    console.log("kjaskjklasjdlkasjdklajsd",tablets)
     if (tablets.length > 0) {
       try {
         await axios.post(
@@ -444,11 +454,11 @@ function PrescriptionForm() {
 
     if (
       medicineName !== "" &&
-      quantity > 0 &&
-      dosageAmount !== "" &&
-      startDate !== "" &&
-      food !== "" &&
-      weekly !== ""
+      // quantity > 0 &&
+      // dosageAmount !== "" &&
+      startDate !== "" 
+      // food !== "" &&
+      // weekly !== ""
     ) {
       const newTablet = {
         InventoryitemNameID,
@@ -460,7 +470,7 @@ function PrescriptionForm() {
         weekly: weekly,
         timing: timing,
       };
-
+      console.log(newTablet,"newTablet")
       setTablets([...tablets, newTablet]);
 
       // Reset the tablet input fields

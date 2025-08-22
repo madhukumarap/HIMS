@@ -300,6 +300,21 @@ const DoctorRegistration = () => {
         style: { fontSize: "13px" },
       });
       console.log(response.data);
+      setFirstName("");
+    setMiddleName("");
+    setLastName("");
+    setRegistrationNo("");
+    setPhoneNo("");
+    setUsername("");
+    setPassword("");
+    setConfirmPassword("");
+    setEmail("");
+    setAddress("");
+    setErrors({});
+    setCountryCode("");
+    setDoctorsType("");
+    setReferralFee("");
+    setConsultationFee("");
     } catch (error) {
       console.error(error);
 
@@ -318,20 +333,7 @@ const DoctorRegistration = () => {
       }
     }
     //  return;
-    setFirstName("");
-    setMiddleName("");
-    setLastName("");
-    setRegistrationNo("");
-    setPhoneNo("");
-    setUsername("");
-    setPassword("");
-    setConfirmPassword("");
-    setEmail("");
-    setAddress("");
-    setErrors({});
-    setCountryCode("");
-    setDoctorsType("");
-    setReferralFee("");
+    
   };
 
   localStorage.setItem("reloadCount1", "0");
@@ -368,13 +370,6 @@ const DoctorRegistration = () => {
     fontSize: "16px" /* Adjust the font size for <h1> */,
   };
 
-  const h2Style = {
-    fontSize: "14px" /* Adjust the font size for <h2> */,
-  };
-
-  const h3Style = {
-    fontSize: "13px" /* Adjust the font size for <h3> */,
-  };
 
   return (
     <>
@@ -676,6 +671,40 @@ const DoctorRegistration = () => {
                       </>
                     )
                   }
+                  {
+                    doctorsType === "exernal" && (
+                      
+                      <>
+                        <label
+                          htmlFor="consultationFee"
+                          className="col-sm-3 col-form-label"
+                        >
+                          <strong>{t("Consultation Fee")}</strong>
+                          <span style={{ color: "red", marginLeft: "5px" }}>*</span>
+                        </label>
+                        <div className="col-sm-3">
+                          <div className="input-group">
+                            <input
+                              type= "text" 
+                              className="form-control"
+                              style={{ fontSize: "12px" }}
+                              id="consultationFee"
+                              value={consultationFee}
+                              onChange={handleconsultationFee}
+                              placeholder={t("Consultation Fee")}
+                              required
+                            />
+
+                          </div>
+                          {errors.consultationFee && (
+                            <span className="text-danger">
+                              {errors.consultationFee}
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    )
+                  }
                   {/* <div className="form-group row"> */}
                   {/* <label
                     htmlFor="signature"
@@ -738,14 +767,14 @@ const DoctorRegistration = () => {
                         id="referralfee"
                         value={referralFee}
                         onChange={handlereferralFee}
-                        placeholder={t("Referral Fee")}
+                        placeholder={t("Ex: 100INR or 10%")}
                         required
                       />
                       
                     </div>
-                    {errors.confirmPassword && (
+                    {errors.referralFee && (
                       <span className="text-danger">
-                        {errors.confirmPassword}
+                        {errors.referralFee}
                       </span>
                     )}
                   </div>
@@ -770,17 +799,13 @@ const DoctorRegistration = () => {
                         style={{ fontSize: "12px" }}
                         id="referralfee"
                         value={referralFee}
-                        onChange={handlereferralFee}
+                        // onChange={handlereferralFee}
                         placeholder={t("Referral Fee")}
-                        required
+                        // required
                       />
                       
                     </div>
-                    {errors.confirmPassword && (
-                      <span className="text-danger">
-                        {errors.confirmPassword}
-                      </span>
-                    )}
+                    
                   </div>
                       </>
                     )

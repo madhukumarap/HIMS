@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
+import jsPDF from "jspdf";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Table, Pagination } from "react-bootstrap";
+import { Table, Pagination, Modal, Button } from "react-bootstrap";
 import axios from "axios";
 import Datepickrange from "./DateRangeCalender";
 import { toast } from "react-toastify";
@@ -43,6 +44,12 @@ function AllPatientList() {
   );
   const [isMobile, setIsMobile] = useState(false);
   
+  // New state for test reports
+  const [testStatuses, setTestStatuses] = useState([]);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -63,42 +70,44 @@ function AllPatientList() {
   // Date formatting
   const locales = { enIN, fr };
   
-  const formatDateInSelectedLanguage = (date) => {
+  const formatDateInSelectedLanguage = useCallback((date) => {
+    if (!date) return "N/A";
     const selectedLanguage = i18n.language || "en";
     const locale = locales[selectedLanguage];
-    return formatDate(date, "PPPP", { locale });
-  };
+    return formatDate(new Date(date), "PPPP", { locale });
+  }, []);
 
-  // Initialize i18n
+  // Initialize i18n - Fixed to run only once
   useEffect(() => {
     const initializei18n = () => {
-      const resources = {
-        en: { translation: Translation["en"] },
-        fr: { translation: Translation["fr"] },
-      };
+      // Only initialize if not already initialized
+      if (!i18n.isInitialized) {
+        const resources = {
+          en: { translation: Translation["en"] },
+          fr: { translation: Translation["fr"] },
+        };
 
-      const storedLanguage = localStorage.getItem("SelectedLanguage");
-      const defaultLanguage = storedLanguage || "en";
+        const storedLanguage = localStorage.getItem("SelectedLanguage");
+        const defaultLanguage = storedLanguage || "en";
 
-      i18n.use(initReactI18next).init({
-        resources,
-        lng: defaultLanguage,
-        fallbackLng: "en",
-        interpolation: {
-          escapeValue: false,
-          format: (value, format, lng) => {
-            if (isDate(value)) {
-              const locale = locales[lng];
-              return formatDate(value, format, { locale });
-            }
+        i18n.use(initReactI18next).init({
+          resources,
+          lng: defaultLanguage,
+          fallbackLng: "en",
+          interpolation: {
+            escapeValue: false,
+            format: (value, format, lng) => {
+              if (isDate(value)) {
+                const locale = locales[lng];
+                return formatDate(value, format, { locale });
+              }
+            },
           },
-        },
-      });
+        });
+      }
     };
 
     initializei18n();
-    const intervalId = setInterval(initializei18n, 500);
-    return () => clearInterval(intervalId);
   }, []);
 
   // Responsive design
@@ -170,8 +179,43 @@ function AllPatientList() {
     }
   };
 
+  // Fetch test statuses based on booking type
+  const fetchTestStatuses = async (bookingId, type) => {
+    try {
+      let endpoint = "";
+      
+      if (type === "pathology") {
+        endpoint = `${import.meta.env.VITE_API_URL}/api/PathologyTestStatuses/${bookingId}`;
+      } else if (type === "diagnostics") {
+        endpoint = `${import.meta.env.VITE_API_URL}/api/DiagnosticTestStatuses/${bookingId}`;
+      } else {
+        // Appointments don't have test reports
+        toast.info(t("NoTestReportsAvailableForAppointments"));
+        return [];
+      }
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          Authorization: `${currentUser?.Token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching test statuses:", error);
+      toast.error(t("ErrorFetchingTestReports"));
+      return [];
+    }
+  };
+
   // Combine and format data from all APIs
   useEffect(() => {
+    console.log([...bookings,...diagnosticsBookings,...appointments],"sdfghjkl;")
     const combined = [
       ...bookings.map(booking => ({
         id: booking.id,
@@ -225,7 +269,7 @@ function AllPatientList() {
         selectedTests: booking.selectedTests
       }))
     ];
-    
+    console.log(combined,"jhkjsakjhdskajh")
     setCombinedData(combined);
   }, [bookings, appointments, diagnosticsBookings]);
 
@@ -253,7 +297,7 @@ function AllPatientList() {
       (!startDate || itemDate >= startDate) &&
       (!endDate || itemDate <= endDate);
 
-    return isNameMatch && isDateMatch;
+    return isNameMatch || isDateMatch;
   });
 
   // Pagination logic
@@ -265,26 +309,244 @@ function AllPatientList() {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   // Generate pagination items
-  let paginationItems = [];
-  const maxVisiblePages = 5;
-  let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+  const renderPaginationItems = () => {
+    let items = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // First page
+    if (startPage > 1) {
+      items.push(
+        <Pagination.Item key={1} onClick={() => paginate(1)}>
+          1
+        </Pagination.Item>
+      );
+      if (startPage > 2) {
+        items.push(<Pagination.Ellipsis key="ellipsis-start" />);
+      }
+    }
+    
+    // Page numbers
+    for (let number = startPage; number <= endPage; number++) {
+      items.push(
+        <Pagination.Item
+          key={number}
+          active={number === currentPage}
+          onClick={() => paginate(number)}
+        >
+          {number}
+        </Pagination.Item>
+      );
+    }
+    
+    // Last page
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        items.push(<Pagination.Ellipsis key="ellipsis-end" />);
+      }
+      items.push(
+        <Pagination.Item key={totalPages} onClick={() => paginate(totalPages)}>
+          {totalPages}
+        </Pagination.Item>
+      );
+    }
+    
+    return items;
+  };
+
+  // View test report
+  const handleViewTestReport = async (item) => {
+    if (item.type === "appointment") {
+      toast.info(t("NoTestReportsAvailableForAppointments"));
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const reports = await fetchTestStatuses(item.id, item.type);
+      
+      if (reports.length === 0) {
+        toast.info(t("NoTestReportsAvailable"));
+        return;
+      }
+      
+      setSelectedReport({
+        patientName: item.patientName,
+        type: item.type,
+        reports: reports
+      });
+      setShowReportModal(true);
+    } catch (error) {
+      console.error("Error viewing test report:", error);
+      toast.error(t("ErrorLoadingTestReports"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Download test report
+const generateBill = async (rowData) => {
+  console.log("rowData=", rowData);
+  const hospitalResponse = await axios.get(
+    `${import.meta.env.VITE_API_URL}/api/getLastCreatedHospital`,
+    {
+      headers: {
+        Authorization: `${currentUser?.Token}`,
+      },
+    }
+  );
+
+  console.log("hospitalResponse=", hospitalResponse);
+  const hospitalData = hospitalResponse.data.data;
+
+  const pdf = new jsPDF();
+  pdf.setFontSize(12);
+
+  // Add Hospital Name and Logo
+  const hospitalName = hospitalData.hospitalName;
+  const hospitalLogoBase64 = hospitalData.logo;
+  const hospitalAddressLine1 = hospitalData.address;
+  const hospitalAddressLine2 = `${hospitalData.pincode}, India`;
+  const email = `Mail: ${hospitalData.email}`;
+  const landline = `Tel: ${hospitalData.landline}`;
   
-  if (endPage - startPage + 1 < maxVisiblePages) {
-    startPage = Math.max(1, endPage - maxVisiblePages + 1);
-  }
-  
-  for (let number = startPage; number <= endPage; number++) {
-    paginationItems.push(
-      <Pagination.Item
-        key={number}
-        active={number === currentPage}
-        onClick={() => paginate(number)}
-      >
-        {number}
-      </Pagination.Item>
+  const hospitalLogo = new Image();
+  hospitalLogo.src = `data:image/png;base64,${hospitalLogoBase64}`;
+
+  hospitalLogo.onload = function () {
+    pdf.addImage(hospitalLogo, "PNG", 160, 15, 30, 30);
+
+    pdf.text(hospitalName, 20, 20);
+    pdf.text(hospitalAddressLine1, 20, 30);
+    pdf.text(hospitalAddressLine2, 20, 35);
+    pdf.text(landline, 20, 40);
+    pdf.text(email, 20, 45);
+    
+    pdf.setFillColor("#48bcdf");
+    const titleText = t("ConsultantBookingReceipt");
+    const titleHeight = 10;
+    pdf.rect(0, 53, pdf.internal.pageSize.getWidth(), titleHeight, "F");
+    pdf.setTextColor("#ffffff");
+    pdf.setFontSize(16);
+    pdf.text(
+      titleText,
+      pdf.internal.pageSize.getWidth() / 2,
+      55 + titleHeight / 2,
+      { align: "center" }
     );
-  }
+
+    pdf.setTextColor("#000000");
+
+    // FIXED: Add date validation before formatting
+    const formatDateSafely = (dateString) => {
+      if (!dateString) return "N/A";
+      const date = new Date(dateString);
+      return isNaN(date.getTime()) ? "N/A" : formatDateInSelectedLanguage(date);
+    };
+
+    const formatTimeSafely = (dateString) => {
+      if (!dateString) return "N/A";
+      const date = new Date(dateString);
+      return isNaN(date.getTime()) ? "N/A" : date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    };
+
+    const patientInfo = `${t("PatientDetails")}: ${rowData.patientName || rowData.PatientName || "N/A"}`;
+    const patientPhone = `${t("PatientPhone")}: ${rowData.phone || rowData.PatientPhone || "N/A"}`;
+    const createdAT = `${t("BookingDate")}: ${formatDateSafely(rowData.createdAt || rowData.date)}`;
+    const doctorInfo = `${t("DoctorDetails")}: Dr ${rowData.doctorName || rowData.DoctorName || "N/A"}`;
+    const doctorPhone = `${t("DoctorPhone")}: ${rowData.doctorMobile || rowData.DoctorPhone || "N/A"}`;
+    
+    const bookingStartEnd = `${t("ConsultantBookingReceipt")}: ${formatDateSafely(rowData.bookingStartDate || rowData.date)} ${formatTimeSafely(rowData.bookingStartDate || rowData.date)} - ${formatTimeSafely(rowData.bookingEndDate)}`;
+    
+    const paymentStatus = `${t("paymentStatus")}: ${(rowData.paymentStatus || "N/A").toUpperCase()}`;
+    
+    const paymentDateTime = rowData?.paymentDateTime
+      ? `${t("PaymentDate")}: ${formatDateSafely(rowData.paymentDateTime)}`
+      : `${t("PaymentDate")}: MM-DD-YYYY`;
+    
+    const amount = `${t("Amount")}: ${rowData?.amount || rowData?.totalFees || "0.00"} ${rowData?.currency || "INR"}`;
+
+    // NEW: Add the additional fields
+    const serviceType = `${t("ServiceType")}: ${rowData.type || "N/A"}`;
+    const serviceStatus = `${t("Status")}: ${rowData.status || "N/A"}`;
+    const selectedTests = `${t("SelectedTests")}: ${rowData.selectedTests || "N/A"}`;
+
+    pdf.setFontSize(12);
+    const col1X = 20;
+    const col1Y = 80;
+    const col1Spacing = 10;
+    const col2X = 130;
+    const col2Y = 80;
+
+    pdf.text(t("PatientDetails"), col1X, col1Y);
+    pdf.text(patientInfo, col1X, col1Y + col1Spacing);
+    pdf.text(patientPhone, col1X, col1Y + 2 * col1Spacing);
+    pdf.text(createdAT, col1X, col1Y + 3 * col1Spacing);
+
+    pdf.text(t("DoctorDetails"), col2X, col2Y);
+    pdf.text(doctorInfo, col2X, col2Y + col1Spacing);
+    pdf.text(doctorPhone, col2X, col2Y + 2 * col1Spacing);
+    pdf.line(0, 120, 210, 120);
+
+    pdf.text(bookingStartEnd, 20, 140);
+    pdf.text(paymentStatus, 20, 150);
+    pdf.text(paymentDateTime, 20, 160);
+    pdf.text(amount, 20, 170);
+    
+    // NEW: Add the additional fields to the PDF
+    pdf.text(serviceType, 20, 180);
+    pdf.text(serviceStatus, 20, 190);
+    pdf.text(selectedTests, 20, 200);
+
+    pdf.setFillColor("#48bcdf");
+    pdf.rect(0, 270, pdf.internal.pageSize.getWidth(), 10, "F");
+    pdf.setTextColor("#ffffff");
+    pdf.setFontSize(12);
+
+    pdf.text(
+      "Powered by mediAI",
+      pdf.internal.pageSize.getWidth() / 2 - 17,
+      277
+    );
+    
+    pdf.save("Receipt.pdf");
+  };
+};
+  // Convert report data to CSV format
+  const convertToCSV = (reportData) => {
+    let csv = `Patient Name,Phone,Doctor,Date,Test Type\n`;
+    csv += `${reportData.patientName},${reportData.patientPhone},${reportData.doctorName},${reportData.date},${reportData.type}\n\n`;
+    
+    csv += `Test Name,Status,Registered Date,Sample Collected Date,Completed Date\n`;
+    reportData.tests.forEach(test => {
+      csv += `${test.testName || 'N/A'},${test.TestStatus || 'N/A'},${test.TestRegisteredDateTime || 'N/A'},${test.TestSamplecollectedDateTime || 'N/A'},${test.TestCompletedDateTime || 'N/A'}\n`;
+    });
+    
+    return csv;
+  };
+
+  // Download CSV file
+  const downloadCSV = (csvContent, fileName) => {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", fileName);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Booking actions
   const handleViewTestNames = (item) => {
@@ -315,6 +577,64 @@ function AllPatientList() {
     // Implement report generation
   };
 
+  // Test Report Modal
+  const TestReportModal = ({ show, onHide, report }) => {
+    if (!report) return null;
+    
+    return (
+      <Modal show={show} onHide={onHide} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {t("TestReportFor")}: {report.patientName}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="table-responsive">
+            <Table striped bordered hover>
+              <thead>
+                <tr>
+                  <th>{t("TestName")}</th>
+                  <th>{t("Status")}</th>
+                  <th>{t("RegisteredDate")}</th>
+                  <th>{t("SampleCollectedDate")}</th>
+                  <th>{t("CompletedDate")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.reports.map((test, index) => (
+                  <tr key={index}>
+                    <td>{test.testName || "N/A"}</td>
+                    <td>{test.TestStatus || "N/A"}</td>
+                    <td>
+                      {test.TestRegisteredDateTime 
+                        ? formatDateInSelectedLanguage(new Date(test.TestRegisteredDateTime))
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {test.TestSamplecollectedDateTime 
+                        ? formatDateInSelectedLanguage(new Date(test.TestSamplecollectedDateTime))
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {test.TestCompletedDateTime 
+                        ? formatDateInSelectedLanguage(new Date(test.TestCompletedDateTime))
+                        : "N/A"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={onHide}>
+            {t("Close")}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    );
+  };
+
   // Mobile card component
   const MobileItemCard = ({ item, index }) => (
     <div className="card mb-3">
@@ -323,7 +643,7 @@ function AllPatientList() {
           {t("PatientName")}: {item.patientName}
         </h5>
         <h6 className="card-subtitle mb-2 text-muted">
-          Type: {item.type === "booking" ? "Diagnostic Booking" : 
+          Type: {item.type === "pathology" ? "Pathology Booking" : 
                 item.type === "diagnostics" ? "Diagnostics Booking" : "Appointment"}
         </h6>
         <p className="card-text">Sr No: {(currentPage - 1) * itemsPerPage + index + 1}</p>
@@ -368,6 +688,24 @@ function AllPatientList() {
           </button>
           
           <button
+            title={t("ViewReport")}
+            className="btn btn-info btn-sm"
+            onClick={() => handleViewTestReport(item)}
+            disabled={loading}
+          >
+            <FaRegEye />
+          </button>
+          
+          <button
+            title={t("DownloadReport")}
+            className="btn btn-success btn-sm"
+            onClick={() => generateBill(item)}
+            disabled={loading}
+          >
+            <FaDownload />
+          </button>
+          
+          <button
             title={t("EditBooking")}
             className="btn btn-secondary btn-sm"
             onClick={() => handleEdit(item)}
@@ -377,7 +715,7 @@ function AllPatientList() {
 
           {!["ROLE_RECEPTIONIST", "ROLE_DOCTOR"].includes(roleCurrentUser) && (
             <>
-              {(item.type === "booking" || item.type === "diagnostics") && (
+              {(item.type === "pathology" || item.type === "diagnostics") && (
                 <UploadDiagnosticImages
                   testBookingID={item.id}
                   SelectedTest={item.selectedTests}
@@ -413,20 +751,19 @@ function AllPatientList() {
       <Table striped bordered hover responsive className="small">
         <thead>
           <tr>
-            <th>{t("diagnsticPatientListTable.SrNo")}</th>
-            <th>Type</th>
-            <th>{t("diagnsticPatientListTable.PatientName")}</th>
-            {/* <th>{t("diagnsticPatientListTable.ReferraDoctor")}</th> */}
-            <th>Doctor</th>
-            <th>Doctor Phone</th>
-            <th>{t("diagnsticPatientListTable.ReferralType")}</th>
-            <th>{t("diagnsticPatientListTable.PatientPhone")}</th>
-            <th>{t("diagnsticPatientListTable.Remarks")}</th>
+            <th>SrNo</th>
+            {/* <th>Type</th> */}
+            <th>PatientName</th>
+            <th>Doctor Name</th>
+            <th>ReferralType</th>
+            <th>PatientPhone</th>
+            <th>Remarks</th>
             <th>{t("Status")}</th>
-            <th>{t("diagnsticPatientListTable.PaymentStatus")}</th>
+            <th>{t("PaymentStatus")}</th>
             <th>{t("Paid")}</th>
-            <th>{t("diagnsticPatientListTable.TotalFees")}</th>
-            <th>{t("diagnsticPatientListTable.RegistrationDate")}</th>
+            <th>{t("TotalFees")}</th>
+            <th>{t("RegistrationDate")}</th>
+            <th>{t("Actions")}</th>
           </tr>
         </thead>
         <tbody>
@@ -436,18 +773,14 @@ function AllPatientList() {
               .map((item, index) => (
                 <tr key={`${item.type}-${item.id}`}>
                   <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                  <td>
-                    {item.type === "booking" ? "Diagnostic" : 
+                  {/* <td>
+                    {item.type === "pathology" ? "Pathology" : 
                      item.type === "diagnostics" ? "Diagnostics" : "Appointment"}
-                  </td>
+                  </td> */}
                   <td>{item.patientName || "N/A"}</td>
                   <td>
                     {item.doctorName && item.doctorName !== "NA NA NA" ? `Dr. ${item.doctorName}` : "NA"}
-                  </td>
-                  <td>
-                    {item.doctorMobile && item.doctorMobile !== "NA NA NA" ? ` ${item.doctorMobile}` : "NA"}
-                  </td>
-                  
+                  </td>                  
                   <td>{item.referralType || "N/A"}</td>
                   <td>{item.phone || "N/A"}</td>
                   <td>{item.remarks || "N/A"}</td>
@@ -472,11 +805,31 @@ function AllPatientList() {
                       : "NA"}
                   </td>
                   <td>{item.date ? formatDateInSelectedLanguage(new Date(item.date)) : "N/A"}</td>
+                  <td>
+                    <div className="d-flex gap-1">
+                      <button
+                        title={t("ViewReport")}
+                        className="btn  btn-sm border border-dark"
+                        onClick={() => handleViewTestReport(item)}
+                        disabled={loading}
+                      >
+                        <FaRegEye />
+                      </button>
+                      <button
+                        title={t("DownloadReport")}
+                        className="btn  btn-sm border border-dark"
+                        onClick={() => generateBill(item)}
+                        disabled={loading}
+                      >
+                        <FaDownload />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
           ) : (
             <tr>
-              <td colSpan="12" className="text-center py-4">
+              <td colSpan="14" className="text-center py-4">
                 {t("NoRecordsFound")}
               </td>
             </tr>
@@ -492,7 +845,7 @@ function AllPatientList() {
               onClick={() => paginate(Math.max(1, currentPage - 1))} 
               disabled={currentPage === 1} 
             />
-            {paginationItems}
+            {renderPaginationItems()}
             <Pagination.Next 
               onClick={() => paginate(Math.min(totalPages, currentPage + 1))} 
               disabled={currentPage === totalPages} 
@@ -572,6 +925,13 @@ function AllPatientList() {
       ) : (
         <DesktopItemTable />
       )}
+      
+      {/* Test Report Modal */}
+      <TestReportModal 
+        show={showReportModal} 
+        onHide={() => setShowReportModal(false)} 
+        report={selectedReport} 
+      />
     </div>
   );
 }

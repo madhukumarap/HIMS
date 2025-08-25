@@ -179,6 +179,7 @@ function AllPatientList() {
         patientName: booking.PatientName,
         phone: booking.PatientPhoneNo,
         doctorName: booking.DoctorName,
+        doctorMobile: booking.DoctorPhone,
         status: booking.status,
         paymentStatus: booking.PaymentStatus,
         amount: booking.PaidAmount,
@@ -195,6 +196,7 @@ function AllPatientList() {
         patientName: appointment.PatientName,
         phone: appointment.PatientPhone,
         doctorName: appointment.DoctorName,
+        doctorMobile: appointment.DoctorPhone,
         status: appointment.paymentStatus === "paid" ? "Completed" : "Pending",
         paymentStatus: appointment.paymentStatus,
         amount: appointment.amount,
@@ -211,6 +213,7 @@ function AllPatientList() {
         patientName: booking.PatientName,
         phone: booking.PatientPhoneNo,
         doctorName: booking.DoctorName,
+        doctorMobile :booking.DoctorPhone,
         status: booking.status,
         paymentStatus: booking.PaymentStatus,
         amount: booking.PaidAmount,
@@ -325,8 +328,12 @@ function AllPatientList() {
         </h6>
         <p className="card-text">Sr No: {(currentPage - 1) * itemsPerPage + index + 1}</p>
         <p className="card-text">
-          {t("ReferralDoctor")}:{" "}
-          {item.doctorName && item.doctorName !== "NA NA NA" ? `Dr. ${item.doctorName}` : "NA"}
+          {t("Doctor Name")}:{" "}
+          {item.doctorName && item.doctorName !== "NA NA" ? `Dr. ${item.doctorName}` : "NA"}
+        </p>
+         <p className="card-text">
+          {t("Doctor Phone")}:{" "}
+          {item.doctorMobile && item.doctorMobile !== "NA NA NA" ? `Dr. ${item.doctorMobile}` : "NA"}
         </p>
         <p className="card-text">
           {t("ReferralType")}: {item.referralType || "N/A"}
@@ -409,7 +416,9 @@ function AllPatientList() {
             <th>{t("diagnsticPatientListTable.SrNo")}</th>
             <th>Type</th>
             <th>{t("diagnsticPatientListTable.PatientName")}</th>
-            <th>{t("diagnsticPatientListTable.ReferralDoctor")}</th>
+            {/* <th>{t("diagnsticPatientListTable.ReferraDoctor")}</th> */}
+            <th>Doctor</th>
+            <th>Doctor Phone</th>
             <th>{t("diagnsticPatientListTable.ReferralType")}</th>
             <th>{t("diagnsticPatientListTable.PatientPhone")}</th>
             <th>{t("diagnsticPatientListTable.Remarks")}</th>
@@ -435,6 +444,10 @@ function AllPatientList() {
                   <td>
                     {item.doctorName && item.doctorName !== "NA NA NA" ? `Dr. ${item.doctorName}` : "NA"}
                   </td>
+                  <td>
+                    {item.doctorMobile && item.doctorMobile !== "NA NA NA" ? ` ${item.doctorMobile}` : "NA"}
+                  </td>
+                  
                   <td>{item.referralType || "N/A"}</td>
                   <td>{item.phone || "N/A"}</td>
                   <td>{item.remarks || "N/A"}</td>

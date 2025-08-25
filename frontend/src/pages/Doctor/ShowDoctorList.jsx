@@ -448,7 +448,9 @@ const ShowDoctorList = () => {
                       <th style={{ whiteSpace: "nowrap" }}>Consultation Fee</th>
                       <th style={{ whiteSpace: "nowrap" }}>Referal Fee</th>
                       <th style={{ whiteSpace: "nowrap" }}>Last Fee Update</th>
-                      <th style={{ whiteSpace: "nowrap" }}>Actions</th>
+                      <th style={{ whiteSpace: "nowrap" }}>
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -642,7 +644,7 @@ const ShowDoctorList = () => {
                   <th>Reason</th>
                   <th>Amount Paid</th>
                   <th>Applicable Doctor Fee</th>
-                  <th>Payment Status</th>
+                  <th>Patient Payment Status</th>
                   <th>Consultation Date</th>
                 </tr>
               </thead>
@@ -819,7 +821,7 @@ const ShowDoctorList = () => {
                   <th>Reason</th>
                   <th>Amount Paid</th>
                   <th>Referral Fee</th>
-                  <th>Payment Status</th>
+                  <th>Patient Payment Status</th>
                   <th>Consultation Date</th>
                 </tr>
               </thead>

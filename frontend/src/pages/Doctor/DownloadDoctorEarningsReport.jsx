@@ -293,14 +293,14 @@ const DownloadDoctorEarningsReport = ({
       style={{
         fontSize: "12px",
         padding: "4px 5px",
-        marginTop: "0px",
+        marginTop: "25px",
         backgroundColor: "#1111",
         color: "black",
       }}
       className="btn btn-secondary mr-2"
       onClick={downloadDoctorEarningsReport}
     >
-      <FaDownload />
+      <FaDownload /> Download Report
     </button>
   );
 };

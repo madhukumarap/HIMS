@@ -239,6 +239,71 @@ const updateDoctorsAppointment = async (req, res) => {
   }
 };
 
+// const getAllDoctorsAppointments = async (req, res) => {
+//   const database = req.headers.userDatabase;
+//   const connectionList = await getConnectionList(database);
+//   const db = connectionList[database];
+//   const DoctorsAppointment = db.DoctorsAppointment;
+//   const Doctor = db.doctor;
+//   try {
+//     const appointments = await DoctorsAppointment.findAll({
+//       order: [["createdAt", "DESC"]],
+//       attributes: { include: ["referralDoctorId"] }, // ensure Sequelize fetches it
+//     });
+//     const referralDoctorIds = [
+//       ...new Set(appointments.map((a) => a.referralDoctorId).filter(Boolean)),
+//     ];
+//     const imagesWithBase64 = await Promise.all(
+//       appointments.map(async (image) => {
+//         let imageBase64;
+
+//         if (image && image.image && image.image.startsWith("images")) {
+//           const imageBuffer = fs.readFileSync(image.image);
+//           imageBase64 = imageBuffer.toString("base64");
+//         } else {
+//           imageBase64 = image?.image;
+//         }
+//     // const  = 
+//     const referralId = image?.referralDoctorId
+
+//     console.log("referralId",referralId,"existingDoc: ",referralDoctorIds,appointments );
+//         return {
+//           id: image?.id ?? null,
+//           image: imageBase64 ? `data:image/png;base64,${imageBase64}` : null,
+//           doctorId: image?.doctorId ?? null,
+//           patientId: image?.patientId ?? null,
+//           PatientName: image?.PatientName ?? null,
+//           PatientPhone: image?.PatientPhone ?? null,
+//           DoctorName: image?.DoctorName ?? null,
+//           DoctorPhone: image?.DoctorPhone ?? null,
+//           DoctorEmail: image?.DoctorEmail ?? null,
+//           amount: image?.amount ?? null,
+//           paymentStatus: image?.paymentStatus ?? null,
+//           visitType: image?.visitType ?? null,
+//           reason: image?.reason ?? null,
+//           paymentDateTime: image?.paymentDateTime ?? null,
+//           bookingStartDate: image?.bookingStartDate ?? null,
+//           bookingEndDate: image?.bookingEndDate ?? null,
+//           remarks: image?.remarks ?? null,
+//           createdAt: image?.createdAt ?? null,
+//           CorporateID: image?.CorporateID ?? null,
+//           Currency: image?.Currency ?? null,
+//           referralDoctorId:image?.referralDoctorId ?? image?.referraldoctorId ?? null,
+//         };
+//       })
+//     );
+
+//     res.status(200).json({ success: true, appointments: imagesWithBase64 });
+//   } catch (error) {
+//     console.error("Error fetching doctors appointments:", error);
+//     res
+//       .status(500)
+//       .json({ success: false, error: "Failed to fetch doctors appointments." });
+//   }
+// };
+
+
+
 const getAllDoctorsAppointments = async (req, res) => {
   const database = req.headers.userDatabase;
   const connectionList = await getConnectionList(database);
@@ -246,45 +311,98 @@ const getAllDoctorsAppointments = async (req, res) => {
   const DoctorsAppointment = db.DoctorsAppointment;
 
   try {
+    // Fetch all appointments
     const appointments = await DoctorsAppointment.findAll({
       order: [["createdAt", "DESC"]],
-      attributes: { include: ["referralDoctorId"] }, // ensure Sequelize fetches it
+      attributes: {
+        include: ["referralDoctorId", "referraldoctorId"],
+      },
+      raw: true,
     });
 
-    const imagesWithBase64 = await Promise.all(
-      appointments.map(async (image) => {
-        let imageBase64;
+    // Get all unique referral doctor IDs (handle both cases)
+    const referralDoctorIds = [
+      ...new Set(
+        appointments
+          .map((a) => a.referralDoctorId || a.referraldoctorId)
+          .filter((id) => id && id > 0)
+      ),
+    ];
 
-        if (image && image.image && image.image.startsWith("images")) {
-          const imageBuffer = fs.readFileSync(image.image);
-          imageBase64 = imageBuffer.toString("base64");
+    let referralDoctorsMap = {};
+
+    if (referralDoctorIds.length > 0) {
+      // ✅ FIXED SQL QUERY → Removed trailing comma + corrected table name
+      const referralDoctors = await db.sequelize.query(
+        `SELECT id, username, phoneNo
+         FROM doctors 
+         WHERE id IN (:ids)`,
+        {
+          replacements: { ids: referralDoctorIds },
+          type: db.Sequelize.QueryTypes.SELECT,
+        }
+      );
+
+      // Map referral doctors for quick lookup
+      referralDoctorsMap = referralDoctors.reduce((acc, doctor) => {
+        acc[doctor.id] = doctor;
+        return acc;
+      }, {});
+    }
+
+    // Process images & attach referral doctor info
+    const imagesWithBase64 = await Promise.all(
+      appointments.map(async (appointment) => {
+        let imageBase64 = null;
+
+        // Convert image to base64 if exists
+        if (appointment?.image && appointment.image.startsWith("images")) {
+          try {
+            const imageBuffer = fs.readFileSync(appointment.image);
+            imageBase64 = imageBuffer.toString("base64");
+          } catch (err) {
+            console.error(`Error reading image for appointment ${appointment.id}:`, err);
+          }
         } else {
-          imageBase64 = image?.image;
+          imageBase64 = appointment?.image ?? null;
         }
 
+        // Handle both referralDoctorId & referraldoctorId
+        const referralId = appointment.referralDoctorId || appointment.referraldoctorId || null;
+
+        const referralDoctor = referralId ? referralDoctorsMap[referralId] || null : null;
+
         return {
-          id: image?.id ?? null,
+          id: appointment.id ?? null,
           image: imageBase64 ? `data:image/png;base64,${imageBase64}` : null,
-          doctorId: image?.doctorId ?? null,
-          patientId: image?.patientId ?? null,
-          PatientName: image?.PatientName ?? null,
-          PatientPhone: image?.PatientPhone ?? null,
-          DoctorName: image?.DoctorName ?? null,
-          DoctorPhone: image?.DoctorPhone ?? null,
-          DoctorEmail: image?.DoctorEmail ?? null,
-          amount: image?.amount ?? null,
-          paymentStatus: image?.paymentStatus ?? null,
-          visitType: image?.visitType ?? null,
-          reason: image?.reason ?? null,
-          paymentDateTime: image?.paymentDateTime ?? null,
-          bookingStartDate: image?.bookingStartDate ?? null,
-          bookingEndDate: image?.bookingEndDate ?? null,
-          remarks: image?.remarks ?? null,
-          createdAt: image?.createdAt ?? null,
-          CorporateID: image?.CorporateID ?? null,
-          Currency: image?.Currency ?? null,
-          referralDoctorId:
-            image?.referralDoctorId ?? image?.referraldoctorId ?? null,
+          doctorId: appointment.doctorId ?? null,
+          patientId: appointment.patientId ?? null,
+          PatientName: appointment.PatientName ?? null,
+          PatientPhone: appointment.PatientPhone ?? null,
+          DoctorName: appointment.DoctorName ?? null,
+          DoctorPhone: appointment.DoctorPhone ?? null,
+          DoctorEmail: appointment.DoctorEmail ?? null,
+          amount: appointment.amount ?? null,
+          paymentStatus: appointment.paymentStatus ?? null,
+          visitType: appointment.visitType ?? null,
+          reason: appointment.reason ?? null,
+          paymentDateTime: appointment.paymentDateTime ?? null,
+          bookingStartDate: appointment.bookingStartDate ?? null,
+          bookingEndDate: appointment.bookingEndDate ?? null,
+          remarks: appointment.remarks ?? null,
+          createdAt: appointment.createdAt ?? null,
+          CorporateID: appointment.CorporateID ?? null,
+          Currency: appointment.Currency ?? null,
+          referralDoctorId: referralId,
+          referralDoctorName:referralDoctor?.username,
+          
+          referralDoctor: referralDoctor
+            ? {
+                id: referralDoctor.id,
+                name: referralDoctor.username,
+                phone: referralDoctor.phoneNo,
+              }
+            : null,
         };
       })
     );
@@ -292,9 +410,10 @@ const getAllDoctorsAppointments = async (req, res) => {
     res.status(200).json({ success: true, appointments: imagesWithBase64 });
   } catch (error) {
     console.error("Error fetching doctors appointments:", error);
-    res
-      .status(500)
-      .json({ success: false, error: "Failed to fetch doctors appointments." });
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch doctors appointments.",
+    });
   }
 };
 

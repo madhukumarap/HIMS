@@ -361,6 +361,7 @@ function AllPatientList() {
 
   // View test report
   const handleViewTestReport = async (item) => {
+    console.log(item,"ghgjgjh")
     if (item.type === "appointment") {
       toast.info(t("No Test Reports Available For Appointments"));
       return;
@@ -381,6 +382,7 @@ function AllPatientList() {
         reports: reports
       });
       setShowReportModal(true);
+      return reports
     } catch (error) {
       console.error("Error viewing test report:", error);
       toast.error(t("ErrorLoadingTestReports"));
@@ -390,135 +392,178 @@ function AllPatientList() {
   };
 
   // Download test report
+// Download test report
 const generateBill = async (rowData) => {
   console.log("rowData=", rowData);
-  const hospitalResponse = await axios.get(
-    `${import.meta.env.VITE_API_URL}/api/getLastCreatedHospital`,
-    {
-      headers: {
-        Authorization: `${currentUser?.Token}`,
-      },
-    }
-  );
-
-  console.log("hospitalResponse=", hospitalResponse);
-  const hospitalData = hospitalResponse.data.data;
-
-  const pdf = new jsPDF();
-  pdf.setFontSize(12);
-
-  // Add Hospital Name and Logo
-  const hospitalName = hospitalData.hospitalName;
-  const hospitalLogoBase64 = hospitalData.logo;
-  const hospitalAddressLine1 = hospitalData.address;
-  const hospitalAddressLine2 = `${hospitalData.pincode}, India`;
-  const email = `Mail: ${hospitalData.email}`;
-  const landline = `Tel: ${hospitalData.landline}`;
   
-  const hospitalLogo = new Image();
-  hospitalLogo.src = `data:image/png;base64,${hospitalLogoBase64}`;
-
-  hospitalLogo.onload = function () {
-    pdf.addImage(hospitalLogo, "PNG", 160, 15, 30, 30);
-
-    pdf.text(hospitalName, 20, 20);
-    pdf.text(hospitalAddressLine1, 20, 30);
-    pdf.text(hospitalAddressLine2, 20, 35);
-    pdf.text(landline, 20, 40);
-    pdf.text(email, 20, 45);
-    
-    pdf.setFillColor("#48bcdf");
-    const titleText = t("Consultant Booking Receipt");
-    const titleHeight = 10;
-    pdf.rect(0, 53, pdf.internal.pageSize.getWidth(), titleHeight, "F");
-    pdf.setTextColor("#ffffff");
-    pdf.setFontSize(16);
-    pdf.text(
-      titleText,
-      pdf.internal.pageSize.getWidth() / 2,
-      55 + titleHeight / 2,
-      { align: "center" }
+  try {
+    // Fetch test reports first
+    let testReports = [];
+    if (rowData.type !== "appointment") {
+      try {
+        testReports = await fetchTestStatuses(rowData.id, rowData.type);
+      } catch (error) {
+        console.error("Error fetching test reports:", error);
+        toast.error(t("ErrorLoadingTestReports"));
+      }
+    }
+    console.log(testReports,"testReports")
+    // Fetch hospital data
+    const hospitalResponse = await axios.get(
+      `${import.meta.env.VITE_API_URL}/api/getLastCreatedHospital`,
+      {
+        headers: {
+          Authorization: `${currentUser?.Token}`,
+        },
+      }
     );
 
-    pdf.setTextColor("#000000");
+    console.log("hospitalResponse=", hospitalResponse);
+    const hospitalData = hospitalResponse.data.data;
 
-    // FIXED: Add date validation before formatting
-    const formatDateSafely = (dateString) => {
-      if (!dateString) return "N/A";
-      const date = new Date(dateString);
-      return isNaN(date.getTime()) ? "N/A" : formatDateInSelectedLanguage(date);
-    };
-
-    const formatTimeSafely = (dateString) => {
-      if (!dateString) return "N/A";
-      const date = new Date(dateString);
-      return isNaN(date.getTime()) ? "N/A" : date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    };
-
-    const patientInfo = `${t("Patient Details")}: ${rowData.patientName || rowData.PatientName || "N/A"}`;
-    const patientPhone = `${t("Patient Phone")}: ${rowData.phone || rowData.PatientPhone || "N/A"}`;
-    const createdAT = `${t("Booking Date")}: ${formatDateSafely(rowData.createdAt || rowData.date)}`;
-    const doctorInfo = `${t("Doctor Details")}: Dr ${rowData.doctorName || rowData.DoctorName || "N/A"}`;
-    const doctorPhone = `${t("Doctor Phone")}: ${rowData.doctorMobile || rowData.DoctorPhone || "N/A"}`;
-    
-    const bookingStartEnd = `${t("Consultant Booking Receipt")}: ${formatDateSafely(rowData.bookingStartDate || rowData.date)} ${formatTimeSafely(rowData.bookingStartDate || rowData.date)} - ${formatTimeSafely(rowData.bookingEndDate)}`;
-    
-    const paymentStatus = `${t("payment Status")}: ${(rowData.paymentStatus || "N/A").toUpperCase()}`;
-    
-    const paymentDateTime = rowData?.paymentDateTime
-      ? `${t("Payment Date")}: ${formatDateSafely(rowData.paymentDateTime)}`
-      : `${t("Payment Date")}: MM-DD-YYYY`;
-    
-    const amount = `${t("Amount")}: ${rowData?.amount || rowData?.totalFees || "0.00"} ${rowData?.currency || "INR"}`;
-
-    // NEW: Add the additional fields
-    const serviceType = `${t("Service Type")}: ${rowData.type || "N/A"}`;
-    const serviceStatus = `${t("Status")}: ${rowData.status || "N/A"}`;
-    const selectedTests = `${t("Tests")}: ${rowData.selectedTests || "N/A"}`;
-
-    pdf.setFontSize(12);
-    const col1X = 20;
-    const col1Y = 80;
-    const col1Spacing = 10;
-    const col2X = 130;
-    const col2Y = 80;
-
-    pdf.text(t("Patient Details"), col1X, col1Y);
-    pdf.text(patientInfo, col1X, col1Y + col1Spacing);
-    pdf.text(patientPhone, col1X, col1Y + 2 * col1Spacing);
-    pdf.text(createdAT, col1X, col1Y + 3 * col1Spacing);
-
-    pdf.text(t("Doctor Details"), col2X, col2Y);
-    pdf.text(doctorInfo, col2X, col2Y + col1Spacing);
-    pdf.text(doctorPhone, col2X, col2Y + 2 * col1Spacing);
-    pdf.line(0, 120, 210, 120);
-
-    pdf.text(bookingStartEnd, 20, 140);
-    pdf.text(paymentStatus, 20, 150);
-    pdf.text(paymentDateTime, 20, 160);
-    pdf.text(amount, 20, 170);
-    
-    // NEW: Add the additional fields to the PDF
-    pdf.text(serviceType, 20, 180);
-    pdf.text(serviceStatus, 20, 190);
-    pdf.text(selectedTests, 20, 200);
-
-    pdf.setFillColor("#48bcdf");
-    pdf.rect(0, 270, pdf.internal.pageSize.getWidth(), 10, "F");
-    pdf.setTextColor("#ffffff");
+    const pdf = new jsPDF();
     pdf.setFontSize(12);
 
-    pdf.text(
-      "Powered by mediAI",
-      pdf.internal.pageSize.getWidth() / 2 - 17,
-      277
-    );
+    // Add Hospital Name and Logo
+    const hospitalName = hospitalData.hospitalName;
+    const hospitalLogoBase64 = hospitalData.logo;
+    const hospitalAddressLine1 = hospitalData.address;
+    const hospitalAddressLine2 = `${hospitalData.pincode}, India`;
+    const email = `Mail: ${hospitalData.email}`;
+    const landline = `Tel: ${hospitalData.landline}`;
     
-    pdf.save("Receipt.pdf");
-  };
+    const hospitalLogo = new Image();
+    hospitalLogo.src = `data:image/png;base64,${hospitalLogoBase64}`;
+
+    hospitalLogo.onload = function () {
+      pdf.addImage(hospitalLogo, "PNG", 160, 15, 30, 30);
+
+      pdf.text(hospitalName, 20, 20);
+      pdf.text(hospitalAddressLine1, 20, 30);
+      pdf.text(hospitalAddressLine2, 20, 35);
+      pdf.text(landline, 20, 40);
+      pdf.text(email, 20, 45);
+      
+      pdf.setFillColor("#48bcdf");
+      const titleText = t("Consultant Booking Receipt");
+      const titleHeight = 10;
+      pdf.rect(0, 53, pdf.internal.pageSize.getWidth(), titleHeight, "F");
+      pdf.setTextColor("#ffffff");
+      pdf.setFontSize(16);
+      pdf.text(
+        titleText,
+        pdf.internal.pageSize.getWidth() / 2,
+        55 + titleHeight / 2,
+        { align: "center" }
+      );
+
+      pdf.setTextColor("#000000");
+
+      // FIXED: Add date validation before formatting
+      const formatDateSafely = (dateString) => {
+        if (!dateString) return "N/A";
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? "N/A" : formatDateInSelectedLanguage(date);
+      };
+
+      const formatTimeSafely = (dateString) => {
+        if (!dateString) return "N/A";
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? "N/A" : date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      };
+
+      const patientInfo = `${t("Patient Details")}: ${rowData.patientName || rowData.PatientName || "N/A"}`;
+      const patientPhone = `${t("Patient Phone")}: ${rowData.phone || rowData.PatientPhone || "N/A"}`;
+      const createdAT = `${t("Booking Date")}: ${formatDateSafely(rowData.createdAt || rowData.date)}`;
+      const doctorInfo = `${t("Doctor Details")}: Dr ${rowData.doctorName || rowData.DoctorName || "N/A"}`;
+      const doctorPhone = `${t("Doctor Phone")}: ${rowData.doctorMobile || rowData.DoctorPhone || "N/A"}`;
+      
+      const bookingStartEnd = `${t("Consultant Booking Receipt")}: ${formatDateSafely(rowData.bookingStartDate || rowData.date)} ${formatTimeSafely(rowData.bookingStartDate || rowData.date)} - ${formatDateSafely(testReports[0].TestCompletedDateTime)}`;
+      
+      const paymentStatus = `${t("payment Status")}: ${(rowData.paymentStatus || "N/A").toUpperCase()}`;
+      
+      const paymentDateTime = rowData?.date
+        ? `${t("Payment Date")}: ${formatDateSafely(rowData.date)}`
+        : `${t("Payment Date")}: MM-DD-YYYY`;
+      
+      const amount = `${t("Amount")}: ${rowData?.amount || rowData?.totalFees || "0.00"} ${rowData?.currency || "INR"}`;
+
+      // Service information
+      const serviceType = `${t("Service Type")}: ${rowData.type || "N/A"}`;
+      const serviceStatus = `${t("Status")}: ${rowData.status || "N/A"}`;
+      const selectedTests = `${t("Tests")}: ${rowData.selectedTests || "N/A"}`;
+
+      pdf.setFontSize(12);
+      const col1X = 20;
+      const col1Y = 80;
+      const col1Spacing = 10;
+      const col2X = 130;
+      const col2Y = 80;
+
+      pdf.text(t("Patient Details"), col1X, col1Y);
+      pdf.text(patientInfo, col1X, col1Y + col1Spacing);
+      pdf.text(patientPhone, col1X, col1Y + 2 * col1Spacing);
+      pdf.text(createdAT, col1X, col1Y + 3 * col1Spacing);
+
+      pdf.text(t("Doctor Details"), col2X, col2Y);
+      pdf.text(doctorInfo, col2X, col2Y + col1Spacing);
+      pdf.text(doctorPhone, col2X, col2Y + 2 * col1Spacing);
+      pdf.line(0, 120, 210, 120);
+
+      pdf.text(bookingStartEnd, 20, 140);
+      pdf.text(paymentStatus, 20, 150);
+      pdf.text(paymentDateTime, 20, 160);
+      pdf.text(amount, 20, 170);
+      
+      // Service information
+      pdf.text(serviceType, 20, 180);
+      pdf.text(serviceStatus, 20, 190);
+      pdf.text(selectedTests, 20, 200);
+
+      // Add test reports if available
+      let yPosition = 220;
+      if (testReports.length > 0) {
+        // pdf.text(t("Test Reports"), 20, yPosition);
+        yPosition += 10;
+        
+        testReports.forEach((report, index) => {
+          if (yPosition > 250) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+          
+          // pdf.text(`${index + 1}. ${report.testName || "Test"}`, 20, yPosition);
+          // pdf.text(`${t("Status")}: ${report.status || "N/A"}`, 40, yPosition + 5);
+          // pdf.text(`${t("Result")}: ${report.result || "N/A"}`, 40, yPosition + 10);
+          
+          // Add more report details as needed
+          yPosition += 20;
+        });
+      } else if (rowData.type !== "appointment") {
+        pdf.text(t("No Test Reports Available"), 20, yPosition);
+        yPosition += 10;
+      }
+
+      pdf.setFillColor("#48bcdf");
+      pdf.rect(0, 270, pdf.internal.pageSize.getWidth(), 10, "F");
+      pdf.setTextColor("#ffffff");
+      pdf.setFontSize(12);
+
+      pdf.text(
+        "Powered by mediAI",
+        pdf.internal.pageSize.getWidth() / 2 - 17,
+        277
+      );
+      
+      pdf.save("Receipt.pdf");
+    };
+  } catch (error) {
+    console.error("Error generating bill:", error);
+    toast.error(t("ErrorGeneratingBill"));
+  }
 };
   // Convert report data to CSV format
   const convertToCSV = (reportData) => {
@@ -582,56 +627,62 @@ const generateBill = async (rowData) => {
     if (!report) return null;
     
     return (
-      <Modal show={show} onHide={onHide} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {t("TestReportFor")}: {report.patientName}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="table-responsive">
-            <Table striped bordered hover>
-              <thead>
-                <tr>
-                  <th>{t("Test Name")}</th>
-                  <th>{t("Status")}</th>
-                  <th>{t("Registered Date")}</th>
-                  <th>{t("Sample Collected Date")}</th>
-                  <th>{t("Completed Date")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.reports.map((test, index) => (
-                  <tr key={index}>
-                    <td>{test.testName || "N/A"}</td>
-                    <td>{test.TestStatus || "N/A"}</td>
-                    <td>
-                      {test.TestRegisteredDateTime 
-                        ? formatDateInSelectedLanguage(new Date(test.TestRegisteredDateTime))
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {test.TestSamplecollectedDateTime 
-                        ? formatDateInSelectedLanguage(new Date(test.TestSamplecollectedDateTime))
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {test.TestCompletedDateTime 
-                        ? formatDateInSelectedLanguage(new Date(test.TestCompletedDateTime))
-                        : "N/A"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={onHide}>
-            {t("Close")}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <Modal 
+  show={show} 
+  onHide={onHide} 
+  size="lg" 
+  centered  // ✅ This centers the modal vertically
+>
+  <Modal.Header closeButton>
+    <Modal.Title>
+      {t("TestReportFor")}: {report.patientName}
+    </Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    <div className="table-responsive">
+      <Table striped bordered hover>
+        <thead>
+          <tr>
+            <th>{t("Test Name")}</th>
+            <th>{t("Status")}</th>
+            <th>{t("Registered Date")}</th>
+            <th>{t("Sample Collected Date")}</th>
+            <th>{t("Completed Date")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {report.reports.map((test, index) => (
+            <tr key={index}>
+              <td>{test.testName || "N/A"}</td>
+              <td>{test.TestStatus || "N/A"}</td>
+              <td>
+                {test.TestRegisteredDateTime 
+                  ? formatDateInSelectedLanguage(new Date(test.TestRegisteredDateTime))
+                  : "N/A"}
+              </td>
+              <td>
+                {test.TestSamplecollectedDateTime 
+                  ? formatDateInSelectedLanguage(new Date(test.TestSamplecollectedDateTime))
+                  : "N/A"}
+              </td>
+              <td>
+                {test.TestCompletedDateTime 
+                  ? formatDateInSelectedLanguage(new Date(test.TestCompletedDateTime))
+                  : "N/A"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </div>
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={onHide}>
+      {t("Close")}
+    </Button>
+  </Modal.Footer>
+</Modal>
+
     );
   };
 

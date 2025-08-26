@@ -77,22 +77,29 @@ router.get("/getAllHospitals", async (req, res) => {
   const HospitalModel = db.Hospital;
 
   try {
-    // Retrieve all hospitals from the database
     const hospitals = await HospitalModel.findAll();
 
     const hospitalsWithImages = hospitals.map((hospital) => {
-      const imagePath = hospital?.logo;
-      //
-      // const options = [JSON.parse(hospital.OptionalCurrency)]
-      //
-      let imageBase64;
-      console.log(imagePath);
-      if (imagePath) {
-        const imageBuffer = fs.readFileSync(imagePath);
-        console.log("imageBuffer=", imageBuffer == true);
+      let imageBase64 = null;
 
-        imageBase64 = imageBuffer.toString("base64");
+      if (hospital?.logo) {
+        try {
+          // build absolute path safely
+          const absolutePath = path.resolve(
+            __dirname,
+            "..",
+            hospital.logo.replace(/\\/g, "/")
+          );
+
+          if (fs.existsSync(absolutePath)) {
+            const imageBuffer = fs.readFileSync(absolutePath);
+            imageBase64 = imageBuffer.toString("base64");
+          }
+        } catch (err) {
+          console.warn(`Logo not found for hospital ${hospital.id}:`, err.message);
+        }
       }
+
       return {
         id: hospital.id,
         hospitalName: hospital.hospitalName,
@@ -108,16 +115,17 @@ router.get("/getAllHospitals", async (req, res) => {
         HospitalUserName: hospital.HospitalUserName,
         HospitalGUID: hospital.HospitalGUID,
         countryCode: hospital.countryCode,
-        logo: imageBase64, // Convert the BLOB to base64
+        logo: imageBase64, // null if not exists
         baseCurrency: hospital.baseCurrency,
         baseCurrencyStatus: hospital.baseCurrencyStatus,
         OptionalCurrency: hospital.OptionalCurrency,
         securityDeposit: hospital.securityDeposit,
       };
     });
+
     res.json({ success: true, data: hospitalsWithImages });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ success: false, error: "Server error" });
   }
 });

@@ -483,7 +483,7 @@ const generateBill = async (rowData) => {
       
       const bookingStartEnd = `${t("Consultant Booking Receipt")}: ${formatDateSafely(rowData.bookingStartDate || rowData.date)} ${formatTimeSafely(rowData.bookingStartDate || rowData.date)} - ${formatDateSafely(testReports[0].TestCompletedDateTime)}`;
       
-      const paymentStatus = `${t("payment Status")}: ${(rowData.paymentStatus || "N/A").toUpperCase()}`;
+      const paymentStatus = `${t("Payment Status")}: ${(rowData.paymentStatus || "N/A").toUpperCase()}`;
       
       const paymentDateTime = rowData?.date
         ? `${t("Payment Date")}: ${formatDateSafely(rowData.date)}`

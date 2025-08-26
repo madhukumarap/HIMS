@@ -190,7 +190,7 @@ function AllPatientList() {
         endpoint = `${import.meta.env.VITE_API_URL}/api/DiagnosticTestStatuses/${bookingId}`;
       } else {
         // Appointments don't have test reports
-        toast.info(t("NoTestReportsAvailableForAppointments"));
+        toast.info(t("No Test Reports Available For Appointments"));
         return [];
       }
       
@@ -362,7 +362,7 @@ function AllPatientList() {
   // View test report
   const handleViewTestReport = async (item) => {
     if (item.type === "appointment") {
-      toast.info(t("NoTestReportsAvailableForAppointments"));
+      toast.info(t("No Test Reports Available For Appointments"));
       return;
     }
     
@@ -371,7 +371,7 @@ function AllPatientList() {
       const reports = await fetchTestStatuses(item.id, item.type);
       
       if (reports.length === 0) {
-        toast.info(t("NoTestReportsAvailable"));
+        toast.info(t("No Test Reports Available"));
         return;
       }
       
@@ -428,7 +428,7 @@ const generateBill = async (rowData) => {
     pdf.text(email, 20, 45);
     
     pdf.setFillColor("#48bcdf");
-    const titleText = t("ConsultantBookingReceipt");
+    const titleText = t("Consultant Booking Receipt");
     const titleHeight = 10;
     pdf.rect(0, 53, pdf.internal.pageSize.getWidth(), titleHeight, "F");
     pdf.setTextColor("#ffffff");
@@ -458,26 +458,26 @@ const generateBill = async (rowData) => {
       });
     };
 
-    const patientInfo = `${t("PatientDetails")}: ${rowData.patientName || rowData.PatientName || "N/A"}`;
-    const patientPhone = `${t("PatientPhone")}: ${rowData.phone || rowData.PatientPhone || "N/A"}`;
-    const createdAT = `${t("BookingDate")}: ${formatDateSafely(rowData.createdAt || rowData.date)}`;
-    const doctorInfo = `${t("DoctorDetails")}: Dr ${rowData.doctorName || rowData.DoctorName || "N/A"}`;
-    const doctorPhone = `${t("DoctorPhone")}: ${rowData.doctorMobile || rowData.DoctorPhone || "N/A"}`;
+    const patientInfo = `${t("Patient Details")}: ${rowData.patientName || rowData.PatientName || "N/A"}`;
+    const patientPhone = `${t("Patient Phone")}: ${rowData.phone || rowData.PatientPhone || "N/A"}`;
+    const createdAT = `${t("Booking Date")}: ${formatDateSafely(rowData.createdAt || rowData.date)}`;
+    const doctorInfo = `${t("Doctor Details")}: Dr ${rowData.doctorName || rowData.DoctorName || "N/A"}`;
+    const doctorPhone = `${t("Doctor Phone")}: ${rowData.doctorMobile || rowData.DoctorPhone || "N/A"}`;
     
-    const bookingStartEnd = `${t("ConsultantBookingReceipt")}: ${formatDateSafely(rowData.bookingStartDate || rowData.date)} ${formatTimeSafely(rowData.bookingStartDate || rowData.date)} - ${formatTimeSafely(rowData.bookingEndDate)}`;
+    const bookingStartEnd = `${t("Consultant Booking Receipt")}: ${formatDateSafely(rowData.bookingStartDate || rowData.date)} ${formatTimeSafely(rowData.bookingStartDate || rowData.date)} - ${formatTimeSafely(rowData.bookingEndDate)}`;
     
-    const paymentStatus = `${t("paymentStatus")}: ${(rowData.paymentStatus || "N/A").toUpperCase()}`;
+    const paymentStatus = `${t("payment Status")}: ${(rowData.paymentStatus || "N/A").toUpperCase()}`;
     
     const paymentDateTime = rowData?.paymentDateTime
-      ? `${t("PaymentDate")}: ${formatDateSafely(rowData.paymentDateTime)}`
-      : `${t("PaymentDate")}: MM-DD-YYYY`;
+      ? `${t("Payment Date")}: ${formatDateSafely(rowData.paymentDateTime)}`
+      : `${t("Payment Date")}: MM-DD-YYYY`;
     
     const amount = `${t("Amount")}: ${rowData?.amount || rowData?.totalFees || "0.00"} ${rowData?.currency || "INR"}`;
 
     // NEW: Add the additional fields
-    const serviceType = `${t("ServiceType")}: ${rowData.type || "N/A"}`;
+    const serviceType = `${t("Service Type")}: ${rowData.type || "N/A"}`;
     const serviceStatus = `${t("Status")}: ${rowData.status || "N/A"}`;
-    const selectedTests = `${t("SelectedTests")}: ${rowData.selectedTests || "N/A"}`;
+    const selectedTests = `${t("Tests")}: ${rowData.selectedTests || "N/A"}`;
 
     pdf.setFontSize(12);
     const col1X = 20;
@@ -486,12 +486,12 @@ const generateBill = async (rowData) => {
     const col2X = 130;
     const col2Y = 80;
 
-    pdf.text(t("PatientDetails"), col1X, col1Y);
+    pdf.text(t("Patient Details"), col1X, col1Y);
     pdf.text(patientInfo, col1X, col1Y + col1Spacing);
     pdf.text(patientPhone, col1X, col1Y + 2 * col1Spacing);
     pdf.text(createdAT, col1X, col1Y + 3 * col1Spacing);
 
-    pdf.text(t("DoctorDetails"), col2X, col2Y);
+    pdf.text(t("Doctor Details"), col2X, col2Y);
     pdf.text(doctorInfo, col2X, col2Y + col1Spacing);
     pdf.text(doctorPhone, col2X, col2Y + 2 * col1Spacing);
     pdf.line(0, 120, 210, 120);
@@ -593,11 +593,11 @@ const generateBill = async (rowData) => {
             <Table striped bordered hover>
               <thead>
                 <tr>
-                  <th>{t("TestName")}</th>
+                  <th>{t("Test Name")}</th>
                   <th>{t("Status")}</th>
-                  <th>{t("RegisteredDate")}</th>
-                  <th>{t("SampleCollectedDate")}</th>
-                  <th>{t("CompletedDate")}</th>
+                  <th>{t("Registered Date")}</th>
+                  <th>{t("Sample Collected Date")}</th>
+                  <th>{t("Completed Date")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -753,16 +753,16 @@ const generateBill = async (rowData) => {
           <tr>
             <th>SrNo</th>
             {/* <th>Type</th> */}
-            <th>PatientName</th>
+            <th>Patient Name</th>
             <th>Doctor Name</th>
-            <th>ReferralType</th>
-            <th>PatientPhone</th>
+            <th>Referral Type</th>
+            <th>Patient Phone</th>
             <th>Remarks</th>
             <th>{t("Status")}</th>
-            <th>{t("PaymentStatus")}</th>
+            <th>{t("Payment Status")}</th>
             <th>{t("Paid")}</th>
-            <th>{t("TotalFees")}</th>
-            <th>{t("RegistrationDate")}</th>
+            <th>{t("Total Fees")}</th>
+            <th>{t("Registration Date")}</th>
             <th>{t("Actions")}</th>
           </tr>
         </thead>
@@ -866,11 +866,11 @@ const generateBill = async (rowData) => {
       <div className="row mb-3 g-3">
         <div className="col-md-4">
           <label className="form-label fw-bold small">
-            {t("SearchbyPatientNameorPhone")}
+            {t("Search by Patient Name or Phone")}
             <input
               type="text"
               className="form-control form-control-sm"
-              placeholder={t("SearchpatientbyNameorPhone")}
+              placeholder={t("Search patient by Name or Phone")}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);

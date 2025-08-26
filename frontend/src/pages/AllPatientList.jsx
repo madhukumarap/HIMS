@@ -635,7 +635,7 @@ const generateBill = async (rowData) => {
 >
   <Modal.Header closeButton>
     <Modal.Title>
-      {t("TestReportFor")}: {report.patientName}
+      {t("Test Report For")}: {report.patientName}
     </Modal.Title>
   </Modal.Header>
   <Modal.Body>

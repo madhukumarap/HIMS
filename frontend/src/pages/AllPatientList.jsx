@@ -78,12 +78,6 @@ function AllPatientList() {
   // Date formatting
   const locales = { enIN, fr };
   
-  const formatDateInSelectedLanguage = useCallback((date) => {
-    if (!date) return "N/A";
-    const selectedLanguage = i18n.language || "en";
-    const locale = locales[selectedLanguage];
-    return formatDate(new Date(date), "PPPP", { locale });
-  }, []);
 
   // Initialize i18n - Fixed to run only once
   useEffect(() => {
@@ -134,6 +128,15 @@ function AllPatientList() {
   useEffect(() => {
     fetchAllData();
   }, []);
+
+    const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0-based
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   const fetchAllData = async () => {
     try {
@@ -741,17 +744,17 @@ const generateBillAppoinment = async (rowData) => {
               <td>{test.TestStatus || "N/A"}</td>
               <td>
                 {test.TestRegisteredDateTime 
-                  ? formatDateInSelectedLanguage(new Date(test.TestRegisteredDateTime))
+                  ? formatDate(new Date(test.TestRegisteredDateTime))
                   : "N/A"}
               </td>
               <td>
                 {test.TestSamplecollectedDateTime 
-                  ? formatDateInSelectedLanguage(new Date(test.TestSamplecollectedDateTime))
-                  :  formatDateInSelectedLanguage(test.TestRegisteredDateTime)}
+                  ? formatDate(new Date(test.TestSamplecollectedDateTime))
+                  :  formatDate(test.TestRegisteredDateTime)}
               </td>
               <td>
                 {test.TestCompletedDateTime 
-                  ? formatDateInSelectedLanguage(new Date(test.TestCompletedDateTime))
+                  ? formatDate(new Date(test.TestCompletedDateTime))
                   : test.TestCompletedDateTime}
               </td>
             </tr>
@@ -810,7 +813,7 @@ const generateBillAppoinment = async (rowData) => {
           )} {selectedGlobalCurrency}
         </p>
         <p className="card-text">
-          {t("RegistrationDate")}: {item.date ? formatDateInSelectedLanguage(new Date(item.date)) : "N/A"}
+          {t("RegistrationDate")}: {item.date ? formatDate(new Date(item.date)) : "N/A"}
         </p>
         
         <div className="d-flex justify-content-center mt-3 flex-wrap gap-2">
@@ -939,7 +942,7 @@ const generateBillAppoinment = async (rowData) => {
                         )} ${selectedGlobalCurrency}`
                       : "NA"}
                   </td>
-                  <td>{item.date ? formatDateInSelectedLanguage(new Date(item.date)) : "N/A"}</td>
+                  <td>{item.date ? formatDate(new Date(item.date)) : "N/A"}</td>
                   <td>
                     <div className="d-flex gap-1">
                       <button

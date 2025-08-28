@@ -225,8 +225,6 @@ const ShowEarningsDoctors = () => {
     return totalEarnings;
   };
 
-  console.log(patients, "patients");
-
   const filterPatientsByDateRange = (patientsList) => {
     if (!dateRange.startDate && !dateRange.endDate) return patientsList;
 

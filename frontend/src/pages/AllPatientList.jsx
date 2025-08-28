@@ -51,39 +51,32 @@ function AllPatientList() {
     new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
   );
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // New state for test reports
   const [testStatuses, setTestStatuses] = useState([]);
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
   // Check if user has access
   if (!currentUser) return "Access Denied";
-  
+
   const roleCurrentUser = currentUser.roles[0];
   const allowedRoles = [
     "ROLE_DIAGNOSTICTECHNICIAN",
     "ROLE_DOCTOR",
     "ROLE_ADMIN",
-    "ROLE_RECEPTIONIST"
+    "ROLE_RECEPTIONIST",
   ];
-  
+
   if (!allowedRoles.includes(roleCurrentUser)) return "Access Denied";
 
   // Date formatting
   const locales = { enIN, fr };
-  
-  const formatDateInSelectedLanguage = useCallback((date) => {
-    if (!date) return "N/A";
-    const selectedLanguage = i18n.language || "en";
-    const locale = locales[selectedLanguage];
-    return formatDate(new Date(date), "PPPP", { locale });
-  }, []);
 
   // Initialize i18n - Fixed to run only once
   useEffect(() => {
@@ -126,7 +119,7 @@ function AllPatientList() {
 
     window.addEventListener("resize", checkIsMobile);
     checkIsMobile();
-    
+
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
@@ -135,9 +128,22 @@ function AllPatientList() {
     fetchAllData();
   }, []);
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0-based
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   const fetchAllData = async () => {
     try {
-      await Promise.all([fetchBookings(), fetchAppointments(), fetchDiagnosticsBookings()]);
+      await Promise.all([
+        fetchBookings(),
+        fetchAppointments(),
+        fetchDiagnosticsBookings(),
+      ]);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -191,40 +197,46 @@ function AllPatientList() {
   const fetchTestStatuses = async (bookingId, type) => {
     try {
       let endpoint = "";
-      
+
       if (type === "pathology") {
-        endpoint = `${import.meta.env.VITE_API_URL}/api/PathologyTestStatuses/${bookingId}`;
+        endpoint = `${
+          import.meta.env.VITE_API_URL
+        }/api/PathologyTestStatuses/${bookingId}`;
       } else if (type === "diagnostics") {
-        endpoint = `${import.meta.env.VITE_API_URL}/api/DiagnosticTestStatuses/${bookingId}`;
+        endpoint = `${
+          import.meta.env.VITE_API_URL
+        }/api/DiagnosticTestStatuses/${bookingId}`;
       } else {
         // Appointments don't have test reports
         toast.info(t("No Test Reports Available For Appointments"));
         return [];
       }
-      
+
       const response = await fetch(endpoint, {
         headers: {
           Authorization: `${currentUser?.Token}`,
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       return data;
     } catch (error) {
       console.error("Error fetching test statuses:", error);
-      toast.error(t("ErrorFetchingTestReports"));
+      toast.error(t("Error Fetching Test Reports"));
       return [];
     }
   };
 
   // Combine and format data from all APIs
   useEffect(() => {
+
+
     const combined = [
-      ...bookings.map(booking => ({
+      ...bookings.map((booking) => ({
         id: booking.id,
         type: "pathology",
         patientName: booking.PatientName,
@@ -239,9 +251,9 @@ function AllPatientList() {
         date: booking.createdAt,
         referralType: booking.commissionValue,
         remarks: booking.remarks,
-        selectedTests: booking.selectedTests
+        selectedTests: booking.selectedTests,
       })),
-      ...appointments.map(appointment => ({
+      ...appointments.map((appointment) => ({
         id: appointment.id,
         type: "appointment",
         patientName: appointment.PatientName,
@@ -256,15 +268,15 @@ function AllPatientList() {
         date: appointment.createdAt,
         referralType: appointment.visitType,
         remarks: appointment.reason,
-        selectedTests: ""
+        selectedTests: "",
       })),
-      ...diagnosticsBookings.map(booking => ({
+      ...diagnosticsBookings.map((booking) => ({
         id: booking.id,
         type: "diagnostics",
         patientName: booking.PatientName,
         phone: booking.PatientPhoneNo,
         doctorName: booking.DoctorName,
-        doctorMobile :booking.DoctorPhone,
+        doctorMobile: booking.DoctorPhone,
         status: booking.status,
         paymentStatus: booking.PaymentStatus,
         amount: booking.PaidAmount,
@@ -273,9 +285,10 @@ function AllPatientList() {
         date: booking.createdAt,
         referralType: booking.commissionValue,
         remarks: booking.remarks,
-        selectedTests: booking.selectedTests
-      }))
+        selectedTests: booking.selectedTests,
+      })),
     ];
+
     setCombinedData(combined);
   }, [bookings, appointments, diagnosticsBookings]);
 
@@ -295,9 +308,10 @@ function AllPatientList() {
   // Filter data based on search query and date range
   const filteredData = combinedData.filter((item) => {
     const isNameMatch =
-      item.patientName && item.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.phone && item.phone.toString().includes(searchQuery);
-    
+      (item.patientName &&
+        item.patientName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.phone && item.phone.toString().includes(searchQuery));
+
     const itemDate = new Date(item.date);
     const isDateMatch =
       (!startDate || itemDate >= startDate) &&
@@ -320,11 +334,11 @@ function AllPatientList() {
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
+
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-    
+
     // First page
     if (startPage > 1) {
       items.push(
@@ -336,7 +350,7 @@ function AllPatientList() {
         items.push(<Pagination.Ellipsis key="ellipsis-start" />);
       }
     }
-    
+
     // Page numbers
     for (let number = startPage; number <= endPage; number++) {
       items.push(
@@ -349,7 +363,7 @@ function AllPatientList() {
         </Pagination.Item>
       );
     }
-    
+
     // Last page
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
@@ -361,32 +375,34 @@ function AllPatientList() {
         </Pagination.Item>
       );
     }
-    
+
     return items;
   };
 
   // View test report
   const handleViewTestReport = async (item) => {
+
     if (item.type === "appointment") {
       toast.info(t("No Test Reports Available For Appointments"));
       return;
     }
-    
+
     setLoading(true);
     try {
       const reports = await fetchTestStatuses(item.id, item.type);
+
       if (reports.length === 0) {
         toast.info(t("No Test Reports Available"));
         return;
       }
-      
+
       setSelectedReport({
         patientName: item.patientName,
         type: item.type,
-        reports: reports
+        reports: reports,
       });
       setShowReportModal(true);
-      return reports
+      return reports;
     } catch (error) {
       console.error("Error viewing test report:", error);
       toast.error(t("ErrorLoadingTestReports"));
@@ -395,8 +411,7 @@ function AllPatientList() {
     }
   };
 
-  // Download test report
-// Download test report
+ 
 
 const generateBill = async (rowData) => {
   const typeData = rowData.type
@@ -676,6 +691,182 @@ const generateBillAppoinment = async (rowData) => {
   }
   };
   
+  // Download test report
+
+  const generateBill = async (rowData) => {
+    console.log("rowData=", rowData);
+
+    try {
+      let testReports = [];
+      if (rowData.type !== "appointment") {
+        try {
+          testReports = await fetchTestStatuses(rowData.id, rowData.type);
+        } catch (error) {
+          console.error("Error fetching test reports:", error);
+          toast.error(t("ErrorLoadingTestReports"));
+        }
+
+        if (!testReports || testReports.length === 0) {
+          toast.error(t("No Test Reports Available"));
+          return;
+        }
+      }
+
+      const hospitalResponse = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/getLastCreatedHospital`,
+        {
+          headers: {
+            Authorization: `${currentUser?.Token}`,
+          },
+        }
+      );
+
+      const hospitalData = hospitalResponse.data.data;
+      const pdf = new jsPDF();
+
+      const hospitalLogoBase64 = hospitalData.logo;
+      const hospitalLogo = new Image();
+      hospitalLogo.src = `data:image/png;base64,${hospitalLogoBase64}`;
+
+      hospitalLogo.onload = function () {
+        pdf.addImage(hospitalLogo, "PNG", 160, 15, 30, 30);
+        pdf.setFontSize(12);
+
+        pdf.text(hospitalData.hospitalName, 20, 20);
+        pdf.text(hospitalData.address, 20, 30);
+        pdf.text(`${hospitalData.pincode}, India`, 20, 35);
+        pdf.text(`Tel: ${hospitalData.landline}`, 20, 40);
+        pdf.text(`Mail: ${hospitalData.email}`, 20, 45);
+
+        pdf.setFillColor("#48bcdf");
+        const titleText = t("Consultant Booking Receipt");
+        const titleHeight = 10;
+        pdf.rect(0, 53, pdf.internal.pageSize.getWidth(), titleHeight, "F");
+        pdf.setTextColor("#ffffff");
+        pdf.setFontSize(16);
+        pdf.text(titleText, pdf.internal.pageSize.getWidth() / 2, 59, {
+          align: "center",
+        });
+        pdf.setTextColor("#000000");
+
+        const formatDateSafely = (dateString) => {
+          if (!dateString) return "N/A";
+          const date = new Date(dateString);
+          return isNaN(date.getTime()) ? "N/A" : formatDate(date);
+        };
+
+        const formatTimeSafely = (dateString) => {
+          if (!dateString) return "N/A";
+          const date = new Date(dateString);
+          return isNaN(date.getTime())
+            ? "N/A"
+            : date.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+        };
+
+        // Prepare table data
+        const tableData = [
+          [
+            t("Patient Name"),
+            rowData.patientName || rowData.PatientName || "N/A",
+          ],
+          [t("Patient Phone"), rowData.phone || rowData.PatientPhone || "N/A"],
+          [
+            t("Booking Date"),
+            formatDateSafely(rowData.createdAt || rowData.date),
+          ],
+          [
+            t("Doctor Name"),
+            `Dr. ${rowData.doctorName || rowData.DoctorName || "N/A"}`,
+          ],
+          [
+            t("Doctor Phone"),
+            rowData.doctorMobile || rowData.DoctorPhone || "N/A",
+          ],
+          [
+            t("Booking Start - End"),
+            `${formatDateSafely(
+              rowData.bookingStartDate || rowData.date
+            )} ${formatTimeSafely(
+              rowData.bookingStartDate || rowData.date
+            )} - ${formatDateSafely(testReports[0]?.TestCompletedDateTime)}`,
+          ],
+          [t("Payment Status"), (rowData.paymentStatus || "N/A").toUpperCase()],
+          [
+            t("Payment Date"),
+            rowData?.date ? formatDateSafely(rowData.date) : "MM-DD-YYYY",
+          ],
+          [
+            t("Amount"),
+            `${rowData?.amount || rowData?.totalFees || "0.00"} ${
+              rowData?.currency || "INR"
+            }`,
+          ],
+          [t("Service Type"), rowData.type || "N/A"],
+          [t("Status"), rowData.status || "N/A"],
+          [
+            t("Tests"),
+            rowData.selectedTests || "No Report Available for this Patient",
+          ],
+        ];
+
+        // Generate the table
+        pdf.autoTable({
+          startY: 70,
+          head: [[t("Field"), t("Details")]],
+          body: tableData,
+          theme: "grid",
+          headStyles: {
+            fillColor: [72, 188, 223],
+            textColor: 255,
+            fontStyle: "bold",
+          },
+          styles: { fontSize: 10, cellPadding: 4 },
+          columnStyles: {
+            0: { cellWidth: 70 },
+            1: { cellWidth: 110 },
+          },
+        });
+
+        // Footer
+        pdf.setFillColor("#48bcdf");
+        pdf.rect(0, 270, pdf.internal.pageSize.getWidth(), 10, "F");
+        pdf.setTextColor("#ffffff");
+        pdf.setFontSize(12);
+        pdf.text(
+          "Powered by mediAI",
+          pdf.internal.pageSize.getWidth() / 2,
+          277,
+          { align: "center" }
+        );
+
+        // Generate file name
+        const reportEndDate =
+          testReports?.[0]?.TestCompletedDateTime || rowData.date;
+        const reportType =
+          rowData.type === "appointment"
+            ? "consultation"
+            : rowData.type || "diagnostic";
+        const safePatientName = (rowData.patientName || "Unknown").replace(
+          /\s+/g,
+          "_"
+        );
+
+        const fileName = `${safePatientName}_${
+          rowData.id
+        }_${reportType}_${formatDateSafely(rowData.date)}_${formatDateSafely(
+          reportEndDate
+        )}_Report.pdf`;
+        pdf.save(fileName);
+      };
+    } catch (error) {
+      console.error("Error generating bill:", error);
+      toast.error(t("ErrorGeneratingBill"));
+    }
+  };
+
   // Convert report data to CSV format
 
   const handleViewTestNames = (item) => {
@@ -709,64 +900,63 @@ const generateBillAppoinment = async (rowData) => {
   // Test Report Modal
   const TestReportModal = ({ show, onHide, report }) => {
     if (!report) return null;
-    
-    return (
-      <Modal 
-  show={show} 
-  onHide={onHide} 
-  size="lg" 
-  centered  // ✅ This centers the modal vertically
->
-  <Modal.Header closeButton>
-    <Modal.Title>
-      {t("Test Report For")}: {report.patientName}
-    </Modal.Title>
-  </Modal.Header>
-  <Modal.Body>
-    <div className="table-responsive">
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>{t("Test Name")}</th>
-            <th>{t("Status")}</th>
-            <th>{t("Registered Date")}</th>
-            <th>{t("Sample Collected Date")}</th>
-            <th>{t("Completed Date")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {report.reports.map((test, index) => (
-            <tr key={index}>
-              <td>{test.testName || "N/A"}</td>
-              <td>{test.TestStatus || "N/A"}</td>
-              <td>
-                {test.TestRegisteredDateTime 
-                  ? formatDateInSelectedLanguage(new Date(test.TestRegisteredDateTime))
-                  : "N/A"}
-              </td>
-              <td>
-                {test.TestSamplecollectedDateTime 
-                  ? formatDateInSelectedLanguage(new Date(test.TestSamplecollectedDateTime))
-                  :  formatDateInSelectedLanguage(test.TestRegisteredDateTime)}
-              </td>
-              <td>
-                {test.TestCompletedDateTime 
-                  ? formatDateInSelectedLanguage(new Date(test.TestCompletedDateTime))
-                  : test.TestCompletedDateTime}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </div>
-  </Modal.Body>
-  <Modal.Footer>
-    <Button variant="secondary" onClick={onHide}>
-      {t("Close")}
-    </Button>
-  </Modal.Footer>
-</Modal>
 
+    return (
+      <Modal
+        show={show}
+        onHide={onHide}
+        size="lg"
+        centered // ✅ This centers the modal vertically
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {t("Test Report For")}: {report.patientName}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="table-responsive">
+            <Table striped bordered hover>
+              <thead>
+                <tr>
+                  <th>{t("Test Name")}</th>
+                  <th>{t("Status")}</th>
+                  <th>{t("Registered Date")}</th>
+                  <th>{t("Sample Collected Date")}</th>
+                  <th>{t("Completed Date")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.reports.map((test, index) => (
+                  <tr key={index}>
+                    <td>{test.testName || "N/A"}</td>
+                    <td>{test.TestStatus || "N/A"}</td>
+                    <td>
+                      {test.TestRegisteredDateTime
+                        ? formatDate(new Date(test.TestRegisteredDateTime))
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {test.TestSamplecollectedDateTime
+                        ? formatDate(new Date(test.TestSamplecollectedDateTime))
+                        : formatDate(test.TestRegisteredDateTime)}
+                    </td>
+                    <td>
+                      {test.TestCompletedDateTime
+                        ? formatDate(new Date(test.TestCompletedDateTime))
+                        : test.TestCompletedDateTime}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={onHide}>
+            {t("Close")}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     );
   };
 
@@ -778,17 +968,27 @@ const generateBillAppoinment = async (rowData) => {
           {t("PatientName")}: {item.patientName}
         </h5>
         <h6 className="card-subtitle mb-2 text-muted">
-          Type: {item.type === "pathology" ? "Pathology Booking" : 
-                item.type === "diagnostics" ? "Diagnostics Booking" : "Appointment"}
+          Type:{" "}
+          {item.type === "pathology"
+            ? "Pathology Booking"
+            : item.type === "diagnostics"
+            ? "Diagnostics Booking"
+            : "Appointment"}
         </h6>
-        <p className="card-text">Sr No: {(currentPage - 1) * itemsPerPage + index + 1}</p>
+        <p className="card-text">
+          Sr No: {(currentPage - 1) * itemsPerPage + index + 1}
+        </p>
         <p className="card-text">
           {t("Doctor Name")}:{" "}
-          {item.doctorName && item.doctorName !== "NA NA" ? `Dr. ${item.doctorName}` : "NA"}
+          {item.doctorName && item.doctorName !== "NA NA"
+            ? `Dr. ${item.doctorName}`
+            : "NA"}
         </p>
-         <p className="card-text">
+        <p className="card-text">
           {t("Doctor Phone")}:{" "}
-          {item.doctorMobile && item.doctorMobile !== "NA NA NA" ? `Dr. ${item.doctorMobile}` : "NA"}
+          {item.doctorMobile && item.doctorMobile !== "NA NA NA"
+            ? `Dr. ${item.doctorMobile}`
+            : "NA"}
         </p>
         <p className="card-text">
           {t("ReferralType")}: {item.referralType || "N/A"}
@@ -803,16 +1003,19 @@ const generateBillAppoinment = async (rowData) => {
           {t("PaymentStatus")}: {item.paymentStatus || "N/A"}
         </p>
         <p className="card-text">
-          {t("TestFees")}: {convertCurrency(
+          {t("TestFees")}:{" "}
+          {convertCurrency(
             item.totalFees || item.amount || 0,
             item.currency || "INR",
             selectedGlobalCurrency
-          )} {selectedGlobalCurrency}
+          )}{" "}
+          {selectedGlobalCurrency}
         </p>
         <p className="card-text">
-          {t("RegistrationDate")}: {item.date ? formatDateInSelectedLanguage(new Date(item.date)) : "N/A"}
+          {t("RegistrationDate")}:{" "}
+          {item.date ? formatDate(new Date(item.date)) : "N/A"}
         </p>
-        
+
         <div className="d-flex justify-content-center mt-3 flex-wrap gap-2">
           <button
             title={t("ViewDetails")}
@@ -821,7 +1024,7 @@ const generateBillAppoinment = async (rowData) => {
           >
             <FaRegEye />
           </button>
-          
+
           <button
             title={t("ViewReport")}
             className="btn btn-info btn-sm"
@@ -830,7 +1033,7 @@ const generateBillAppoinment = async (rowData) => {
           >
             <FaRegEye />
           </button>
-          
+
           <button
             title={t("DownloadReport")}
             className="btn btn-success btn-sm"
@@ -839,7 +1042,7 @@ const generateBillAppoinment = async (rowData) => {
           >
             <FaDownload />
           </button>
-          
+
           <button
             title={t("EditBooking")}
             className="btn btn-secondary btn-sm"
@@ -865,7 +1068,7 @@ const generateBillAppoinment = async (rowData) => {
               </button>
             </>
           )}
-        
+
           {roleCurrentUser !== "ROLE_RECEPTIONIST" && (
             <button
               title={t("diagnsticPatientListTable.DownloadReport")}
@@ -914,8 +1117,10 @@ const generateBillAppoinment = async (rowData) => {
                   </td> */}
                   <td>{item.patientName || "N/A"}</td>
                   <td>
-                    {item.doctorName && item.doctorName !== "NA NA NA" ? `Dr. ${item.doctorName}` : "NA"}
-                  </td>                  
+                    {item.doctorName && item.doctorName !== "NA NA NA"
+                      ? `Dr. ${item.doctorName}`
+                      : "NA"}
+                  </td>
                   <td>{item.referralType || "N/A"}</td>
                   <td>{item.phone || "N/A"}</td>
                   <td>{item.remarks || "N/A"}</td>
@@ -939,7 +1144,7 @@ const generateBillAppoinment = async (rowData) => {
                         )} ${selectedGlobalCurrency}`
                       : "NA"}
                   </td>
-                  <td>{item.date ? formatDateInSelectedLanguage(new Date(item.date)) : "N/A"}</td>
+                  <td>{item.date ? formatDate(new Date(item.date)) : "N/A"}</td>
                   <td>
                     <div className="d-flex gap-1">
                       <button
@@ -971,19 +1176,19 @@ const generateBillAppoinment = async (rowData) => {
           )}
         </tbody>
       </Table>
-      
+
       {/* Pagination controls */}
       {totalPages > 1 && (
         <div className="d-flex justify-content-center mt-3">
           <Pagination>
-            <Pagination.Prev 
-              onClick={() => paginate(Math.max(1, currentPage - 1))} 
-              disabled={currentPage === 1} 
+            <Pagination.Prev
+              onClick={() => paginate(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
             />
             {renderPaginationItems()}
-            <Pagination.Next 
-              onClick={() => paginate(Math.min(totalPages, currentPage + 1))} 
-              disabled={currentPage === totalPages} 
+            <Pagination.Next
+              onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
             />
           </Pagination>
         </div>
@@ -992,9 +1197,9 @@ const generateBillAppoinment = async (rowData) => {
   );
 
   return (
-    <div className="container-fluid py-3">
+    <div className="container-fluid py-3" style={{ padding: "3rem" }}>
       <header className="text-center mb-4">
-        <h2 className="h5">{t("PatientList")}</h2>
+        <h2 className="h5">{t("Patient List")}</h2>
       </header>
 
       {/* Search and Filter Section */}
@@ -1032,26 +1237,32 @@ const generateBillAppoinment = async (rowData) => {
         <div>
           {currentItems.length > 0 ? (
             currentItems.map((item, index) => (
-              <MobileItemCard key={`${item.type}-${item.id}`} item={item} index={index} />
+              <MobileItemCard
+                key={`${item.type}-${item.id}`}
+                item={item}
+                index={index}
+              />
             ))
           ) : (
             <div className="text-center py-4">
-              <p>{t("NoRecordsFound")}</p>
+              <p>{t("No Records Found")}</p>
             </div>
           )}
-          
+
           {/* Pagination for mobile */}
           {totalPages > 1 && (
             <div className="d-flex justify-content-center mt-3">
               <Pagination size="sm">
-                <Pagination.Prev 
-                  onClick={() => paginate(Math.max(1, currentPage - 1))} 
-                  disabled={currentPage === 1} 
+                <Pagination.Prev
+                  onClick={() => paginate(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
                 />
                 <Pagination.Item active>{currentPage}</Pagination.Item>
-                <Pagination.Next 
-                  onClick={() => paginate(Math.min(totalPages, currentPage + 1))} 
-                  disabled={currentPage === totalPages} 
+                <Pagination.Next
+                  onClick={() =>
+                    paginate(Math.min(totalPages, currentPage + 1))
+                  }
+                  disabled={currentPage === totalPages}
                 />
               </Pagination>
             </div>
@@ -1060,12 +1271,12 @@ const generateBillAppoinment = async (rowData) => {
       ) : (
         <DesktopItemTable />
       )}
-      
+
       {/* Test Report Modal */}
-      <TestReportModal 
-        show={showReportModal} 
-        onHide={() => setShowReportModal(false)} 
-        report={selectedReport} 
+      <TestReportModal
+        show={showReportModal}
+        onHide={() => setShowReportModal(false)}
+        report={selectedReport}
       />
       
     </div>

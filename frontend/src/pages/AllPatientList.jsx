@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import jsPDF from "jspdf";
+import html2canvas from 'html2canvas';
 import "jspdf-autotable";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Table, Pagination, Modal, Button } from "react-bootstrap";
@@ -7,6 +8,9 @@ import axios from "axios";
 import Datepickrange from "./DateRangeCalender";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import generatePatientReportPDF from "./generatePatientReportPDF";
+import generatePatientReportPDF1 from "./generatePatientReportPDF1";
+
 import {
   FaPencilAlt,
   FaTrashAlt,
@@ -33,6 +37,9 @@ function AllPatientList() {
 
   // State management
   const [bookings, setBookings] = useState([]);
+  const [reportData, setReportData] = useState(null);
+  const [hopsitalDatadata, setHopsitalData] = useState(null)
+  const [hopsitalDatadata1, setHopsitalData1] = useState(null)
   const [appointments, setAppointments] = useState([]);
   const [diagnosticsBookings, setDiagnosticsBookings] = useState([]);
   const [combinedData, setCombinedData] = useState([]);
@@ -226,11 +233,8 @@ function AllPatientList() {
 
   // Combine and format data from all APIs
   useEffect(() => {
-    console.log(
-      [...bookings, ...diagnosticsBookings, ...appointments],
-      "sdfghjkl;"
-    );
-    
+
+
     const combined = [
       ...bookings.map((booking) => ({
         id: booking.id,
@@ -284,7 +288,7 @@ function AllPatientList() {
         selectedTests: booking.selectedTests,
       })),
     ];
-    console.log(combined, "jhkjsakjhdskajh");
+
     setCombinedData(combined);
   }, [bookings, appointments, diagnosticsBookings]);
 
@@ -377,7 +381,7 @@ function AllPatientList() {
 
   // View test report
   const handleViewTestReport = async (item) => {
-    console.log(item, "ghgjgjh");
+
     if (item.type === "appointment") {
       toast.info(t("No Test Reports Available For Appointments"));
       return;
@@ -386,7 +390,7 @@ function AllPatientList() {
     setLoading(true);
     try {
       const reports = await fetchTestStatuses(item.id, item.type);
-      console.log(reports, "reports");
+
       if (reports.length === 0) {
         toast.info(t("No Test Reports Available"));
         return;
@@ -407,7 +411,286 @@ function AllPatientList() {
     }
   };
 
-  // Download test report
+ 
+
+const generateBill = async (rowData) => {
+  const typeData = rowData.type
+  try {
+    let testReports = [];
+    if (rowData.type !== "appointment") {
+      try {
+        testReports = await fetchTestStatuses(rowData.id, rowData.type);
+      } catch (error) {
+        console.error("Error fetching test reports:", error);
+        toast.error(t("ErrorLoadingTestReports"));
+        return; // Return early on error
+      }
+      
+      if (!testReports || testReports.length === 0) {
+        toast.error(t("No Test Reports Available"));
+        return;
+      }
+
+      if (rowData.id) {
+        try {
+          // Fetch test results (which already includes Doctor data)
+          const testResponse = await fetch(
+            `${
+              import.meta.env.VITE_API_URL
+            }/api/getLastRecordByPatientTestBookingIDForMultipleTest/${rowData.id}`,
+            {
+              headers: {
+                Authorization: `${currentUser?.Token}`,
+              },
+            }
+          );
+
+          if (!testResponse.ok) {
+            throw new Error(`Failed to fetch test data: ${testResponse.status}`);
+          }
+
+          const testData = await testResponse.json();
+
+          const filteredResults = Object.fromEntries(
+            Object.entries(testData.results).filter(
+              ([key, value]) => value !== null
+            )
+          );
+          
+          // Fetch medicine data with await instead of .then()
+          const medicineResponse = await fetch(
+            `${import.meta.env.VITE_API_URL}/api/GetDispensedListOfPr/${rowData.id}`,
+            {
+              headers: {
+                Authorization: `${currentUser?.Token}`,
+              },
+            }
+          );
+          
+          if (!medicineResponse.ok) {
+            throw new Error(`Failed to fetch medicine data: ${medicineResponse.status}`);
+          }
+          
+          const medicineData = await medicineResponse.json();
+          console.log(medicineData);
+          
+          // If you need this data in state, set it but don't rely on it immediately
+          setHopsitalData1(medicineData);
+
+          const hospitalResponse = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/getLastCreatedHospital`,
+            {
+              headers: {
+                Authorization: `${currentUser?.Token}`,
+              },
+            }
+          );
+              
+          const hospitalData = hospitalResponse.data.data;
+                  
+          const hospitalLogoBase64 = hospitalData.logo;
+          const hospitalLogo = new Image();
+          hospitalLogo.src = `data:image/png;base64,${hospitalLogoBase64}`;
+
+          setHopsitalData(hospitalData);
+          
+          // Use medicineData directly (the variable), not the state
+          console.log(medicineData, "medicineData");
+          
+          const reportData = {
+            typeData,
+            hospitalData,
+            pathologyTest: testData.pathologyTest,
+            selectedTests: testData.selectedTestsArray,
+            doctor: testData.Doctor,
+            results: testData.results,
+            medicineData: medicineData // Add medicineData to the report
+          };
+          
+          return reportData;
+
+        } catch (error) {
+          console.error("Error in fetchData:", error);
+          toast.error(error.message || "Failed to fetch data");
+          throw error; // Re-throw to handle in outer catch
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error generating bill:", error);
+    toast.error(t("ErrorGeneratingBill"));
+  }
+};
+
+const generateBillAppoinment = async (rowData) => {
+  const typeData = rowData.type;
+  
+  // Initialize all data with default values
+  let reportData = {
+    typeData,
+    hospitalData: null,
+    pathologyTest: null,
+    selectedTests: null,
+    doctor: null,
+    results: null,
+    medicineData: [],
+    prescriptionData: null,
+    inventoryData: []
+  };
+
+  try {
+    let testReports = [];
+    if (rowData.type == "appointment") {
+      try {
+        testReports = await fetchTestStatuses(rowData.id, rowData.type);
+      } catch (error) {
+        console.error("Error fetching test reports:", error);
+        toast.error(t("ErrorLoadingTestReports"));
+        // Continue execution even if test reports fail
+      }
+      
+      if (!testReports || testReports.length === 0) {
+        toast.error(t("No Test Reports Available"));
+      }
+
+      if (rowData.id) {
+        const id2 = rowData.id || rowData.prescriptionId;
+        
+        // Fetch all data in parallel with error handling for each request
+        try {
+          // Fetch test results
+          const testResponse = await fetch(
+            `${import.meta.env.VITE_API_URL}/api/getLastRecordByPatientTestBookingIDForMultipleTest/${rowData.id}`,
+            {
+              headers: {
+                Authorization: `${currentUser?.Token}`,
+              },
+            }
+          );
+
+          if (testResponse.ok) {
+            const testData = await testResponse.json();
+            reportData = {
+              ...reportData,
+              pathologyTest: testData.pathologyTest,
+              selectedTests: testData.selectedTestsArray,
+              doctor: testData.Doctor,
+              results: testData.results
+            };
+          } else {
+            console.warn("Test data API failed:", testResponse.status);
+          }
+        } catch (error) {
+          console.error("Error fetching test data:", error);
+        }
+
+        try {
+          // Fetch medicine inventory
+          const medicinesResponse = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/getInventryItems`,
+            {
+              headers: {
+                Authorization: `${currentUser?.Token}`,
+              },
+            }
+          );
+          reportData.inventoryData = medicinesResponse.data;
+        } catch (error) {
+          console.error("Error fetching inventory data:", error);
+        }
+
+        try {
+          // Fetch prescription data
+          const prescriptionResponse = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/getOnePrescription/${id2}`,
+            {
+              headers: {
+                Authorization: `${currentUser?.Token}`,
+              },
+            }
+          );
+          reportData.prescriptionData = prescriptionResponse.data;
+        } catch (error) {
+          console.error("Error fetching prescription data:", error);
+        }
+
+        try {
+          // Fetch medicine dispensation data
+          const medicineResponse = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/GetDispensedListOfPr/${id2}`,
+            {
+              headers: {
+                Authorization: `${currentUser?.Token}`,
+              },
+            }
+          );
+          reportData.medicineData = medicineResponse.data;
+        } catch (error) {
+          console.error("Error fetching medicine data:", error);
+        }
+
+        try {
+          // Fetch hospital data
+          const hospitalResponse = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/getLastCreatedHospital`,
+            {
+              headers: {
+                Authorization: `${currentUser?.Token}`,
+              },
+            }
+          );
+          reportData.hospitalData = hospitalResponse.data.data;
+          setHopsitalData(hospitalResponse.data.data);
+        } catch (error) {
+          console.error("Error fetching hospital data:", error);
+        }
+
+        console.log("Final report data:", reportData);
+        return reportData;
+      }
+    }
+  } catch (error) {
+    console.error("Error generating bill:", error);
+    toast.error(t("ErrorGeneratingBill"));
+    // Return whatever data we have collected so far
+    return reportData;
+  }
+  return reportData;
+};
+  const handleGenerateBill = async (rowData) => {
+    if (rowData.type == "appointment"){
+      console.log("jhdkjsahjkashdkj")
+      const data = await generateBillAppoinment(rowData)
+      if (data){
+        setReportData(data);
+      }
+      const hospitalData = data?.hospitalData || hopsitalDatadata
+    generatePatientReportPDF1  (
+      rowData,
+          data?.typeData,
+          hospitalData,
+          data?.medicineData || [],
+          data?.inventoryData
+      )
+    }
+    else {
+    const data = await generateBill(rowData);
+    if (data) {
+      setReportData(data);
+    }
+    const hospitalData = data?.hospitalData || hopsitalDatadata
+    generatePatientReportPDF  (
+          data?.typeData,
+          hospitalData,
+          data?.pathologyTest || [],
+          data?.selectedTests || [],
+          data?.doctor || [],
+          data?.results || [],
+          data?.medicineData || []
+      )
+  }
+  };
+  
   // Download test report
 
   const generateBill = async (rowData) => {
@@ -754,7 +1037,7 @@ function AllPatientList() {
           <button
             title={t("DownloadReport")}
             className="btn btn-success btn-sm"
-            onClick={() => generateBill(item)}
+            onClick={() => handleGenerateBill(item)}
             disabled={loading}
           >
             <FaDownload />
@@ -875,7 +1158,7 @@ function AllPatientList() {
                       <button
                         title={t("DownloadReport")}
                         className="btn  btn-sm border border-dark"
-                        onClick={() => generateBill(item)}
+                        onClick={() => handleGenerateBill(item)}
                         disabled={loading}
                       >
                         <FaDownload />
@@ -995,6 +1278,7 @@ function AllPatientList() {
         onHide={() => setShowReportModal(false)}
         report={selectedReport}
       />
+      
     </div>
   );
 }

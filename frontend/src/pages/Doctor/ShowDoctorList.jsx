@@ -21,6 +21,10 @@ const ShowDoctorList = () => {
   const [doctorList, setDoctorList] = useState([]);
   const [doctorFees, setDoctorFees] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [diagnosticsBookings, setDiagnosticsBookings] = useState([]);
+  const [pathologyBookings, setPathologyBookings] = useState([]);
+  const [enterCodes, setEnterCodes] = useState([]);
 
   // Consultation modal state
   const [showConsultationModal, setShowConsultationModal] = useState(false);
@@ -53,12 +57,14 @@ const ShowDoctorList = () => {
   const [showEditModal, setShowEditModal] = useState(false);
 
   //
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
 
   useEffect(() => {
     fetchDoctorList();
     fetchDoctorFees();
     fetchAllDoctorsAppointments();
+    fetchDiagnosticsBookings();
+    fetchBookings();
+    getEnterCodeList();
   }, []);
 
   const fetchDoctorFees = async () => {
@@ -109,16 +115,60 @@ const ShowDoctorList = () => {
     }
   };
 
+  const fetchDiagnosticsBookings = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/getDiagnosticsBooking`,
+        {
+          headers: { Authorization: `${currentUser?.Token}` },
+        }
+      );
+      setDiagnosticsBookings(response.data.bookings || []);
+    } catch (error) {
+      console.error("Error fetching diagnostics bookings:", error);
+    }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/getAllBookingsTest`,
+        {
+          headers: { Authorization: `${currentUser?.Token}` },
+        }
+      );
+      setPathologyBookings(response.data.bookings);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    }
+  };
+
+  const getEnterCodeList = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/GetEnterCodeList`,
+        {
+          headers: { Authorization: `${currentUser?.Token}` },
+        }
+      );
+      setEnterCodes(res.data); // store data in state
+    } catch (error) {
+      console.error("Error fetching enter code list:", error);
+    }
+  };
+
+  console.log(diagnosticsBookings, "diagnosticsBookings");
+  console.log(patients, "patients");
+  console.log(pathologyBookings, "bookings");
+  console.log(enterCodes, "enterCodes");
+
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    const options = {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0-based
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   // Function to get the applicable fee for a patient based on consultation date
@@ -203,31 +253,75 @@ const ShowDoctorList = () => {
     setSelectedDoctorCurrency(latestFee?.consultationCurrency || "INR");
     setDateRange({ startDate: "", endDate: "" });
 
-    // Filter patients by referralDoctorId
+    // Filter patients by referralDoctorId (consultations)
     const filteredPatients = patients.filter(
       (patient) => patient.referralDoctorId === doctor.id
     );
-    setDoctorReferrals(filteredPatients);
-    setFilteredReferrals(filteredPatients);
+
+    // Filter diagnostics bookings by doctorId (not referralDoctorId)
+    const filteredDiagnostics = diagnosticsBookings.filter(
+      (booking) => booking.doctorId === doctor.id
+    );
+
+    // Filter pathology bookings by doctorId (not referralDoctorId)
+    const filteredPathology = pathologyBookings.filter(
+      (booking) => booking.doctorId === doctor.id
+    );
+
+    // Combine all referral data
+    const allReferrals = [
+      ...filteredPatients.map((item) => ({ ...item, type: "Consultation" })),
+      ...filteredDiagnostics.map((item) => ({ ...item, type: "Diagnostics" })),
+      ...filteredPathology.map((item) => ({ ...item, type: "Pathology" })),
+    ];
+
+    setDoctorReferrals(allReferrals);
+    setFilteredReferrals(allReferrals);
 
     // Calculate total amount from referrals
-    const totalPatientFees = filteredPatients.reduce((sum, patient) => {
-      return sum + (parseFloat(patient.amount) || 0);
+    const totalPatientFees = allReferrals.reduce((sum, referral) => {
+      return (
+        sum +
+        (parseFloat(referral.amount) ||
+          parseFloat(referral.PaidAmount) ||
+          parseFloat(referral.TotalFees) ||
+          0)
+      );
     }, 0);
     setTotalReferralFees(totalPatientFees);
 
-    // Calculate doctor's referral earnings based on applicable fees
+    // Calculate doctor's referral earnings based on applicable fees and enter codes
     let doctorTotalEarnings = 0;
-    filteredPatients.forEach((patient) => {
-      const applicableFee = getApplicableFee(
-        doctor.id,
-        patient.bookingStartDate,
-        "referral"
-      );
-      doctorTotalEarnings += applicableFee;
-    });
-    setReferralEarnings(doctorTotalEarnings);
 
+    allReferrals.forEach((referral) => {
+      // For consultation referrals
+      if (referral.type === "Consultation") {
+        const applicableFee = getApplicableFee(
+          doctor.id,
+          referral.bookingStartDate,
+          "referral"
+        );
+        doctorTotalEarnings += applicableFee;
+      }
+      // For diagnostics and pathology referrals
+      else if (referral.commissionValue) {
+        // Find the enter code
+        const enterCode = enterCodes.find(
+          (code) => code.codeType === referral.commissionValue
+        );
+        if (enterCode) {
+          // Extract percentage value (e.g., "10%" -> 10)
+          const percentage = parseFloat(enterCode.value);
+          const amount =
+            parseFloat(referral.PaidAmount) ||
+            parseFloat(referral.TotalFees) ||
+            0;
+          doctorTotalEarnings += (amount * percentage) / 100;
+        }
+      }
+    });
+
+    setReferralEarnings(doctorTotalEarnings);
     setShowReferralModal(true);
   };
 
@@ -366,21 +460,48 @@ const ShowDoctorList = () => {
     setFilteredReferrals(filtered);
 
     // Recalculate totals for filtered data
-    const totalPatientFees = filtered.reduce((sum, patient) => {
-      return sum + (parseFloat(patient.amount) || 0);
+    const totalPatientFees = filtered.reduce((sum, referral) => {
+      return (
+        sum +
+        (parseFloat(referral.amount) ||
+          parseFloat(referral.PaidAmount) ||
+          parseFloat(referral.TotalFees) ||
+          0)
+      );
     }, 0);
     setTotalReferralFees(totalPatientFees);
 
-    // Recalculate referral earnings based on applicable fees
+    // Recalculate referral earnings based on applicable fees and enter codes
     let doctorTotalEarnings = 0;
-    filtered.forEach((patient) => {
-      const applicableFee = getApplicableFee(
-        selectedDoctorId,
-        patient.bookingStartDate,
-        "referral"
-      );
-      doctorTotalEarnings += applicableFee;
+
+    filtered.forEach((referral) => {
+      // For consultation referrals
+      if (referral.type === "Consultation") {
+        const applicableFee = getApplicableFee(
+          selectedDoctorId,
+          referral.bookingStartDate,
+          "referral"
+        );
+        doctorTotalEarnings += applicableFee;
+      }
+      // For diagnostics and pathology referrals
+      else if (referral.commissionValue) {
+        // Find the enter code
+        const enterCode = enterCodes.find(
+          (code) => code.codeType === referral.commissionValue
+        );
+        if (enterCode) {
+          // Extract percentage value (e.g., "10%" -> 10)
+          const percentage = parseFloat(enterCode.value);
+          const amount =
+            parseFloat(referral.PaidAmount) ||
+            parseFloat(referral.TotalFees) ||
+            0;
+          doctorTotalEarnings += (amount * percentage) / 100;
+        }
+      }
     });
+
     setReferralEarnings(doctorTotalEarnings);
   };
 
@@ -447,16 +568,16 @@ const ShowDoctorList = () => {
                       <th style={{ whiteSpace: "nowrap" }}>Address</th>
                       <th style={{ whiteSpace: "nowrap" }}>Consultation Fee</th>
                       <th style={{ whiteSpace: "nowrap" }}>Referal Fee</th>
-                      <th style={{ whiteSpace: "nowrap" }}>Last Fee Update</th>
                       <th style={{ whiteSpace: "nowrap" }}>
-                        Actions
+                        Diagnostics/Pathology Commission
                       </th>
+                      {/* <th style={{ whiteSpace: "nowrap" }}>Last Fee Update</th> */}
+                      <th style={{ whiteSpace: "nowrap" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {doctorList.map((doctor, index) => {
                       const latestFee = getLatestDoctorFee(doctor.id);
-
                       return (
                         <tr key={doctor.id}>
                           <td style={{ textAlign: "center" }}>{index + 1}</td>
@@ -487,11 +608,25 @@ const ShowDoctorList = () => {
                               : "N/A"}
                           </td>
                           <td style={{ whiteSpace: "nowrap" }}>
+                            {enterCodes.length > 0 ? (
+                              <div>
+                                {enterCodes.map((code, idx) => (
+                                  <div key={code.id}>
+                                    {code.codeType}: {code.value}
+                                    {idx < enterCodes.length - 1 && <br />}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              "N/A"
+                            )}
+                          </td>
+                          {/* <td style={{ whiteSpace: "nowrap" }}>
                             {latestFee
                               ? formatDate(latestFee.feeUpdatedAt)
                               : "N/A"}
-                          </td>
-                          <td>
+                          </td> */}
+                          <td style={{ whiteSpace: "nowrap" }}>
                             <div className="d-flex justify-content-start">
                               <button
                                 title="View Patient Consultations"
@@ -711,7 +846,7 @@ const ShowDoctorList = () => {
               {filteredConsultations.length}
               <br />
               <strong>Doctor's Total Earnings:</strong>{" "}
-              {doctorEarnings.toFixed(2)} INR
+              {doctorEarnings.toFixed(2)} {selectedDoctorCurrency}
             </div>
             <div>
               <Button
@@ -799,6 +934,7 @@ const ShowDoctorList = () => {
                 }}
                 patients={filteredReferrals}
                 dateRange={dateRange}
+                enterCodes={enterCodes}
               />
             </div>
           </div>
@@ -815,57 +951,94 @@ const ShowDoctorList = () => {
               >
                 <tr>
                   <th>Sr. No</th>
+                  <th>Type</th>
                   <th>Patient Name</th>
                   <th>Phone</th>
-                  <th>Visit Type</th>
-                  <th>Reason</th>
+                  <th>Procedure/Visit Type</th>
                   <th>Amount Paid</th>
                   <th>Referral Fee</th>
-                  <th>Patient Payment Status</th>
-                  <th>Consultation Date</th>
+                  <th>Payment Status</th>
+                  <th>Date</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredReferrals.map((patient, index) => {
-                  const applicableReferralFee = getApplicableFee(
-                    selectedDoctorId,
-                    patient.bookingStartDate,
-                    "referral"
-                  );
-                  const applicableFeeRecord = doctorFees
-                    .filter((fee) => fee.doctorId === selectedDoctorId)
-                    .find(
-                      (fee) =>
-                        new Date(patient.bookingStartDate) >=
-                        new Date(fee.feeUpdatedAt)
+                {filteredReferrals.map((referral, index) => {
+                  let referralFee = 0;
+                  let procedureVisitType = "";
+                  let patientName = "";
+                  let phone = "";
+                  let amountPaid = 0;
+                  let paymentStatus = "";
+                  let date = "";
+                  let currency = "INR";
+
+                  // Consultation referral
+                  if (referral.type === "Consultation") {
+                    procedureVisitType = referral.visitType;
+                    patientName = referral.PatientName;
+                    phone = referral.PatientPhone;
+                    amountPaid = parseFloat(referral.amount) || 0;
+                    paymentStatus = referral.paymentStatus;
+                    date = formatDate(referral.bookingStartDate);
+                    currency = referral.Currency || "INR";
+
+                    referralFee = getApplicableFee(
+                      selectedDoctorId,
+                      referral.bookingStartDate,
+                      "referral"
                     );
+                  }
+                  // Diagnostics or Pathology referral
+                  else {
+                    procedureVisitType =
+                      referral.selectedTests || referral.PackageName || "N/A";
+                    patientName = referral.PatientName;
+                    phone = referral.PatientPhoneNo;
+                    amountPaid =
+                      parseFloat(referral.PaidAmount) ||
+                      parseFloat(referral.TotalFees) ||
+                      0;
+                    paymentStatus = referral.PaymentStatus;
+                    date = formatDate(
+                      referral.PaymentDate || referral.createdAt
+                    );
+                    currency = referral.Currency || "INR";
+
+                    // Calculate referral fee based on enter code
+                    const enterCode = enterCodes.find(
+                      (code) => code.codeType === referral.commissionValue
+                    );
+                    if (enterCode) {
+                      const percentage = parseFloat(enterCode.value);
+                      referralFee = (amountPaid * percentage) / 100;
+                    }
+                  }
 
                   return (
-                    <tr key={patient.id}>
+                    <tr key={`${referral.type}-${referral.id}`}>
                       <td>{index + 1}</td>
-                      <td>{patient.PatientName}</td>
-                      <td>{patient.PatientPhone}</td>
-                      <td>{patient.visitType}</td>
-                      <td>{patient.reason}</td>
+                      <td>{referral.type}</td>
+                      <td>{patientName}</td>
+                      <td>{phone}</td>
+                      <td>{procedureVisitType}</td>
                       <td>
-                        {patient.amount} {patient.Currency}
+                        {amountPaid.toFixed(2)} {currency}
                       </td>
                       <td>
-                        {applicableReferralFee}{" "}
-                        {applicableFeeRecord?.consultationCurrency || "INR"}
+                        {referralFee.toFixed(2)} {selectedDoctorCurrency}
                       </td>
                       <td>
                         <span
                           className={`badge ${
-                            patient.paymentStatus === "paid"
+                            paymentStatus === "paid" || paymentStatus === "Paid"
                               ? "bg-success"
                               : "bg-danger"
                           }`}
                         >
-                          {patient.paymentStatus}
+                          {paymentStatus}
                         </span>
                       </td>
-                      <td>{formatDate(patient.bookingStartDate)}</td>
+                      <td>{date}</td>
                     </tr>
                   );
                 })}

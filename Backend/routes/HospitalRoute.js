@@ -52,7 +52,7 @@ router.post("/createHospital", upload.single("logo"), async (req, res) => {
       email: formData.email,
       hospitalAdminEmail: formData.hospitalAdminEmail,
       phone: formData.phone,
-      countryCode:formData.countryCode,
+      countryCode: formData.countryCode,
       landline: formData.landline,
       HospitalUserName: formData.hospitalUserName,
       HospitalGUID: newGuid,
@@ -96,7 +96,10 @@ router.get("/getAllHospitals", async (req, res) => {
             imageBase64 = imageBuffer.toString("base64");
           }
         } catch (err) {
-          console.warn(`Logo not found for hospital ${hospital.id}:`, err.message);
+          console.warn(
+            `Logo not found for hospital ${hospital.id}:`,
+            err.message
+          );
         }
       }
 
@@ -299,9 +302,9 @@ router.get("/getLastCreatedHospital", async (req, res) => {
       order: [["createdAt", "DESC"]],
       limit: 1,
     });
-    
+
     console.log("lastCreatedHospital=", lastCreatedHospital);
-    
+
     if (!lastCreatedHospital) {
       return res
         .status(404)
@@ -314,18 +317,20 @@ router.get("/getLastCreatedHospital", async (req, res) => {
     let logoData = null;
 
     // If logo path exists and is valid, read the file
-    if (imagePath && typeof imagePath === 'string' && imagePath.trim() !== '') {
+    if (imagePath && typeof imagePath === "string" && imagePath.trim() !== "") {
       try {
         const imageBuffer = fs.readFileSync(imagePath);
         logoData = imageBuffer.toString("base64");
       } catch (error) {
         console.error("Error reading logo file:", error);
         // Fall back to default URL if file reading fails
-        logoData = "https://silfratech.com/wp-content/uploads/2024/10/cropped-cropped-Screenshot_2024-10-04_131150_-_Copy-removebg-preview.png";
+        logoData =
+          "https://silfratech.com/wp-content/uploads/2024/10/cropped-cropped-Screenshot_2024-10-04_131150_-_Copy-removebg-preview.png";
       }
     } else {
       // Use default logo URL when no logo exists
-      logoData = "https://silfratech.com/wp-content/uploads/2024/10/cropped-cropped-Screenshot_2024-10-04_131150_-_Copy-removebg-preview.png";
+      logoData =
+        "https://silfratech.com/wp-content/uploads/2024/10/cropped-cropped-Screenshot_2024-10-04_131150_-_Copy-removebg-preview.png";
     }
 
     // Convert the hospital logo image from BLOB to base64
@@ -344,9 +349,10 @@ router.get("/getLastCreatedHospital", async (req, res) => {
       baseCurrency: lastCreatedHospital.baseCurrency,
       baseCurrencyStatus: lastCreatedHospital.baseCurrencyStatus,
       patientRegistrationFee: lastCreatedHospital.patientRegistrationFee,
-      patientRegistrationCurrency: lastCreatedHospital.patientRegistrationCurrency,
+      patientRegistrationCurrency:
+        lastCreatedHospital.patientRegistrationCurrency,
       createdAt: lastCreatedHospital.createdAt,
-      updatedAt: lastCreatedHospital.updatedAt
+      updatedAt: lastCreatedHospital.updatedAt,
     };
 
     res.json({ success: true, data: hospitalWithImage });
@@ -355,6 +361,7 @@ router.get("/getLastCreatedHospital", async (req, res) => {
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
+
 router.get("/getHospital/:id", async (req, res) => {
   const database = req.headers.userDatabase;
   const connectionList = await getConnectionList(database);

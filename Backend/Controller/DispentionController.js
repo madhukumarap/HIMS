@@ -26,12 +26,14 @@ const GetDispensedListOfPr = async (req, res) => {
         prescription_Id: prescriptionId,
       },
     });
-
+    console.log(data,"medicine data")
     const lastDispenseData = data;
     const dispenseTableId = req.params.dispenseTableId;
+    const patId = lastDispenseData && lastDispenseData.length > 0 ? lastDispenseData[0].prescription_Id : prescriptionId;
+    console.log(patId,"patIdpatIdpatIdpatId")
     const data2 = await DispensedMedicine.findAll({
       where: {
-        prescription_Id: lastDispenseData[0].prescription_Id,
+        patient_Id: patId,
       },
     });
 

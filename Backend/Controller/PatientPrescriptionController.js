@@ -45,6 +45,47 @@ const alternativeMedecines = async (req, res) => {
 };
 
 //one to many mapping in prescription table and medecines
+// const getOnePrescription = async (req, res) => {
+//   const database = req.headers.userDatabase;
+//   const connectionList = await getConnectionList(database);
+//   const db = connectionList[database];
+//   const PaisentPrescription = db.paisentprescription;
+//   const Medecines = db.paitentMedicines;
+//   const prescription_Id = req.params.prescription_Id;
+
+//   try {
+//     const data = await PaisentPrescription.findOne({
+//       include: [
+//         {
+//           model: Medecines,
+//           as: "medicines",
+//         },
+//       ],
+//       where: { id: prescription_Id },
+//     });
+//     console.log("fghjklhghkgjhjhg")
+//     //
+//     const imagePath = data.image || null;
+//     console.log("imagePath=", imagePath);
+//     let imageBase64;
+//     if (imagePath) {
+//       const imageBuffer = fs.readFileSync(imagePath);
+//       //   console.log("imageBuffer=", imageBuffer == true);
+//       imageBase64 = imageBuffer.toString("base64");
+
+//       // Convert image buffer to base64
+//       const base64Image = data.image.toString("base64");
+
+//       // Add the base64 image to the data object
+//       data.image = imageBase64;
+//     }
+//     // console.log(data.image);
+//     res.status(200).send(data);
+//   } catch (error) {
+//     console.error("Error:", error.message);
+//     res.status(500).send("Internal Server Error");
+//   }
+// };
 const getOnePrescription = async (req, res) => {
   const database = req.headers.userDatabase;
   const connectionList = await getConnectionList(database);
@@ -61,32 +102,45 @@ const getOnePrescription = async (req, res) => {
           as: "medicines",
         },
       ],
-      where: { id: prescription_Id },
+      where: { 
+    id: prescription_Id || patient_Id // Use prescription_Id, fallback to patient_Id if prescription_Id is falsy
+  }
     });
-
-    //
-    const imagePath = data.image;
+    
+    console.log("fghjklhghkgjhjhg");
+    
+    // Check if data is null (no prescription found)
+    if (!data) {
+      return res.status(404).send("Prescription not found");
+    }
+    
+    const imagePath = data.image || null;
     console.log("imagePath=", imagePath);
+    
     let imageBase64;
     if (imagePath) {
-      const imageBuffer = fs.readFileSync(imagePath);
-      //   console.log("imageBuffer=", imageBuffer == true);
-      imageBase64 = imageBuffer.toString("base64");
+      try {
+        const imageBuffer = fs.readFileSync(imagePath);
+        imageBase64 = imageBuffer.toString("base64");
+        
+        // Convert image buffer to base64
+        const base64Image = data.image.toString("base64");
 
-      // Convert image buffer to base64
-      const base64Image = data.image.toString("base64");
-
-      // Add the base64 image to the data object
-      data.image = imageBase64;
+        // Add the base64 image to the data object
+        data.image = imageBase64;
+      } catch (fsError) {
+        console.error("Error reading image file:", fsError.message);
+        // Continue without the image if file reading fails
+        data.image = null;
+      }
     }
-    // console.log(data.image);
+    
     res.status(200).send(data);
   } catch (error) {
     console.error("Error:", error.message);
     res.status(500).send("Internal Server Error");
   }
 };
-
 const getPatientIfNotDispensed = async (req, res) => {
   const database = req.headers.userDatabase;
   const connectionList = await getConnectionList(database);

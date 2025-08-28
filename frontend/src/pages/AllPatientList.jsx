@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import jsPDF from "jspdf";
+import "jspdf-autotable";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Table, Pagination, Modal, Button } from "react-bootstrap";
 import axios from "axios";
@@ -370,7 +371,7 @@ function AllPatientList() {
     setLoading(true);
     try {
       const reports = await fetchTestStatuses(item.id, item.type);
-      
+      console.log(reports,"reports")
       if (reports.length === 0) {
         toast.info(t("No Test Reports Available"));
         return;
@@ -393,11 +394,11 @@ function AllPatientList() {
 
   // Download test report
 // Download test report
+
 const generateBill = async (rowData) => {
   console.log("rowData=", rowData);
-  
+
   try {
-    // Fetch test reports first
     let testReports = [];
     if (rowData.type !== "appointment") {
       try {
@@ -406,9 +407,13 @@ const generateBill = async (rowData) => {
         console.error("Error fetching test reports:", error);
         toast.error(t("ErrorLoadingTestReports"));
       }
+
+      if (!testReports || testReports.length === 0) {
+        toast.error(t("No Test Reports Available"));
+        return;
+      }
     }
-    console.log(testReports,"testReports")
-    // Fetch hospital data
+
     const hospitalResponse = await axios.get(
       `${import.meta.env.VITE_API_URL}/api/getLastCreatedHospital`,
       {
@@ -418,48 +423,32 @@ const generateBill = async (rowData) => {
       }
     );
 
-    console.log("hospitalResponse=", hospitalResponse);
     const hospitalData = hospitalResponse.data.data;
-
     const pdf = new jsPDF();
-    pdf.setFontSize(12);
 
-    // Add Hospital Name and Logo
-    const hospitalName = hospitalData.hospitalName;
     const hospitalLogoBase64 = hospitalData.logo;
-    const hospitalAddressLine1 = hospitalData.address;
-    const hospitalAddressLine2 = `${hospitalData.pincode}, India`;
-    const email = `Mail: ${hospitalData.email}`;
-    const landline = `Tel: ${hospitalData.landline}`;
-    
     const hospitalLogo = new Image();
     hospitalLogo.src = `data:image/png;base64,${hospitalLogoBase64}`;
 
     hospitalLogo.onload = function () {
       pdf.addImage(hospitalLogo, "PNG", 160, 15, 30, 30);
+      pdf.setFontSize(12);
 
-      pdf.text(hospitalName, 20, 20);
-      pdf.text(hospitalAddressLine1, 20, 30);
-      pdf.text(hospitalAddressLine2, 20, 35);
-      pdf.text(landline, 20, 40);
-      pdf.text(email, 20, 45);
-      
+      pdf.text(hospitalData.hospitalName, 20, 20);
+      pdf.text(hospitalData.address, 20, 30);
+      pdf.text(`${hospitalData.pincode}, India`, 20, 35);
+      pdf.text(`Tel: ${hospitalData.landline}`, 20, 40);
+      pdf.text(`Mail: ${hospitalData.email}`, 20, 45);
+
       pdf.setFillColor("#48bcdf");
       const titleText = t("Consultant Booking Receipt");
       const titleHeight = 10;
       pdf.rect(0, 53, pdf.internal.pageSize.getWidth(), titleHeight, "F");
       pdf.setTextColor("#ffffff");
       pdf.setFontSize(16);
-      pdf.text(
-        titleText,
-        pdf.internal.pageSize.getWidth() / 2,
-        55 + titleHeight / 2,
-        { align: "center" }
-      );
-
+      pdf.text(titleText, pdf.internal.pageSize.getWidth() / 2, 59, { align: "center" });
       pdf.setTextColor("#000000");
 
-      // FIXED: Add date validation before formatting
       const formatDateSafely = (dateString) => {
         if (!dateString) return "N/A";
         const date = new Date(dateString);
@@ -475,125 +464,59 @@ const generateBill = async (rowData) => {
         });
       };
 
-      const patientInfo = `${t("Patient Details")}: ${rowData.patientName || rowData.PatientName || "N/A"}`;
-      const patientPhone = `${t("Patient Phone")}: ${rowData.phone || rowData.PatientPhone || "N/A"}`;
-      const createdAT = `${t("Booking Date")}: ${formatDateSafely(rowData.createdAt || rowData.date)}`;
-      const doctorInfo = `${t("Doctor Details")}: Dr ${rowData.doctorName || rowData.DoctorName || "N/A"}`;
-      const doctorPhone = `${t("Doctor Phone")}: ${rowData.doctorMobile || rowData.DoctorPhone || "N/A"}`;
-      
-      const bookingStartEnd = `${t("Consultant Booking Receipt")}: ${formatDateSafely(rowData.bookingStartDate || rowData.date)} ${formatTimeSafely(rowData.bookingStartDate || rowData.date)} - ${formatDateSafely(testReports[0].TestCompletedDateTime)}`;
-      
-      const paymentStatus = `${t("Payment Status")}: ${(rowData.paymentStatus || "N/A").toUpperCase()}`;
-      
-      const paymentDateTime = rowData?.date
-        ? `${t("Payment Date")}: ${formatDateSafely(rowData.date)}`
-        : `${t("Payment Date")}: MM-DD-YYYY`;
-      
-      const amount = `${t("Amount")}: ${rowData?.amount || rowData?.totalFees || "0.00"} ${rowData?.currency || "INR"}`;
+      // Prepare table data
+      const tableData = [
+        [t("Patient Name"), rowData.patientName || rowData.PatientName || "N/A"],
+        [t("Patient Phone"), rowData.phone || rowData.PatientPhone || "N/A"],
+        [t("Booking Date"), formatDateSafely(rowData.createdAt || rowData.date)],
+        [t("Doctor Name"), `Dr. ${rowData.doctorName || rowData.DoctorName || "N/A"}`],
+        [t("Doctor Phone"), rowData.doctorMobile || rowData.DoctorPhone || "N/A"],
+        [t("Booking Start - End"), `${formatDateSafely(rowData.bookingStartDate || rowData.date)} ${formatTimeSafely(rowData.bookingStartDate || rowData.date)} - ${formatDateSafely(testReports[0]?.TestCompletedDateTime)}`],
+        [t("Payment Status"), (rowData.paymentStatus || "N/A").toUpperCase()],
+        [t("Payment Date"), rowData?.date ? formatDateSafely(rowData.date) : "MM-DD-YYYY"],
+        [t("Amount"), `${rowData?.amount || rowData?.totalFees || "0.00"} ${rowData?.currency || "INR"}`],
+        [t("Service Type"), rowData.type || "N/A"],
+        [t("Status"), rowData.status || "N/A"],
+        [t("Tests"), rowData.selectedTests || "No Report Available for this Patient"],
+      ];
 
-      // Service information
-      const serviceType = `${t("Service Type")}: ${rowData.type || "N/A"}`;
-      const serviceStatus = `${t("Status")}: ${rowData.status || "N/A"}`;
-      const selectedTests = `${t("Tests")}: ${rowData.selectedTests || "N/A"}`;
+      // Generate the table
+      pdf.autoTable({
+        startY: 70,
+        head: [[t("Field"), t("Details")]],
+        body: tableData,
+        theme: "grid",
+        headStyles: { fillColor: [72, 188, 223], textColor: 255, fontStyle: "bold" },
+        styles: { fontSize: 10, cellPadding: 4 },
+        columnStyles: {
+          0: { cellWidth: 70 },
+          1: { cellWidth: 110 },
+        },
+      });
 
-      pdf.setFontSize(12);
-      const col1X = 20;
-      const col1Y = 80;
-      const col1Spacing = 10;
-      const col2X = 130;
-      const col2Y = 80;
-
-      pdf.text(t("Patient Details"), col1X, col1Y);
-      pdf.text(patientInfo, col1X, col1Y + col1Spacing);
-      pdf.text(patientPhone, col1X, col1Y + 2 * col1Spacing);
-      pdf.text(createdAT, col1X, col1Y + 3 * col1Spacing);
-
-      pdf.text(t("Doctor Details"), col2X, col2Y);
-      pdf.text(doctorInfo, col2X, col2Y + col1Spacing);
-      pdf.text(doctorPhone, col2X, col2Y + 2 * col1Spacing);
-      pdf.line(0, 120, 210, 120);
-
-      pdf.text(bookingStartEnd, 20, 140);
-      pdf.text(paymentStatus, 20, 150);
-      pdf.text(paymentDateTime, 20, 160);
-      pdf.text(amount, 20, 170);
-      
-      // Service information
-      pdf.text(serviceType, 20, 180);
-      pdf.text(serviceStatus, 20, 190);
-      pdf.text(selectedTests, 20, 200);
-
-      // Add test reports if available
-      let yPosition = 220;
-      if (testReports.length > 0) {
-        // pdf.text(t("Test Reports"), 20, yPosition);
-        yPosition += 10;
-        
-        testReports.forEach((report, index) => {
-          if (yPosition > 250) {
-            pdf.addPage();
-            yPosition = 20;
-          }
-          
-          // pdf.text(`${index + 1}. ${report.testName || "Test"}`, 20, yPosition);
-          // pdf.text(`${t("Status")}: ${report.status || "N/A"}`, 40, yPosition + 5);
-          // pdf.text(`${t("Result")}: ${report.result || "N/A"}`, 40, yPosition + 10);
-          
-          // Add more report details as needed
-          yPosition += 20;
-        });
-      } else if (rowData.type !== "appointment") {
-        pdf.text(t("No Test Reports Available"), 20, yPosition);
-        yPosition += 10;
-      }
-
+      // Footer
       pdf.setFillColor("#48bcdf");
       pdf.rect(0, 270, pdf.internal.pageSize.getWidth(), 10, "F");
       pdf.setTextColor("#ffffff");
       pdf.setFontSize(12);
+      pdf.text("Powered by mediAI", pdf.internal.pageSize.getWidth() / 2, 277, { align: "center" });
 
-      pdf.text(
-        "Powered by mediAI",
-        pdf.internal.pageSize.getWidth() / 2 - 17,
-        277
-      );
-      
-      pdf.save("Receipt.pdf");
+      // Generate file name
+      const reportEndDate = testReports?.[0]?.TestCompletedDateTime || rowData.date;
+      const reportType = rowData.type === "appointment" ? "consultation" : rowData.type || "diagnostic";
+      const safePatientName = (rowData.patientName || "Unknown").replace(/\s+/g, "_");
+
+      const fileName = `${safePatientName}_${rowData.id}_${reportType}_${formatDateSafely(rowData.date)}_${formatDateSafely(reportEndDate)}_Report.pdf`;
+      pdf.save(fileName);
     };
   } catch (error) {
     console.error("Error generating bill:", error);
     toast.error(t("ErrorGeneratingBill"));
   }
 };
+
   // Convert report data to CSV format
-  const convertToCSV = (reportData) => {
-    let csv = `Patient Name,Phone,Doctor,Date,Test Type\n`;
-    csv += `${reportData.patientName},${reportData.patientPhone},${reportData.doctorName},${reportData.date},${reportData.type}\n\n`;
-    
-    csv += `Test Name,Status,Registered Date,Sample Collected Date,Completed Date\n`;
-    reportData.tests.forEach(test => {
-      csv += `${test.testName || 'N/A'},${test.TestStatus || 'N/A'},${test.TestRegisteredDateTime || 'N/A'},${test.TestSamplecollectedDateTime || 'N/A'},${test.TestCompletedDateTime || 'N/A'}\n`;
-    });
-    
-    return csv;
-  };
 
-  // Download CSV file
-  const downloadCSV = (csvContent, fileName) => {
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute("href", url);
-    link.setAttribute("download", fileName);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Booking actions
   const handleViewTestNames = (item) => {
     console.log("View details for:", item);
   };
@@ -663,12 +586,12 @@ const generateBill = async (rowData) => {
               <td>
                 {test.TestSamplecollectedDateTime 
                   ? formatDateInSelectedLanguage(new Date(test.TestSamplecollectedDateTime))
-                  : "N/A"}
+                  :  formatDateInSelectedLanguage(test.TestRegisteredDateTime)}
               </td>
               <td>
                 {test.TestCompletedDateTime 
                   ? formatDateInSelectedLanguage(new Date(test.TestCompletedDateTime))
-                  : "N/A"}
+                  : test.TestCompletedDateTime}
               </td>
             </tr>
           ))}

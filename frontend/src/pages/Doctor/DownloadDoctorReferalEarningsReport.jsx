@@ -5,7 +5,7 @@ import { FaDownload } from "react-icons/fa";
 import axios from "axios";
 import AuthService from "../../services/auth.service";
 
-const DownloadDoctorReferalEarningsReport = ({ doctor, patients, dateRange }) => {
+const DownloadDoctorReferalEarningsReport = ({ doctor, patients, dateRange, enterCodes }) => {
   const currentUser = AuthService.getCurrentUser();
 
   const fetchHospitalData = async () => {
@@ -33,7 +33,18 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients, dateRange }) =>
     const end = dateRange.endDate ? new Date(dateRange.endDate) : null;
     
     return patients.filter(patient => {
-      const patientDate = new Date(patient.bookingStartDate);
+      let patientDate;
+      
+      // Handle different date fields for different referral types
+      if (patient.bookingStartDate) {
+        patientDate = new Date(patient.bookingStartDate);
+      } else if (patient.PaymentDate) {
+        patientDate = new Date(patient.PaymentDate);
+      } else if (patient.createdAt) {
+        patientDate = new Date(patient.createdAt);
+      } else {
+        return true;
+      }
       
       if (start && end) {
         return patientDate >= start && patientDate <= end;
@@ -44,6 +55,26 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients, dateRange }) =>
       }
       return true;
     });
+  };
+
+  // Calculate referral fee based on type and enter codes
+  const calculateReferralFee = (referral) => {
+    // For consultation referrals
+    if (referral.type === "Consultation") {
+      return parseFloat(doctor.referralFee) || 0;
+    }
+    // For diagnostics and pathology referrals
+    else if (referral.commissionValue) {
+      // Find the enter code
+      const enterCode = enterCodes.find(code => code.codeType === referral.commissionValue);
+      if (enterCode) {
+        // Extract percentage value (e.g., "10%" -> 10)
+        const percentage = parseFloat(enterCode.value);
+        const amount = parseFloat(referral.PaidAmount) || parseFloat(referral.TotalFees) || 0;
+        return (amount * percentage) / 100;
+      }
+    }
+    return 0;
   };
 
   const downloadDoctorEarningsReport = async () => {
@@ -144,55 +175,86 @@ const DownloadDoctorReferalEarningsReport = ({ doctor, patients, dateRange }) =>
         105
       );
 
-      doc.line(0, 110, doc.internal.pageSize.getWidth(), 110);
+      // Add enter code information
+      if (enterCodes && enterCodes.length > 0) {
+        doc.text("Commission Rates:", 20, 115);
+        enterCodes.forEach((code, index) => {
+          doc.text(`${code.codeType}: ${code.value}`, 20, 120 + (index * 5));
+        });
+      }
+
+      doc.line(0, 130, doc.internal.pageSize.getWidth(), 130);
 
       // Calculate total earnings
       const totalEarnings = filteredPatients.reduce((sum, patient) => {
-        return sum + (parseFloat(doctor.referralFee) || 0);
+        return sum + calculateReferralFee(patient);
       }, 0);
 
+      // Count referrals by type
+      const consultationCount = filteredPatients.filter(p => p.type === "Consultation").length;
+      const diagnosticsCount = filteredPatients.filter(p => p.type === "Diagnostics").length;
+      const pathologyCount = filteredPatients.filter(p => p.type === "Pathology").length;
+
       doc.setFontSize(12);
-      doc.text("Earnings Summary:", 20, 120);
+      doc.text("Earnings Summary:", 20, 145);
       doc.setFontSize(9);
-      doc.text(`Total Referrals: ${filteredPatients.length}`, 20, 130);
+      doc.text(`Total Referrals: ${filteredPatients.length}`, 20, 155);
+      doc.text(`- Consultations: ${consultationCount}`, 25, 160);
+      doc.text(`- Diagnostics: ${diagnosticsCount}`, 25, 165);
+      doc.text(`- Pathology: ${pathologyCount}`, 25, 170);
       doc.text(
         `Total Earnings: ${totalEarnings.toFixed(2)} ${doctor.consultationCurrency}`,
         20,
-        135
+        175
       );
     }
 
     function addPatientTable(filteredPatients) {
-      const tableData = filteredPatients.map((patient, index) => [
-        index + 1,
-        patient.PatientName,
-        patient.PatientPhone,
-        patient.visitType,
-        patient.reason,
-        `${patient.amount} ${patient.Currency}`,
-        `${doctor.referralFee} ${doctor.consultationCurrency}`,
-        new Date(patient.bookingStartDate).toLocaleDateString(),
-        new Date(patient.paymentDateTime).toLocaleDateString(),
-        patient.paymentStatus,
-      ]);
+      const tableData = filteredPatients.map((patient, index) => {
+        const referralFee = calculateReferralFee(patient);
+        let date = "";
+        let amountPaid = 0;
+        let currency = "INR";
+
+        if (patient.type === "Consultation") {
+          date = new Date(patient.bookingStartDate).toLocaleDateString();
+          amountPaid = parseFloat(patient.amount) || 0;
+          currency = patient.Currency || "INR";
+        } else {
+          date = new Date(patient.PaymentDate || patient.createdAt).toLocaleDateString();
+          amountPaid = parseFloat(patient.PaidAmount) || parseFloat(patient.TotalFees) || 0;
+          currency = patient.Currency || "INR";
+        }
+
+        return [
+          index + 1,
+          patient.type,
+          patient.PatientName,
+          patient.PatientPhone || patient.PatientPhoneNo,
+          patient.type === "Consultation" ? patient.visitType : (patient.selectedTests || patient.PackageName || "N/A"),
+          `${amountPaid.toFixed(2)} ${currency}`,
+          `${referralFee.toFixed(2)} ${doctor.consultationCurrency}`,
+          date,
+          patient.paymentStatus || patient.PaymentStatus,
+        ];
+      });
 
       doc.autoTable({
         head: [
           [
             "Sr.No",
+            "Type",
             "Patient Name",
             "Phone",
-            "Visit Type",
-            "Reason",
+            "Procedure/Visit Type",
             "Amount Paid",
             "Doctor's Referral Fee",
-            "Consultation Date",
-            "Payment Date",
+            "Date",
             "Payment Status",
           ],
         ],
         body: tableData,
-        startY: 145,
+        startY: 185,
         styles: {
           fontSize: 8,
           cellPadding: 2,

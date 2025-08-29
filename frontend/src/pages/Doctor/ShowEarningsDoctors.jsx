@@ -557,8 +557,9 @@ const ShowEarningsDoctors = () => {
             <FaTimes />
           </Button>
         </Modal.Header>
-        <Modal.Body>
-          <div className="row mb-3">
+        <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+          <h6>Filter by Date Range</h6>
+          <div className="mb-3 p-3 border rounded d-flex align-items-center gap-2 flex-wrap">
             <div className="col-md-3">
               <Form.Label>Start Date</Form.Label>
               <Form.Control
@@ -580,7 +581,7 @@ const ShowEarningsDoctors = () => {
               />
             </div>
 
-            <div className="col-md-3 d-flex align-items-end">
+            <div className="col-md-3 mt-3 d-flex align-items-end">
               <Button
                 variant="primary"
                 className="me-2"
@@ -608,9 +609,6 @@ const ShowEarningsDoctors = () => {
               >
                 Clear
               </Button>
-            </div>
-
-            <div className="col-md-3 d-flex align-items-end">
               <DownloadDoctorEarningsReport
                 doctor={selectedDoctor}
                 patients={filteredConsultationPatients}
@@ -723,7 +721,7 @@ const ShowEarningsDoctors = () => {
         <Modal.Header
           style={{
             backgroundColor: "#f8f9fa",
-            borderBottom: "1px solid ",
+            borderBottom: "1px solid #dee2e6",
           }}
         >
           <Modal.Title style={{ fontSize: "18px", fontWeight: "bold" }}>
@@ -738,8 +736,9 @@ const ShowEarningsDoctors = () => {
             <FaTimes />
           </Button>
         </Modal.Header>
-        <Modal.Body>
-          <div className="row mb-3">
+        <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+          <h6>Filter by Date Range</h6>
+          <div className="mb-3 p-3 border rounded d-flex align-items-center gap-2 flex-wrap">
             <div className="col-md-3">
               <Form.Label>Start Date</Form.Label>
               <Form.Control
@@ -761,7 +760,7 @@ const ShowEarningsDoctors = () => {
               />
             </div>
 
-            <div className="col-md-3 d-flex align-items-end">
+            <div className="col-md-3 mt-3 d-flex align-items-end">
               <Button
                 variant="primary"
                 className="me-2"
@@ -845,9 +844,6 @@ const ShowEarningsDoctors = () => {
               >
                 Clear
               </Button>
-            </div>
-
-            <div className="col-md-3 d-flex align-items-end">
               <DownloadDoctorReferalEarningsReport
                 doctor={{
                   ...selectedDoctor,
@@ -858,6 +854,7 @@ const ShowEarningsDoctors = () => {
                 patients={filteredReferralPatients}
                 dateRange={dateRange}
                 enterCodes={enterCodes}
+                className="ms-4"
               />
             </div>
           </div>
@@ -989,4 +986,4 @@ const ShowEarningsDoctors = () => {
 
 export default ShowEarningsDoctors;
 
-//pushing again 
+//pushing again

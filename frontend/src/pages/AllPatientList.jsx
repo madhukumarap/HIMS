@@ -415,7 +415,7 @@ const generateBill = async (rowData) => {
       }
       
       if (!testReports || testReports.length === 0) {
-        toast.error(t("No Test Reports Available"));
+        toast.info(t("No Test Reports Available"));
         return;
       }
 
@@ -537,9 +537,9 @@ const generateBillAppoinment = async (rowData) => {
         // Continue execution even if test reports fail
       }
       
-      if (!testReports || testReports.length === 0) {
-        toast.error(t("No Test Reports Available"));
-      }
+      // if (!testReports || testReports.length === 0) {
+        // toast.info(t("No Test Reports Available"));
+      // }
 
       if (rowData.id) {
         const id2 = rowData.id || rowData.prescriptionId;

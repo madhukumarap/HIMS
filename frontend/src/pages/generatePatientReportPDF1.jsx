@@ -45,19 +45,19 @@ if (hospitalData?.logo) {
       console.error("Error adding logo:", error);
     }
   }
-  // Header
-  addText(hospitalData?.hospitalName || "City Care Hospital", pageWidth / 2, yPosition, {
-    fontSize: 18,
-    align: 'center',
-    color: [0, 0, 255]
-  });
+  // // Header
+  // addText(hospitalData?.hospitalName || "City Care Hospital", pageWidth / 2, yPosition, {
+  //   fontSize: 18,
+  //   align: 'center',
+  //   color: [0, 0, 255]
+  // });
   yPosition += 8;
   
-  addText("Patient Medical Report", pageWidth / 2, yPosition, {
-    fontSize: 16,
-    align: 'center',
-    color: [0, 128, 0]
-  });
+  // addText("Patient Medical Report", pageWidth / 2, yPosition, {
+  //   fontSize: 16,
+  //   align: 'center',
+  //   color: [0, 128, 0]
+  // });
   yPosition += 15;
 
   // Hospital & Report Info

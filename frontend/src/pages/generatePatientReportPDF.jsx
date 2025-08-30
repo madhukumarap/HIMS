@@ -46,18 +46,18 @@ if (hospitalData?.logo) {
     }
   }
   // Header
-  addText(hospitalData?.hospitalName || "City Care Hospital", pageWidth / 2, yPosition, {
-    fontSize: 18,
-    align: 'center',
-    color: [0, 0, 255]
-  });
+  // addText(hospitalData?.hospitalName || "City Care Hospital", pageWidth / 2, yPosition, {
+  //   fontSize: 18,
+  //   align: 'center',
+  //   color: [0, 0, 255]
+  // });
   yPosition += 8;
   
-  addText("Patient Diagnosis Report", pageWidth / 2, yPosition, {
-    fontSize: 16,
-    align: 'center',
-    color: [0, 128, 0]
-  });
+  // addText("Patient Diagnosis Report", pageWidth / 2, yPosition, {
+  //   fontSize: 16,
+  //   align: 'center',
+  //   color: [0, 128, 0]
+  // });
   yPosition += 15;
 
   // Hospital & Report Info

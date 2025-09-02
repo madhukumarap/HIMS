@@ -207,6 +207,7 @@ const SubMenu = ({ item, isActive, toggleSidebar, toggleSubMenu }) => {
       );
     } else if (userRoleADMIN) {
       return (
+        subItem.title === "Dicom" ||
         subItem.title === "ReferalDoctorsList" ||
         subItem.title === "All Patinent List" ||
         subItem.title === "DoctorsList" ||

@@ -110,7 +110,8 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }) => {
         item.title === "MySpaces" ||
         item.title === "Laboratory" ||
         item.title === "OutPatient" ||
-        item.title === "InPatient"
+        item.title === "InPatient" ||
+        item.title === "Dicom"
       );
     } else if (userReceptionist) {
       return (
@@ -119,7 +120,11 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }) => {
         item.title === "OutPatient"
       );
     } else if (userDiagnosticsTech) {
-      return item.title === "Diagnostics" || item.title === "Packages";
+      return (
+        item.title === "Diagnostics" ||
+        item.title === "Packages" ||
+        item.title === "Dicom"
+      );
     } else if (userRolePATHOLOGISTADMIN) {
       return (
         item.title === "Pathology" ||
@@ -133,7 +138,8 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }) => {
         item.title === "Pathology" ||
         item.title === "Packages" ||
         item.title === "OutPatient" ||
-        item.title === "Doctors Managment"
+        item.title === "Doctors Managment" ||
+        item.title === "Diacom"
       );
     } else if (userOTTechnician) {
       return (

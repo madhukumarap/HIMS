@@ -230,6 +230,7 @@ const performDatabaseDump = require("./dump.js");
 const BackupConfiguration = require("./routes/storeBackupConfig.js");
 const reminderForConsultation = require("./routes/ReminderForConsultation.js");
 const userRoleRoutes = require("./routes/userRole.routes");
+const DicomeRoutes = require("./routes/DicomRoutes.js");
 app.use(
   "/api",
   EmailRoute,
@@ -269,7 +270,8 @@ app.use(
   VendorRoute,
   HospitalRooms,
   reminderForConsultation,
-  BackupConfiguration
+  BackupConfiguration,
+  DicomeRoutes
 );
 
 app.use("/api/user-roles", userRoleRoutes);

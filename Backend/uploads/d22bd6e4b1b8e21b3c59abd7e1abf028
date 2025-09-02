@@ -1,0 +1,3 @@
+testName,category,SpecimenName,LabCategoryName,description,parameterName,minimumRange,maximumRange,unitOfMeasurements,testPrice
+Blood Sugar For Fasting,Blood,Blood,Biochemistry,fasting blood sugar,BloodNew,70,upto 100,mg/dl,150
+Blood Sugar (PP),Blood,Blood,Biochemistry,blood sugar (pp),BloodNew,70,upto 140,mg/dl,150

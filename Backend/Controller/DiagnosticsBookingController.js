@@ -136,7 +136,7 @@ const createBooking = async (req, res) => {
         PaymentStatus: paymentStatus,
         PaymentDate: paymentDate || new Date("2000-01-01"),
         selectedTests: selectedTestsString,
-        testFees: PaidAmount,
+        testFees: PaidAmount || TotalFees || 0,
         TotalFees:PaidAmount == 0 ? TotalFees : PaidAmount,
         Currency,
         admissionID,

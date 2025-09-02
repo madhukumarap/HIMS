@@ -169,7 +169,8 @@ import { CurrencyContext } from "./context/CurrencyProvider";
 import ShowDoctorList from "./pages/Doctor/ShowDoctorList";
 import HospitalAnalytics from "./pages/Reports/HospitalAnalytics";
 import ShowEarningsDoctors from "./pages/Doctor/ShowEarningsDoctors";
-import AllPatientList from  "./pages/AllPatientList";
+import AllPatientList from "./pages/AllPatientList";
+import DicomList from "./pages/Diacom/DicomList";
 const Container = styled.div``;
 
 const Content = styled.div`
@@ -403,7 +404,7 @@ function App() {
           hospitalURL: "http://localhost:3000/mediai/healthcare",
           HospitalGUID: "",
           name: "healthcare",
-          databaseName: "pharmacymanagement",
+          databaseName: "healthcare",
         },
       ]);
     } else {
@@ -414,7 +415,7 @@ function App() {
         {
           headers: {
             Authorization: `${currentUser?.Token}`,
-            MainDatabase: "pharmacymanagement",
+            MainDatabase: "healthcare",
           },
         }
       )
@@ -1798,6 +1799,10 @@ function App() {
                   <Route
                     path={`/${hospitals[0]?.name}/OverAllPatientList`}
                     element={<AllPatientList />}
+                  />
+                  <Route
+                    path={`/${hospitals[0]?.name}/Dicom`}
+                    element={<DicomList />}
                   />
                 </>
               )}

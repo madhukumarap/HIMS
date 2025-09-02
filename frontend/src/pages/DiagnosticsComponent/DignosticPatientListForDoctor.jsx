@@ -222,23 +222,40 @@ function DiagnosticsBooking() {
       });
   };
 
-  useEffect(() => {
-    if (formData.paymentStatus === "Paid" && currency && exchangeRates) {
-      const selectedCurrencyRate = exchangeRates[currency];
-      // alert(formData.testFees);
-      const fees = selectedPackageObject?.finalPrice
-        ? parseInt(selectedPackageObject.finalPrice) +
-          parseInt(formData.testFees)
-        : formData.testFees;
-      const totalFeesInSelectedCurrency = fees * selectedCurrencyRate;
-      // alert(totalFeesInSelectedCurrency);
-      const formattedTotalFees = totalFeesInSelectedCurrency.toFixed(2);
+useEffect(() => {
+  if (formData.paymentStatus === "Paid" && currency && exchangeRates) {
+    // ✅ Always normalize currency to uppercase
+    const normalizedCurrency = currency.toUpperCase();
 
-      setTotalFees(formattedTotalFees);
-    } else {
+    // ✅ Use USD fallback if currency not found
+    const selectedCurrencyRate = exchangeRates[normalizedCurrency] ?? 1;
+
+    // ✅ Ensure fees are always numeric
+    const fees = selectedPackageObject?.finalPrice
+      ? Number(selectedPackageObject.finalPrice) + Number(formData.testFees)
+      : Number(formData.testFees);
+
+    console.log("Currency:", normalizedCurrency);
+    console.log("Selected Rate:", selectedCurrencyRate);
+    console.log("Fees:", fees);
+
+    // ✅ Prevent NaN issues by checking validity
+    if (isNaN(fees) || isNaN(selectedCurrencyRate)) {
+      console.warn("Invalid calculation:", { fees, selectedCurrencyRate });
       setTotalFees(null);
+      return;
     }
-  }, [currency, formData.testFees]);
+
+    // ✅ Calculate total
+    const totalFeesInSelectedCurrency = fees * selectedCurrencyRate;
+    const formattedTotalFees = totalFeesInSelectedCurrency.toFixed(2);
+
+    console.log("Final Total:", formattedTotalFees);
+    setTotalFees(formattedTotalFees);
+  } else {
+    setTotalFees(null);
+  }
+}, [currency, formData.testFees, exchangeRates, selectedPackageObject]);
 
   const { t } = useTranslation();
   const locales = { enIN, fr };

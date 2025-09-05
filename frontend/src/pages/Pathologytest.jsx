@@ -44,7 +44,7 @@ function Pathologytest() {
   const [currency, setCurrency] = useState("");
   const [Hospitals, setHospitals] = useState([]);
   const [optionalCurrencies, setOptionalCurrencies] = useState([]);
-
+  const [totalFeesFinal, setTotalFeesFinal] = useState(0);
   const [selectedPackage, setSelectedPackage] = useState("");
   const [selectedPackageObject, setSelectedPackageObject] = useState("");
   const currentPath = window.location.pathname;
@@ -62,6 +62,7 @@ function Pathologytest() {
   const locales = { enIN, fr };
   const [PaidAmount, setPaidAmount] = useState(0);
   const [EditPaidAmount, setEditPaidAmount] = useState(0);
+  
 
   useEffect(() => {
     const initializei18n = () => {
@@ -183,6 +184,7 @@ function Pathologytest() {
 
       const totalFeesInSelectedCurrency = baseFees * selectedRate;
       const formattedTotalFees = totalFeesInSelectedCurrency.toFixed(2);
+      console.log(formattedTotalFees,"formattedTotalFees")
       setTotalFees(Number(formattedTotalFees));
     } else {
       setTotalFees(null);
@@ -820,7 +822,33 @@ function Pathologytest() {
     setShowModal(true);
     setIsEditMode(true);
   };
+  useEffect(() => {
+  const calculatedFees = isEditMode
+    ? parseFloat(formData.TotalFees || formData.testFees || 0)
+    : selectedPackageObject?.finalPrice
+    ? parseInt(selectedPackageObject.finalPrice) + parseInt(formData.testFees || 0)
+    : formData.testFees || 0;
 
+  const convertedFees = convertCurrency(
+    calculatedFees,
+    isEditMode
+      ? formData.Currency || currency || Hospitals[0]?.baseCurrency
+      : selectedPackageObject?.Currency || currency || Hospitals[0]?.baseCurrency,
+    selectedGlobalCurrency
+  );
+
+  setTotalFeesFinal(convertedFees);
+}, [
+  formData.TotalFees,
+  formData.testFees,
+  formData.Currency,
+  selectedPackageObject,
+  isEditMode,
+  currency,
+  Hospitals,
+  selectedGlobalCurrency,
+]);
+  console.log(formData.TotalFees || formData.testFees,selectedPackageObject,totalFeesFinal,"totalFeesFinal,formData.TotalFees || formData.testFees")
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -849,9 +877,9 @@ function Pathologytest() {
           toast.error("Please Enter Valid Amount");
           return;
         }
-        formData.TotalFees = totalFees;
+        formData.TotalFees = formData.TotalFees || totalFeesFinal;
         formData.Currency = currency;
-        formData.PaidAmount = PaidAmount;
+        formData.PaidAmount = formData.PaidAmount || totalFeesFinal;
         response = await axios.put(
           `${import.meta.env.VITE_API_URL}/api/updateBooking/${formData.id}`,
           {
@@ -862,9 +890,9 @@ function Pathologytest() {
             doctorID: selectedDoctor,
             selectedTest: formData?.selectedTests,
             TestManagementID: formData?.TestManagementID,
-            TotalFees: totalFees,
+            TotalFees: totalFeesFinal,
             Currency: currency,
-            PaidAmount: PaidAmount,
+            PaidAmount: totalFeesFinal,
           },
           {
             headers: {
@@ -921,6 +949,10 @@ function Pathologytest() {
         formData.TotalFees = totalFees;
         formData.Currency = currency;
         formData.PaidAmount = PaidAmount;
+        const sanitizedTotalFees = totalFeesFinal
+  ? totalFeesFinal.toString().replace(/,/g, "")
+  : 0;
+
         response = await axios.post(
           `${import.meta.env.VITE_API_URL}/api/testBooking`,
           {
@@ -933,9 +965,9 @@ function Pathologytest() {
             SelectedTests: convertedTestData,
             selectedPackageID: selectedPackageID,
             TestManagementID: SelectedTests[0]?.TestManagementID || 0,
-            TotalFees: totalFees,
+            TotalFees: sanitizedTotalFees,
             Currency: currency,
-            PaidAmount: PaidAmount,
+            PaidAmount: sanitizedTotalFees,
           },
           {
             headers: {

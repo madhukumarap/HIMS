@@ -6,7 +6,7 @@ module.exports = {
   // Database configuration
   HOST: process.env.DB_HOST || "localhost",
   USER: process.env.DB_USER || "root",
-  PASSWORD: process.env.DB_PASSWORD || "root", // Use DB_PASSWORD from env
+  PASSWORD: process.env.DB_PASSWORD || "1234", // Use DB_PASSWORD from env
   DB: process.env.DB_NAME || "healthcare",
   dialect: "mysql",
   

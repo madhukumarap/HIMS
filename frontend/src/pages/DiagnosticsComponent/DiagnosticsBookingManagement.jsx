@@ -32,9 +32,11 @@ import { format as formatDate, isDate } from "date-fns";
 import { fr, enIN } from "date-fns/locale";
 import { HospitalContext } from "../../context/HospitalDataProvider";
 import { CurrencyContext } from "../../context/CurrencyProvider";
+import DicomUploadModal from "./DicomUploadModal";
+import { getDicomFiles } from "../Diacom/api/dicom";
+import DicomViewerModal from "./DicomViewerModal";
 
 function DiagnosticsBooking() {
-  
   const navigate = useNavigate();
   const currentUser = AuthService.getCurrentUser();
 
@@ -75,6 +77,50 @@ function DiagnosticsBooking() {
     admissionID: 0,
   });
   const [isEditMode, setIsEditMode] = useState(false);
+
+  //diacom
+
+  const [showDicomModal, setShowDicomModal] = useState(false);
+  const [selectedBookingForDicom, setSelectedBookingForDicom] = useState(null);
+
+  const [showDicomViewerModal, setShowDicomViewerModal] = useState(false);
+  const [dicomFiles, setDicomFiles] = useState([]);
+  const [selectedPatientForDicom, setSelectedPatientForDicom] = useState(null);
+  const [loadingDicom, setLoadingDicom] = useState(false);
+
+  // Add this function to handle the Dicom button click:
+  const handleDicomUpload = (booking) => {
+    console.log(booking, "booking");
+
+    setSelectedBookingForDicom(booking);
+    setShowDicomModal(true);
+  };
+
+  const handleViewDicom = async (booking) => {
+    try {
+      setLoadingDicom(true);
+      setSelectedPatientForDicom(booking);
+
+      // Fetch DICOM files for this specific patient using your existing API
+      const response = await getDicomFiles(booking.PatientID);
+
+      if (
+        response.data &&
+        response.data.rows &&
+        response.data.rows.length > 0
+      ) {
+        setDicomFiles(response.data.rows);
+        setShowDicomViewerModal(true);
+      } else {
+        toast.error("No DICOM files found for this patient");
+      }
+    } catch (error) {
+      console.error("Error fetching DICOM files:", error);
+      toast.error("Failed to fetch DICOM files");
+    } finally {
+      setLoadingDicom(false);
+    }
+  };
 
   const { selectedGlobalCurrency, convertCurrency, rates } =
     useContext(CurrencyContext);
@@ -173,7 +219,6 @@ function DiagnosticsBooking() {
   }, [totalFees]);
 
   const { t } = useTranslation();
-
   const locales = { enIN, fr };
 
   useEffect(() => {
@@ -206,15 +251,20 @@ function DiagnosticsBooking() {
       });
     };
 
+    // Initialize only once when component mounts
     initializei18n();
-    const intervalId = setInterval(initializei18n, 500);
-    return () => clearInterval(intervalId);
-  }, []);
-  const formatDateInSelectedLanguage = (date) => {
-    const selectedLanguage = i18n.language || "en";
-    const format = "PPPP";
-    const locale = locales[selectedLanguage];
-    return formatDate(date, format, { locale });
+
+    // Remove the setInterval completely
+    // No need to keep re-initializing i18n
+  }, []); // Empty dependency array ensures this runs only once
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0-based
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   ///
@@ -1090,7 +1140,6 @@ function DiagnosticsBooking() {
   ) {
     return "Access Denied";
   }
-  //console.log("testNames: " + JSON.stringify(testNames));
 
   const filteredTestNames = PackageSelectedTests
     ? testNames.filter(
@@ -1102,7 +1151,7 @@ function DiagnosticsBooking() {
     : testNames;
 
   return (
-    <div style={{ fontSize: "12px" }} className="container">
+    <div style={{ fontSize: "12px", padding: "3rem" }}>
       <header
         className="header"
         style={{
@@ -1111,7 +1160,7 @@ function DiagnosticsBooking() {
           alignItems: "center",
         }}
       >
-        <h2 style={{ fontSize: "16px" }}>{t("TestBookingPatientList")}</h2>
+        <h2 style={{ fontSize: "16px" }}>"Test Booking Patient List</h2>
       </header>
       <br />
       <button
@@ -1119,44 +1168,8 @@ function DiagnosticsBooking() {
         className="btn btn-secondary mr-3"
         onClick={() => setShowModal(true)}
       >
-        {t("TestRegistration")}
+        Test Registration
       </button>{" "}
-      {/* <Button
-        style={{ fontSize: "12px", padding: "4px 5px" }}
-        variant="secondary"
-        onClick={() => {
-          navigate("/sampleCollectionForm");
-        }}
-      >
-        Sample Collection
-      </Button> */}
-      {/* <Button
-        style={{ fontSize: "12px", padding: "4px 5px" }}
-        variant="secondary"
-        onClick={() => {
-          navigate("/sampleHomeCollectionForm");
-        }}
-      >
-        Sample Home Collection
-      </Button> */}
-      {/* <Button
-        style={{ fontSize: "12px", padding: "4px 5px" }}
-        variant="secondary"
-        onClick={() => {
-          navigate("/pathalogytestManagement");
-        }}
-      >
-        Pathalogy test Management
-      </Button> */}
-      {/* <Button
-        style={{ fontSize: "12px", padding: "4px 5px" }}
-        variant="secondary"
-        onClick={() => {
-          navigate("/CommissionCodeData");
-        }}
-      >
-        Referral type code
-      </Button> */}
       <br></br> <br></br>
       <div className="row mb-3">
         <div className="col-md-4 col-sm-12  ">
@@ -1168,7 +1181,7 @@ function DiagnosticsBooking() {
               width: "100%",
             }}
           >
-            {t("SearchbyPatientNameorPhone")}
+            Search by Patient Name or Phone
             <input
               style={{ fontSize: "12px", marginTop: "10px" }}
               type="text"
@@ -1212,7 +1225,7 @@ function DiagnosticsBooking() {
       >
         <Modal.Header closeButton>
           <Modal.Title style={{ fontSize: "16px" }}>
-            {formData.id ? t("EditData") : t("RegisterforTest")}
+            {formData.id ? "Edit Data" : "Register for Test"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -1228,24 +1241,25 @@ function DiagnosticsBooking() {
                       marginBottom: "10px",
                     }}
                   >
-                    {t("SelectINOUTPatient")}{" "}
+                    {"Select IN / OUT Patient"}{" "}
                     {/* <span style={{ color: "red" }}>*</span> */}
                   </label>
                   <select
                     style={{ fontSize: "12px" }}
                     className="form-control"
                     name="selectedPatient"
-                    disabled={isEditMode}
-                    value={inOutPatient}
+                    // disabled={isEditMode}
+                    // value={formData.selectedPatient}
                     onChange={(e) => setInOutPatient(e.target.value)}
                   >
-                    <option value=""> {t("SelectINOUTPatient")}</option>
+                    <option value="">Select IN / OUT Patient</option>
                     <option value="InPatient">IN Patient</option>
                     <option value="OutPatient">OUT Patient</option>
                   </select>
                 </div>
               </div>
             </div>
+
             <div className="row">
               <div className="col-md-6">
                 <div className="form-group">
@@ -1265,7 +1279,7 @@ function DiagnosticsBooking() {
                     className="form-control"
                     name="selectedPatient"
                     disabled={isEditMode}
-                    value={formData.selectedPatient}
+                    // value={formData.selectedPatient}
                     onChange={
                       inOutPatient == "OutPatient"
                         ? handleChange
@@ -1286,7 +1300,7 @@ function DiagnosticsBooking() {
                           return (
                             <option
                               key={patient.id}
-                              value={JSON.stringify(patient.PatientID)}
+                              value={JSON.stringify(patient)}
                             >
                               PID:{patient.PatientID},{patient.PatientName} (
                               {patient.PatientPhoneNo}{" "}
@@ -1311,7 +1325,7 @@ function DiagnosticsBooking() {
                     htmlFor="selectDoctor"
                     className="control-label"
                   >
-                    {t("ReferralDoctor")}
+                    Referral Doctor
                   </label>
                   <div>
                     <select
@@ -1321,7 +1335,7 @@ function DiagnosticsBooking() {
                       value={selectedDoctor}
                       onChange={(e) => setSelectedDoctor(e.target.value)}
                     >
-                      <option value="">{t("SelectDoctor")}</option>
+                      <option value="">Select Doctor</option>
                       {doctors.map((doctor) => (
                         <option key={doctor.id} value={doctor.id}>
                           {t("Dr")}. {doctor.FirstName} {doctor.LastName}
@@ -1343,7 +1357,7 @@ function DiagnosticsBooking() {
                       marginBottom: "10px",
                     }}
                   >
-                    {t("Status")} <span style={{ color: "red" }}>*</span>
+                    Status <span style={{ color: "red" }}>*</span>
                   </label>
                   <select
                     style={{ fontSize: "12px" }}
@@ -1353,13 +1367,11 @@ function DiagnosticsBooking() {
                     onChange={handleChange}
                     required
                   >
-                    <option value="">{t("SelectStatus")}</option>
-                    <option value="Registered">{t("Registered")}</option>
-                    <option value="SampleCollected">
-                      {t("SampleCollected")}
-                    </option>
-                    <option value="Completed">{t("Completed")}</option>
-                    <option value="Cancelled">{t("Cancelled")}</option>
+                    <option value="">Select Status</option>
+                    <option value="Registered">Registered</option>
+                    <option value="SampleCollected">Sample Collected</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
                   </select>
                 </div>
               </div>
@@ -1373,7 +1385,7 @@ function DiagnosticsBooking() {
                       marginBottom: "10px",
                     }}
                   >
-                    {t("ReferralType")} <span style={{ color: "red" }}>*</span>
+                    Referral Type <span style={{ color: "red" }}>*</span>
                   </label>
                   <select
                     style={{ fontSize: "12px" }}
@@ -1382,7 +1394,7 @@ function DiagnosticsBooking() {
                     value={formData.referralType} // Update the value to formData.referralType
                     onChange={handleChange} // Update the handler to handleChange
                   >
-                    <option value="">{t("SelectReferralType")}</option>
+                    <option value="">Select Referral Type</option>
                     {enterCodeData?.map((referralType) => (
                       <option key={referralType.id} value={referralType.id}>
                         {referralType.codeType}
@@ -1403,7 +1415,7 @@ function DiagnosticsBooking() {
                       marginBottom: "10px",
                     }}
                   >
-                    {t("SelectaPackage")}
+                    Select a Package
                   </label>
                   <select
                     style={{ fontSize: "12px" }}
@@ -1413,7 +1425,7 @@ function DiagnosticsBooking() {
                     disabled={isEditMode}
                     onChange={handlePackageSelection}
                   >
-                    <option value="">{t("SelectPackage")}</option>
+                    <option value="">Select Package</option>
                     {packages.map((Testpackage) => (
                       <option key={Testpackage.id} value={Testpackage.id}>
                         {Testpackage.packageName}
@@ -1437,7 +1449,7 @@ function DiagnosticsBooking() {
                       marginBottom: "10px",
                     }}
                   >
-                    {t("ViewTest")}
+                    View Test
                   </label>
                   <button
                     style={{ marginTop: "16px" }}
@@ -1460,7 +1472,7 @@ function DiagnosticsBooking() {
                       marginBottom: "10px",
                     }}
                   >
-                    {t("SelectaTestName")}{" "}
+                    Select a Test Name
                     <span style={{ color: "red" }}>*</span>
                   </label>
                   <Select
@@ -1491,7 +1503,7 @@ function DiagnosticsBooking() {
                       marginBottom: "10px",
                     }}
                   >
-                    {t("PaymentStatus")} <span style={{ color: "red" }}>*</span>
+                    Payment Status<span style={{ color: "red" }}>*</span>
                   </label>
                   <select
                     style={{ fontSize: "12px" }}
@@ -1502,10 +1514,10 @@ function DiagnosticsBooking() {
                     onChange={handleChange}
                     required
                   >
-                    <option value="">{t("SelectPaymentStatus")}</option>
-                    <option value="Partial-Paid">{t("Partial-Paid")}</option>
-                    <option value="Paid">{t("Paid")}</option>
-                    <option value="Not-Paid">{t("NotPaid")}</option>
+                    <option value="">Select Payment Status</option>
+                    <option value="Partial-Paid">Partial-Paid</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Not-Paid">NotPaid</option>
                   </select>
                 </div>
               </div>
@@ -1520,8 +1532,7 @@ function DiagnosticsBooking() {
                       marginBottom: "10px",
                     }}
                   >
-                    {t("ViewFees")} ({selectedGlobalCurrency})
-                    {/* ({hospitalData.baseCurrency}) */}
+                    View Fees ({selectedGlobalCurrency})
                   </label>
                   <input
                     disabled
@@ -1563,7 +1574,7 @@ function DiagnosticsBooking() {
                       marginBottom: "10px",
                     }}
                   >
-                    {t("EnterRemarks")} <span style={{ color: "red" }}>*</span>
+                    Enter Remarks<span style={{ color: "red" }}>*</span>
                   </label>
                   <textarea
                     required
@@ -1573,7 +1584,7 @@ function DiagnosticsBooking() {
                     rows="1"
                     value={formData.remarks}
                     onChange={handleChange}
-                    placeholder={t("EnterRemarks")}
+                    placeholder="Enter Remarks"
                   />
                 </div>
               </div>
@@ -1589,7 +1600,7 @@ function DiagnosticsBooking() {
                         marginBottom: "10px",
                       }}
                     >
-                      {t("PaymentDate")} <span style={{ color: "red" }}>*</span>
+                      Payment Date <span style={{ color: "red" }}>*</span>
                     </label>
                     <input
                       style={{ fontSize: "12px" }}
@@ -1620,7 +1631,7 @@ function DiagnosticsBooking() {
                         marginBottom: "10px",
                       }}
                     >
-                      {t("Currency")} <span style={{ color: "red" }}>*</span>
+                      Currency<span style={{ color: "red" }}>*</span>
                     </label>
 
                     <select
@@ -1630,7 +1641,7 @@ function DiagnosticsBooking() {
                       disabled={EditPaidAmount}
                       onChange={(e) => setCurrency(e.target.value)}
                     >
-                      <option value="">{t("Select")}</option>
+                      <option value="">Select</option>
                       <option value="USD">USD</option>
                       <option value="EUR">EUR</option>
                       <option value="INR">INR</option>
@@ -1662,7 +1673,7 @@ function DiagnosticsBooking() {
                         marginBottom: "10px",
                       }}
                     >
-                      {t("Total Fees")} {" = "}
+                      Total Fees {" = "}
                       {convertCurrency(
                         totalFees,
                         currency,
@@ -1686,7 +1697,7 @@ function DiagnosticsBooking() {
                           marginBottom: "10px",
                         }}
                       >
-                        {t("Enter Advance Amount")} {" = "}
+                        Enter Advance Amount {" = "}
                       </label>
                     </div>
                   )}
@@ -1705,7 +1716,7 @@ function DiagnosticsBooking() {
                         }}
                       >
                         {EditPaidAmount ? EditPaidAmount : ""} {currency} Paid ,
-                        {t("Pay Remaining Amount")}
+                        Pay Remaining Amount
                         {":"}{" "}
                       </label>
                     </div>
@@ -1735,7 +1746,7 @@ function DiagnosticsBooking() {
                 style={{ fontSize: "12px" }}
                 className="btn btn-secondary"
               >
-                {formData.id ? t("Update") : t("RegisterNow")}
+                {formData.id ? "Update" : "Register Now"}
               </button>
             </div>
           </form>
@@ -1750,10 +1761,10 @@ function DiagnosticsBooking() {
               <div className="card mb-3" key={booking.id}>
                 <div className="card-body">
                   <h5 className="card-title">
-                    {t("PatientName")}: {booking.PatientName}
+                    Patient Name: {booking.PatientName}
                   </h5>
                   <h6 className="card-subtitle mb-2 text-muted">
-                    {t("TestNames")}:{" "}
+                    Test Names:{" "}
                     <button
                       title="View Tests"
                       style={{ fontSize: "13px", padding: "4px 5px" }}
@@ -1765,36 +1776,31 @@ function DiagnosticsBooking() {
                   </h6>
                   <p className="card-text">Sr No: {index + 1}</p>
                   <p className="card-text">
-                    {t("ReferralDoctor")}:{" "}
+                    Referral Doctor:{" "}
                     {booking.DoctorName !== "NA NA NA"
                       ? `Dr. ${booking.DoctorName}`
                       : "NA"}
                   </p>
                   <p className="card-text">
-                    {t("ReferralType")}: {booking.commissionValue}
+                    Referral Type: {booking.commissionValue}
                   </p>
                   <p className="card-text">
-                    {t("PatientPhone")}: {booking.PatientPhoneNo}
+                    Patient Phone: {booking.PatientPhoneNo}
+                  </p>
+                  <p className="card-text">Status: {booking.status}</p>
+                  <p className="card-text">
+                    Payment Status: {booking.PaymentStatus}
                   </p>
                   <p className="card-text">
-                    {t("Status")}: {booking.status}
-                  </p>
-                  <p className="card-text">
-                    {t("PaymentStatus")}: {booking.PaymentStatus}
-                  </p>
-                  <p className="card-text">
-                    {t("PaymentDate")}:{" "}
+                    Payment Date:{" "}
                     {booking.PaymentDate !== null ? booking.PaymentDate : "NA"}
                   </p>
+                  <p className="card-text">Test Fees: ₹{booking.testFees}</p>
                   <p className="card-text">
-                    {t("TestFees")}: ₹{booking.testFees}
+                    Authorization Status: {booking.Authorization}
                   </p>
                   <p className="card-text">
-                    {t("AuthorizationStatus")}: {booking.Authorization}
-                  </p>
-                  <p className="card-text">
-                    {t("RegistrationDate")}:{" "}
-                    {formatDateInSelectedLanguage(new Date(booking.createdAt))}
+                    Registration Date: {formatDate(new Date(booking.createdAt))}
                   </p>
                   <div
                     style={{ fontSize: "12px" }}
@@ -1802,7 +1808,7 @@ function DiagnosticsBooking() {
                   >
                     <button
                       style={{ fontSize: "12px", padding: "4px 5px" }}
-                      title={t("EditBooking")}
+                      title="Edit Booking"
                       className="btn btn-secondary"
                       onClick={() => handleEdit(booking)}
                     >
@@ -1810,7 +1816,7 @@ function DiagnosticsBooking() {
                     </button>
                     <button
                       style={{ fontSize: "12px", padding: "4px 5px" }}
-                      title={t("DeleteBooking")}
+                      title="Delete Booking"
                       className="btn btn-secondary"
                       onClick={() => {
                         setSelectedBookingId(booking.id);
@@ -1853,7 +1859,7 @@ function DiagnosticsBooking() {
                     )}
                     {roleCurrentUser !== "ROLE_RECEPTIONIST" && (
                       <button
-                        title={t("diagnsticPatientListTable.DownloadReport")}
+                        title="diagnstic Patient List Table.DownloadReport"
                         style={{
                           whiteSpace: "nowrap",
                           fontSize: "12px",
@@ -1880,56 +1886,25 @@ function DiagnosticsBooking() {
         >
           <thead>
             <tr>
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.SrNo")}
-              </th>
+              <th style={{ whiteSpace: "nowrap" }}>SrNo</th>
               {/* <th style={{ whiteSpace: "nowrap" }}>Lab Name</th> */}
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.TestName")}
-              </th>
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.PatientName")}
-              </th>
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.ReferralDoctor")}
-              </th>
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.ReferralType")}
-              </th>
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.PatientPhone")}
-              </th>
-              {/*               <th style={{ textAlign: "center" }}>InstrumentsUsed</th> */}
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.Remarks")}
-              </th>
-              <th style={{ textAlign: "center" }}>{t("Status")}</th>
-              {/*               <th style={{ textAlign: "center" }}>Results</th> */}
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.PaymentStatus")}
-              </th>
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.PaymentDate")}
-              </th>
+              <th style={{ whiteSpace: "nowrap" }}>Test Name</th>
+              <th style={{ whiteSpace: "nowrap" }}>Patient Name</th>
+              <th style={{ whiteSpace: "nowrap" }}>Referral Doctor</th>
+              <th style={{ whiteSpace: "nowrap" }}>Referral Type</th>
+              <th style={{ whiteSpace: "nowrap" }}>Patient Phone</th>
+              <th style={{ whiteSpace: "nowrap" }}>Remarks</th>
+              <th style={{ textAlign: "center" }}>Status</th>
+              <th style={{ whiteSpace: "nowrap" }}>Payment Status</th>
+              <th style={{ whiteSpace: "nowrap" }}>Payment Date</th>
 
-              <th style={{ whiteSpace: "nowrap" }}>{t("Paid")}</th>
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.TotalFees")}
-              </th>
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.ViewPackage")}
-              </th>
+              <th style={{ whiteSpace: "nowrap" }}>Paid</th>
+              <th style={{ whiteSpace: "nowrap" }}>Total Fees</th>
+              <th style={{ whiteSpace: "nowrap" }}>View Package</th>
 
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.AuthorizationStatus")}
-              </th>
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.RegistrationDate")}
-              </th>
-              <th style={{ whiteSpace: "nowrap" }}>
-                {t("diagnsticPatientListTable.Action")}
-              </th>
-              {/* <th style={{ whiteSpace: "nowrap" }}>Add/Upload Result</th> */}
+              <th style={{ whiteSpace: "nowrap" }}>Authorization Status</th>
+              <th style={{ whiteSpace: "nowrap" }}>Registration Date</th>
+              <th style={{ whiteSpace: "nowrap" }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -1941,7 +1916,7 @@ function DiagnosticsBooking() {
 
                   <td style={{ whiteSpace: "nowrap", textAlign: "center" }}>
                     <button
-                      title={t("diagnsticPatientListTable.ViewTests")}
+                      title="View Tests"
                       style={{ fontSize: "13px", padding: "4px 5px" }}
                       className="btn btn-secondary"
                       onClick={() => handleViewTestNames(booking)}
@@ -1961,7 +1936,6 @@ function DiagnosticsBooking() {
                     style={{
                       whiteSpace: "nowrap",
                       textAlign: "center",
-                      textAlign: "center",
                     }}
                   >
                     {booking.commissionValue}
@@ -1979,9 +1953,7 @@ function DiagnosticsBooking() {
                   </td>
                   <td style={{ whiteSpace: "nowrap", textAlign: "center" }}>
                     {booking.PaymentDate !== null
-                      ? formatDateInSelectedLanguage(
-                          new Date(booking.PaymentDate)
-                        )
+                      ? formatDate(new Date(booking.PaymentDate))
                       : "NA"}
                   </td>
 
@@ -2018,27 +1990,21 @@ function DiagnosticsBooking() {
                   <td style={{ textAlign: "center" }}>
                     {booking.Authorization}
                   </td>
-                  <td>
-                    {formatDateInSelectedLanguage(new Date(booking.createdAt))}
-                  </td>
+                  <td>{formatDate(new Date(booking.createdAt))}</td>
                   <td
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      textAlign: "center",
-                    }}
+                    className="d-flex justify-content-start"
+                    style={{ whiteSpace: "nowrap" }}
                   >
                     <button
-                      title={t("diagnsticPatientListTable.EditBooking")}
+                      title="Edit Booking"
                       style={{ fontSize: "12px", padding: "4px 5px" }}
                       className="btn btn-secondary mr-2"
                       onClick={() => handleEdit(booking)}
                     >
                       <FaPencilAlt />
                     </button>
-                    {"  "}{" "}
                     <button
-                      title={t("diagnsticPatientListTable.DeleteBooking")}
+                      title="Delete Booking"
                       style={{ fontSize: "12px", padding: "4px 5px" }}
                       className="btn btn-secondary mr-2"
                       onClick={() => {
@@ -2078,12 +2044,68 @@ function DiagnosticsBooking() {
                         <FaDownload />
                       </button>
                     )}
+                    <button
+                      title="Upload DICOM File"
+                      style={{
+                        fontSize: "12px",
+                        padding: "4px 5px",
+                        marginTop: "0px",
+                        backgroundColor: "#1111",
+                        color: "black",
+                      }}
+                      className="btn btn-secondary mr-1"
+                      onClick={() => handleDicomUpload(booking)}
+                    >
+                      <FaPlusSquare /> Add Dicom
+                    </button>
+                    <button
+                      title="View DICOM File"
+                      style={{
+                        fontSize: "12px",
+                        padding: "4px 5px",
+                        marginTop: "0px",
+                        backgroundColor: "#1111",
+                        color: "black",
+                      }}
+                      className="btn btn-secondary mr-1"
+                      onClick={() => handleViewDicom(booking)}
+                      disabled={loadingDicom}
+                    >
+                      {loadingDicom ? (
+                        "Loading..."
+                      ) : (
+                        <>
+                          <FaRegEye /> View Dicom
+                        </>
+                      )}
+                    </button>
                   </td>
                 </tr>
               ))}
           </tbody>
         </Table>
       )}
+      <DicomUploadModal
+        show={showDicomModal}
+        handleClose={() => {
+          setShowDicomModal(false);
+          setSelectedBookingForDicom(null);
+        }}
+        bookingData={selectedBookingForDicom}
+        onUploadSuccess={() => {
+          toast.success("DICOM file uploaded successfully");
+          // You might want to refresh data or perform other actions
+        }}
+      />
+      <DicomViewerModal
+        show={showDicomViewerModal}
+        handleClose={() => {
+          setShowDicomViewerModal(false);
+          setDicomFiles([]); // Only reset what's defined in parent
+        }}
+        dicomFiles={dicomFiles}
+        patientData={selectedPatientForDicom}
+      />
       <Modal
         style={{ marginTop: "20px", fontSize: "13px" }}
         centered
@@ -2092,18 +2114,18 @@ function DiagnosticsBooking() {
         onHide={() => setShowDeleteModal(false)}
       >
         <Modal.Header closeButton>
-          <Modal.Title style={{ fontSize: "16px" }}>
-            {t("ConfirmDelete")}
-          </Modal.Title>
+          <Modal.Title style={{ fontSize: "16px" }}>Confirm Delete</Modal.Title>
         </Modal.Header>
-        <Modal.Body>{t("AreYouSureyouWanttoDeletethisTestBooking")}</Modal.Body>
+        <Modal.Body>
+          Are You Sure you Want to Delete this Test Booking
+        </Modal.Body>
         <Modal.Footer>
           <Button
             style={{ fontSize: "13px" }}
             variant="secondary"
             onClick={() => setShowDeleteModal(false)}
           >
-            {t("diagnsticPatientListTable.Cancel")}
+            Cancel
           </Button>
           <Button
             style={{ fontSize: "13px" }}
@@ -2113,7 +2135,7 @@ function DiagnosticsBooking() {
               setShowDeleteModal(false);
             }}
           >
-            {t("diagnsticPatientListTable.Delete")}
+            Delete
           </Button>
         </Modal.Footer>
       </Modal>
@@ -2137,8 +2159,7 @@ function DiagnosticsBooking() {
       >
         <Modal.Header closeButton>
           <Modal.Title style={{ fontSize: "16px" }}>
-            {t("diagnosticsModal.TestNamesForPatient")}:
-            {selectedTestBooking?.PatientName}
+            Patient Name : {selectedTestBooking?.PatientName}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -2147,25 +2168,19 @@ function DiagnosticsBooking() {
               {testStatuses.map((status, index) => (
                 <div className="card mb-3" key={index}>
                   <div className="card-body">
-                    <h5 className="card-title">
-                      {t("diagnosticsModal.TestName")}: {status.testName}
-                    </h5>
+                    <h5 className="card-title">Test Name: {status.testName}</h5>
                     <p className="card-text">
-                      {t("diagnosticsModal.CurrentStatus")}: {status.TestStatus}
+                      Current Status: {status.TestStatus}
                     </p>
                     <p className="card-text">
-                      {t("diagnosticsModal.RegisteredDate")}:{" "}
-                      {formatDateInSelectedLanguage(
-                        new Date(status.TestRegisteredDateTime)
-                      )}
+                      Registered Date:{" "}
+                      {formatDate(new Date(status.TestRegisteredDateTime))}
                     </p>
 
                     <p className="card-text">
-                      {t("pathologyStatusModalTable.CompletedDate")}:{" "}
+                      Completed Date:{" "}
                       {status.TestCompletedDateTime
-                        ? formatDateInSelectedLanguage(
-                            new Date(status.TestCompletedDateTime)
-                          )
+                        ? formatDate(new Date(status.TestCompletedDateTime))
                         : "N/A"}
                     </p>
                   </div>
@@ -2176,20 +2191,12 @@ function DiagnosticsBooking() {
             <table style={{ fontSize: "14px" }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: "center" }}>
-                    {t("diagnosticsModal.TestName")}
-                  </th>
-                  <th style={{ textAlign: "center" }}>
-                    {t("diagnosticsModal.CurrentStatus")}
-                  </th>
+                  <th style={{ textAlign: "center" }}>Test Name</th>
+                  <th style={{ textAlign: "center" }}>Current Status</th>
 
-                  <th style={{ textAlign: "center" }}>
-                    {t("diagnosticsModal.RegisteredDate")}
-                  </th>
+                  <th style={{ textAlign: "center" }}>Registered Date</th>
 
-                  <th style={{ textAlign: "center" }}>
-                    {t("diagnosticsModal.CompletedDate")}
-                  </th>
+                  <th style={{ textAlign: "center" }}>Completed Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -2198,16 +2205,12 @@ function DiagnosticsBooking() {
                     <td>{status.testName}</td>
                     <td>{status.TestStatus}</td>
                     <td>
-                      {formatDateInSelectedLanguage(
-                        new Date(status.TestRegisteredDateTime)
-                      )}
+                      {formatDate(new Date(status.TestRegisteredDateTime))}
                     </td>
 
                     <td>
                       {status.TestCompletedDateTime
-                        ? formatDateInSelectedLanguage(
-                            new Date(status.TestCompletedDateTime)
-                          )
+                        ? formatDate(new Date(status.TestCompletedDateTime))
                         : "NA"}
                     </td>
                   </tr>
@@ -2237,7 +2240,7 @@ function DiagnosticsBooking() {
       >
         <Modal.Header closeButton>
           <Modal.Title style={{ fontSize: "16px" }}>
-            {t("UpdateAuthorizationStatusforPatient")}: {PatientNapeStatus}
+            Update Authorization Status for Patient: {PatientNapeStatus}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -2250,7 +2253,7 @@ function DiagnosticsBooking() {
                   marginBottom: "15px",
                 }}
               >
-                {t("SelectStatus")} <span style={{ color: "red" }}>*</span>
+                Select Status <span style={{ color: "red" }}>*</span>
               </Form.Label>
               <Form.Control
                 as="select"
@@ -2259,7 +2262,7 @@ function DiagnosticsBooking() {
                 value={authorizationStatus}
                 onChange={(e) => setAuthorizationStatus(e.target.value)}
               >
-                <option value="">{t("SelectStatus")}</option>
+                <option value="">Select Status</option>
 
                 <option value="Approved">Approved</option>
                 <option value="Pending">Pending</option>
@@ -2274,13 +2277,13 @@ function DiagnosticsBooking() {
                   fontWeight: "bold",
                 }}
               >
-                {t("Feedback")} <span style={{ color: "red" }}>*</span>
+                Feedback <span style={{ color: "red" }}>*</span>
               </Form.Label>
               <Form.Control
                 as="textarea"
                 rows={2}
                 required
-                placeholder={t("EnterFeedback")}
+                placeholder="Enter Feedback"
                 style={{ fontSize: "12px" }}
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
@@ -2294,7 +2297,7 @@ function DiagnosticsBooking() {
             variant="secondary"
             onClick={handleUpdateAuthorization}
           >
-            {t("Submit")}
+            Submit
           </Button>
         </Modal.Footer>
       </Modal>

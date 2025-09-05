@@ -31,7 +31,6 @@ var corsOptions = {
   origin: ["http://localhost:3000" || "http://localhost:7000"],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
-
 };
 
 app.use(cors(corsOptions));
@@ -42,7 +41,7 @@ const dbConfig = require("./config/db.config.js");
 app.get("/api/get-hospitalsMain/:extractedPart", async (req, res) => {
   try {
     const { extractedPart } = req.params;
-    console.log("extractedPart",extractedPart);
+    console.log("extractedPart", extractedPart);
     const hospitals = await db.HospitalMain.findAll({
       where: {
         name: extractedPart,
@@ -275,11 +274,15 @@ app.use(
 );
 
 app.use("/api/user-roles", userRoleRoutes);
+const dicomRoutes = require("./routes/DicomRoutes.js");
 
 /////////////
 const hospitalRoutes = require("./routes/user.routes");
 app.use("/api/hospitals", hospitalRoutes);
-////already 07
-app.listen(7000, () => {
-  console.log("Started on port 7000");
+app.use("/api/dicom", dicomRoutes);
+////
+
+const PORT = process.env.PORT || 7000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}.`);
 });

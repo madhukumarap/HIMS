@@ -21,6 +21,7 @@ import {
   Col,
 } from "react-bootstrap";
 // import { BSE_URL } from "../Constant";
+import AuthService from "../../services/auth.service";
 
 const getAuthHeader = (): { Authorization: string } => {
   const raw = localStorage.getItem("xpert_token") || "";
@@ -163,6 +164,8 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
   const [showTextModal, setShowTextModal] = useState(false);
   const [textAnnotation, setTextAnnotation] = useState("");
 
+   const currentUser = AuthService.getCurrentUser();
+
   useEffect(() => {
     try {
       initializeCornerstone();
@@ -260,7 +263,9 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
 
         const tagsResp = await axios.get(
           `${import.meta.env.VITE_API_URL}/api/dicom/${dicomId}/tags`,
-          { headers }
+          {headers:{
+            Authorization: `${currentUser?.Token}`,
+          }}
         );
         if (cancelled) return;
         setTags(tagsResp.data.tags ?? {});
@@ -269,7 +274,9 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
           `${import.meta.env.VITE_API_URL}/api/dicom/${dicomId}/download`,
           {
             responseType: "arraybuffer",
-            headers,
+           headers:{
+            Authorization: `${currentUser?.Token}`,
+          }
           }
         );
         if (cancelled) return;

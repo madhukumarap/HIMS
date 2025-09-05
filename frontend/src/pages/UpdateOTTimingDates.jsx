@@ -261,9 +261,8 @@ const BookingCalendar = () => {
       />
 
       <Modal
-        style={{ marginTop: "20px" }}
+        style={{ marginTop: "20px",fontSize: "12px" }}
         centered
-        style={{ fontSize: "12px" }}
         show={showEventModal}
         onHide={handleEventModalCancel}
       >

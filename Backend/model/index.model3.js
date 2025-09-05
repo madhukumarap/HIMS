@@ -31,6 +31,7 @@ const getConnection = async (database) => {
     const db = {};
     db.Sequelize = Sequelize;
     db.sequelize = sequelize;
+    db.DicomFile = require("./Dicom_Files.js")(sequelize, DataTypes);
     db.userRole = require("./userRole.model")(sequelize, Sequelize);
     db.Payments = require("./paymentsModel.js")(sequelize, DataTypes);
     db.Hospital = require("./Hospital.js")(sequelize, DataTypes);

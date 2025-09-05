@@ -296,6 +296,7 @@ async function uploadDicomFileHandler(req, res) {
       });
       console.log("✅ Orthanc upload successful:", orthancResp);
     } catch (uploadError) {
+      console.log(uploadError)
       console.error("❌ Orthanc upload failed:", uploadError.message);
       if (filePath && fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);

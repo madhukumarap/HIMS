@@ -220,87 +220,139 @@ const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selecte
   yPosition = doc.lastAutoTable.finalY + 15;
 
   // Test Results Tables
-  if (results) {
-    doc.setFontSize(14);
-    doc.setTextColor(105, 105, 105);
-    doc.text("Test Results", 15, yPosition);
-    yPosition += 10;
+// Test Results Tables
+if (results) {
+  doc.setFontSize(14);
+  doc.setTextColor(105, 105, 105);
+  doc.text("Test Results", 15, yPosition);
+  yPosition += 10;
 
-    // Ultrasound Abdomen Results
-    if (results.ultrasoundabdomenresultmodels) {
-      const abdomenResults = results.ultrasoundabdomenresultmodels;
-      
-      const abdomenData = [
-        ["Kidney", abdomenResults.Kidney || "N/A"]
+  // Blood Sugar Results
+  if (results.bloodsugarresultmodels) {
+    const bloodSugarResults = results.bloodsugarresultmodels;
+    
+    const bloodSugarData = [
+      ["Blood Sugar Fasting", bloodSugarResults.bloodsugarfasting || "N/A"],
+      ["Comments", bloodSugarResults.Comment || "No comments"]
+    ];
+
+    doc.autoTable({
+      startY: yPosition,
+      head: [["Test", "Result"]],
+      body: bloodSugarData,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [220, 220, 220],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+      },
+      styles: { fontSize: 10 },
+      margin: { left: 15 }
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 15;
+  }
+
+  // Blood Sugar for Fasting Results
+  if (results["bloodsugarforfastingresultmodels"]) {
+    const bloodSugarFastingResults = results["bloodsugarforfastingresultmodels"];
+    
+    const bloodSugarFastingData = [
+      ["Liquid", bloodSugarFastingResults.Liquid || "N/A"],
+      ["Blood New", bloodSugarFastingResults.BloodNew || "N/A"],
+      ["Comments", bloodSugarFastingResults.Comment || "No comments"]
+    ];
+
+    doc.autoTable({
+      startY: yPosition,
+      head: [["Test", "Result"]],
+      body: bloodSugarFastingData,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [220, 220, 220],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+      },
+      styles: { fontSize: 10 },
+      margin: { left: 15 }
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 15;
+  }
+
+  // Ultrasound Abdomen Results (existing code)
+  if (results.ultrasoundabdomenresultmodels) {
+    const abdomenResults = results.ultrasoundabdomenresultmodels;
+    
+    const abdomenData = [
+      ["Kidney", abdomenResults.Kidney || "N/A"]
+    ];
+
+    doc.autoTable({
+      startY: yPosition,
+      head: [["Test", "Result"]],
+      body: abdomenData,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [220, 220, 220],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+      },
+      styles: { fontSize: 10 },
+      margin: { left: 15 }
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 10;
+
+    // Comments as a separate table
+    if (abdomenResults.Comment) {
+      const commentData = [
+        ["Comments", abdomenResults.Comment || "No comments"]
       ];
 
       doc.autoTable({
         startY: yPosition,
-        head: [["Test", "Result"]],
-        body: abdomenData,
+        body: commentData,
         theme: 'grid',
-        headStyles: {
-          fillColor: [220, 220, 220],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold'
-        },
         styles: { fontSize: 10 },
-        margin: { left: 15 }
-      });
-
-      yPosition = doc.lastAutoTable.finalY + 10;
-
-      // Comments as a separate table
-      if (abdomenResults.Comment) {
-        const commentData = [
-          ["Comments", abdomenResults.Comment || "No comments"]
-        ];
-
-        doc.autoTable({
-          startY: yPosition,
-          body: commentData,
-          theme: 'grid',
-          styles: { fontSize: 10 },
-          columnStyles: {
-            0: { fontStyle: 'bold', cellWidth: 25 },
-            1: { cellWidth: 'auto' }
-          },
-          margin: { left: 15 }
-        });
-
-        yPosition = doc.lastAutoTable.finalY + 15;
-      }
-    }
-    
-    // Multiple test results table
-    if (Array.isArray(results)) {
-      const testResultsData = results.map(test => [
-        test.testName || "N/A",
-        test.TestStatus || "N/A",
-        test.TestSamplecollectedDateTime ? formatDateSafely(test.TestSamplecollectedDateTime) : "N/A",
-        test.TestCompletedDateTime ? formatDateSafely(test.TestCompletedDateTime) : "N/A"
-      ]);
-
-      doc.autoTable({
-        startY: yPosition,
-        head: [["Test Name", "Status", "Sample Collected", "Completed"]],
-        body: testResultsData,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [220, 220, 220],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold'
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 25 },
+          1: { cellWidth: 'auto' }
         },
-        styles: { fontSize: 9 }, // Smaller font to fit more data
-        margin: { left: 15 },
-        pageBreak: 'auto'
+        margin: { left: 15 }
       });
 
       yPosition = doc.lastAutoTable.finalY + 15;
     }
   }
+  
+  // Multiple test results table (existing code)
+  if (Array.isArray(results)) {
+    const testResultsData = results.map(test => [
+      test.testName || "N/A",
+      test.TestStatus || "N/A",
+      test.TestSamplecollectedDateTime ? formatDateSafely(test.TestSamplecollectedDateTime) : "N/A",
+      test.TestCompletedDateTime ? formatDateSafely(test.TestCompletedDateTime) : "N/A"
+    ]);
 
+    doc.autoTable({
+      startY: yPosition,
+      head: [["Test Name", "Status", "Sample Collected", "Completed"]],
+      body: testResultsData,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [220, 220, 220],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+      },
+      styles: { fontSize: 9 }, // Smaller font to fit more data
+      margin: { left: 15 },
+      pageBreak: 'auto'
+    });
 
+    yPosition = doc.lastAutoTable.finalY + 15;
+  }
+}
   // Check if we need a new page
   checkPageBreak(50);
 

@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import { format, isDate } from "date-fns";
 
-const generatePatientReportPDF = (typeData,hospitalData, pathologyTest, selectedTests, doctor, results, medicineData) => {
+const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selectedTests, doctor, results, medicineData) => {
   console.log(hospitalData, pathologyTest, selectedTests, doctor, results, medicineData);
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -30,9 +30,20 @@ const generatePatientReportPDF = (typeData,hospitalData, pathologyTest, selected
   const formatDateSafely = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return isNaN(date.getTime()) ? "N/A" : format(date, "dd-MMM-yyyy");
+    return isNaN(date.getTime()) ? "N/A" : format(date, "dd-MMM-yyyy HH:mm");
   };
-if (hospitalData?.logo) {
+
+  // Helper function to check page break
+  const checkPageBreak = (requiredSpace = 20) => {
+    if (yPosition > pageHeight - requiredSpace) {
+      doc.addPage();
+      yPosition = 15;
+      return true;
+    }
+    return false;
+  };
+
+  if (hospitalData?.logo) {
     try {
       // Add hospital logo (resize to appropriate dimensions)
       const logoWidth = 30;
@@ -45,19 +56,20 @@ if (hospitalData?.logo) {
       console.error("Error adding logo:", error);
     }
   }
+
   // Header
-  // addText(hospitalData?.hospitalName || "City Care Hospital", pageWidth / 2, yPosition, {
-  //   fontSize: 18,
-  //   align: 'center',
-  //   color: [0, 0, 255]
-  // });
+  addText(hospitalData?.hospitalName || "City Care Hospital", pageWidth / 2, yPosition, {
+    fontSize: 18,
+    align: 'center',
+    color: [0, 0, 255]
+  });
   yPosition += 8;
   
-  // addText("Patient Diagnosis Report", pageWidth / 2, yPosition, {
-  //   fontSize: 16,
-  //   align: 'center',
-  //   color: [0, 128, 0]
-  // });
+  addText("Patient Diagnosis Report", pageWidth / 2, yPosition, {
+    fontSize: 16,
+    align: 'center',
+    color: [0, 128, 0]
+  });
   yPosition += 15;
 
   // Hospital & Report Info
@@ -122,10 +134,7 @@ if (hospitalData?.logo) {
   yPosition += 15;
 
   // Check if we need a new page
-  if (yPosition > pageHeight - 50) {
-    doc.addPage();
-    yPosition = 15;
-  }
+  checkPageBreak(50);
 
   // Medicine Details (if available)
   if (medicineData && medicineData.length > 0) {
@@ -139,15 +148,12 @@ if (hospitalData?.logo) {
 
     // Table headers
     addText("Medicine Name", col1, yPosition, {fontStyle: 'bold'});
-    // addText("Batch No", col2, yPosition, {fontStyle: 'bold'});
     addText("Expiry Date", col3, yPosition, {fontStyle: 'bold'});
     addText("Qty", col4, yPosition, {fontStyle: 'bold'});
     yPosition += 7;
 
     addText("Unit Price", col1, yPosition, {fontStyle: 'bold'});
     addText("Total Cost", col2, yPosition, {fontStyle: 'bold'});
-    // addText("Currency", col3, yPosition, {fontStyle: 'bold'});
-    // addText("Dispense ID", col4, yPosition, {fontStyle: 'bold'});
     yPosition += 7;
 
     addLine(yPosition);
@@ -156,37 +162,15 @@ if (hospitalData?.logo) {
     // Medicine items
     medicineData.forEach((medicine, index) => {
       // Check if we need a new page
-      if (yPosition > pageHeight - 30) {
-        doc.addPage();
-        yPosition = 15;
-        
-        // Add table headers again on new page
-        addText("Medicine Name", col1, yPosition, {fontStyle: 'bold'});
-        // addText("Batch No", col2, yPosition, {fontStyle: 'bold'});
-        addText("Expiry Date", col3, yPosition, {fontStyle: 'bold'});
-        addText("Qty", col4, yPosition, {fontStyle: 'bold'});
-        yPosition += 7;
-
-        addText("Unit Price", col1, yPosition, {fontStyle: 'bold'});
-        addText("Total Cost", col2, yPosition, {fontStyle: 'bold'});
-        // addText("Currency", col3, yPosition, {fontStyle: 'bold'});
-        // addText("Dispense ID", col4, yPosition, {fontStyle: 'bold'});
-        yPosition += 7;
-
-        addLine(yPosition);
-        yPosition += 5;
-      }
-
+      checkPageBreak(30);
+      
       addText(medicine.MedicineName || "N/A", col1, yPosition);
-      // addText(medicine.BatchNumber || "N/A", col2, yPosition);
       addText(formatDateSafely(medicine.ExpiryDate), col3, yPosition);
       addText(medicine.Quantity || "N/A", col4, yPosition);
       yPosition += 7;
 
       addText(`${medicine.UnitPrice || "0.00"}`, col1, yPosition);
       addText(`${medicine.EachmedicineCost || "0.00"}`, col2, yPosition);
-      // addText(medicine.EachMedicineCurrency || "N/A", col3, yPosition);
-      // addText(medicine.DispenseID || "N/A", col4, yPosition);
       yPosition += 10;
 
       // Add line between items (except after last item)
@@ -200,60 +184,125 @@ if (hospitalData?.logo) {
   }
 
   // Check if we need a new page
-  if (yPosition > pageHeight - 50) {
-    doc.addPage();
-    yPosition = 15;
-  }
+  checkPageBreak(50);
 
   // Diagnosis Details
-  addText("Diagnosis Details", 15, yPosition, {
-    fontSize: 14,
-    color: [105, 105, 105]
-  });
-  yPosition += 8;
-  addLine(yPosition);
+   doc.setFontSize(14);
+  doc.setTextColor(105, 105, 105);
+  doc.text("Diagnosis Details", 15, yPosition);
   yPosition += 10;
 
-  addText("Test Name", col1, yPosition, {fontStyle: 'bold'});
-  addText(pathologyTest?.selectedTests || "N/A", col2, yPosition);
-  addText("Procedure", col3, yPosition, {fontStyle: 'bold'});
-  addText(pathologyTest?.procedure || "N/A", col4, yPosition);
-  yPosition += 7;
+  const diagnosisData = [
+    ["Test Name", pathologyTest?.selectedTests || "N/A", "Procedure", pathologyTest?.procedure || "N/A"],
+    ["Status", pathologyTest?.status || "N/A", "Authorization", pathologyTest?.Authorization || "N/A"]
+  ];
 
-  addText("Status", col1, yPosition, {fontStyle: 'bold'});
-  addText(pathologyTest?.status || "N/A", col2, yPosition);
-  addText("Authorization", col3, yPosition, {fontStyle: 'bold'});
-  addText(pathologyTest?.Authorization || "N/A", col4, yPosition);
-  yPosition += 7;
+  doc.autoTable({
+    startY: yPosition,
+    head: [["Field", "Value", "Field", "Value"]],
+    body: diagnosisData,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [220, 220, 220],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold'
+    },
+    styles: { fontSize: 10 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 30 },
+      1: { cellWidth: 50 },
+      2: { fontStyle: 'bold', cellWidth: 30 },
+      3: { cellWidth: 50 }
+    },
+    margin: { left: 15 }
+  });
 
-  // Test Results
+  yPosition = doc.lastAutoTable.finalY + 15;
+
+  // Test Results Tables
   if (results) {
-    yPosition += 7;
-    addText("Test Results", col1, yPosition, {fontStyle: 'bold', fontSize: 12});
+    doc.setFontSize(14);
+    doc.setTextColor(105, 105, 105);
+    doc.text("Test Results", 15, yPosition);
     yPosition += 10;
-    
+
     // Ultrasound Abdomen Results
     if (results.ultrasoundabdomenresultmodels) {
       const abdomenResults = results.ultrasoundabdomenresultmodels;
-      addText("Kidney:", col1, yPosition, {fontStyle: 'bold'});
-      addText(abdomenResults.Kidney || "N/A", col2, yPosition);
-      yPosition += 7;
       
-      addText("Comments:", col1, yPosition, {fontStyle: 'bold'});
-      // Handle multi-line comments
-      const comments = abdomenResults.Comment || "No comments";
-      const splitComments = doc.splitTextToSize(comments, pageWidth - 30);
-      addText(splitComments, col1, yPosition + 7);
-      yPosition += (splitComments.length * 7) + 7;
+      const abdomenData = [
+        ["Kidney", abdomenResults.Kidney || "N/A"]
+      ];
+
+      doc.autoTable({
+        startY: yPosition,
+        head: [["Test", "Result"]],
+        body: abdomenData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold'
+        },
+        styles: { fontSize: 10 },
+        margin: { left: 15 }
+      });
+
+      yPosition = doc.lastAutoTable.finalY + 10;
+
+      // Comments as a separate table
+      if (abdomenResults.Comment) {
+        const commentData = [
+          ["Comments", abdomenResults.Comment || "No comments"]
+        ];
+
+        doc.autoTable({
+          startY: yPosition,
+          body: commentData,
+          theme: 'grid',
+          styles: { fontSize: 10 },
+          columnStyles: {
+            0: { fontStyle: 'bold', cellWidth: 25 },
+            1: { cellWidth: 'auto' }
+          },
+          margin: { left: 15 }
+        });
+
+        yPosition = doc.lastAutoTable.finalY + 15;
+      }
+    }
+    
+    // Multiple test results table
+    if (Array.isArray(results)) {
+      const testResultsData = results.map(test => [
+        test.testName || "N/A",
+        test.TestStatus || "N/A",
+        test.TestSamplecollectedDateTime ? formatDateSafely(test.TestSamplecollectedDateTime) : "N/A",
+        test.TestCompletedDateTime ? formatDateSafely(test.TestCompletedDateTime) : "N/A"
+      ]);
+
+      doc.autoTable({
+        startY: yPosition,
+        head: [["Test Name", "Status", "Sample Collected", "Completed"]],
+        body: testResultsData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold'
+        },
+        styles: { fontSize: 9 }, // Smaller font to fit more data
+        margin: { left: 15 },
+        pageBreak: 'auto'
+      });
+
+      yPosition = doc.lastAutoTable.finalY + 15;
     }
   }
-  yPosition += 15;
+
 
   // Check if we need a new page
-  if (yPosition > pageHeight - 50) {
-    doc.addPage();
-    yPosition = 15;
-  }
+  checkPageBreak(50);
 
   // Payment Details
   addText("Payment Details", 15, yPosition, {
@@ -288,10 +337,7 @@ if (hospitalData?.logo) {
   yPosition += 15;
 
   // Check if we need a new page
-  if (yPosition > pageHeight - 50) {
-    doc.addPage();
-    yPosition = 15;
-  }
+  checkPageBreak(50);
 
   // Doctor Details
   addText("Doctor Details", 15, yPosition, {
@@ -319,10 +365,7 @@ if (hospitalData?.logo) {
   yPosition += 15;
 
   // Check if we need a new page
-  if (yPosition > pageHeight - 50) {
-    doc.addPage();
-    yPosition = 15;
-  }
+  checkPageBreak(50);
 
   // Additional Remarks
   if (pathologyTest?.remarks || pathologyTest?.feedback) {
@@ -335,17 +378,43 @@ if (hospitalData?.logo) {
     yPosition += 10;
 
     if (pathologyTest?.remarks) {
+      // Check page break before adding remarks
+      checkPageBreak(30);
+      
       addText("Remarks:", col1, yPosition, {fontStyle: 'bold'});
       const remarks = doc.splitTextToSize(pathologyTest.remarks, pageWidth - 30);
+      
+      // Calculate height needed for remarks
+      const remarksHeight = remarks.length * 7;
+      
+      // Check if we need a new page for remarks
+      if (yPosition + remarksHeight > pageHeight - 20) {
+        doc.addPage();
+        yPosition = 15;
+      }
+      
       addText(remarks, col1, yPosition + 7);
-      yPosition += (remarks.length * 7) + 10;
+      yPosition += remarksHeight + 10;
     }
 
     if (pathologyTest?.feedback) {
+      // Check page break before adding feedback
+      checkPageBreak(30);
+      
       addText("Feedback:", col1, yPosition, {fontStyle: 'bold'});
       const feedback = doc.splitTextToSize(pathologyTest.feedback, pageWidth - 30);
+      
+      // Calculate height needed for feedback
+      const feedbackHeight = feedback.length * 7;
+      
+      // Check if we need a new page for feedback
+      if (yPosition + feedbackHeight > pageHeight - 20) {
+        doc.addPage();
+        yPosition = 15;
+      }
+      
       addText(feedback, col1, yPosition + 7);
-      yPosition += (feedback.length * 7) + 10;
+      yPosition += feedbackHeight + 10;
     }
   }
   

@@ -1,6 +1,6 @@
 // routes/dicom.routes.js
 const express = require("express");
-const dicomController = require("../Controller/Dicom/dicomController");
+const dicomController = require("../Controller/Dicom/DicomController");
 const authJwt = require("../middleware/authJwt");
 
 const router = express.Router();

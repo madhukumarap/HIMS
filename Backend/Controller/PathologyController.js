@@ -80,32 +80,15 @@ const createBooking = async (req, res) => {
     const selectedTestsArray = new Set(req.body.selectedTests);
     const selectedTests = [...selectedTestsArray];
 
-    console.log(req.body);
-    console.log("selectedTest: " + selectedTest);
-
-    //return;
-    // const tests = await TestArray.findAll();
-    // const testid = findTestIdByName(tests, "Lipid Profile");
-    // console.log("testid:" + testid);
-    //return;
     const enterCodeTypeValue = await EnterCodeTypeValue.findByPk(
-      commissionType
+      commissionType || "A"
     );
 
     if (!enterCodeTypeValue) {
       return res.status(404).json({ error: "EnterCodeTypeValue not found" });
     }
-    console.log(enterCodeTypeValue);
-    // return;
-    // Fetch patient details by patientId
-    // const patientIdInfo = patientId;
-    // const regex = /PID:(\d+)/;
-    // const match = patientIdInfo.match(regex);
 
     if (true) {
-      // const patientId = match[1];
-      console.log("Patient ID:", patientId);
-
       // Fetch patient details by patientId
       const patient = await Patient.findByPk(patientId);
       const doctor = await DoctorModel.findByPk(doctorID);
@@ -271,7 +254,7 @@ const createBookingEvent = async (req, res) => {
         PatientName:
           patient.mr + " " + patient.firstName + " " + patient.lastName,
         PatientID: patient.id,
-        PaidAmount:amount,
+        PaidAmount: amount,
         CorporateID: patient?.CorporateID || null,
         DoctorName:
           (doctor?.FirstName || "NA") + " " + (doctor?.LastName || "NA"),

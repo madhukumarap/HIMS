@@ -48,7 +48,7 @@ db.nurse = require("./Nurse.js")(sequelize, DataTypes);
 db.doctor = require("./Doctor.js")(sequelize, DataTypes);
 db.DoctorFee  = require("./DoctorsFee.js")(sequelize, DataTypes);
 db.Doctor_Fee  = require("./Doctors_Fees.js")(sequelize, DataTypes);
-db.Dicom_files = require("./Dicom_Files.js")(sequelize, DataTypes);
+db.DicomFile = require("./Dicom_Files.js")(sequelize, DataTypes);
 db.CompanyRegistration = require("./CompanyRegistration")(sequelize, DataTypes);
 
 db.PathologyTestManage = require("./PathologyTestManage")(sequelize, DataTypes);

@@ -1274,6 +1274,7 @@ function Pathologytest() {
                 </div>
               </div>
             </div>
+            
             <div className="row">
               <div className="col-md-6">
                 <div className="form-group">

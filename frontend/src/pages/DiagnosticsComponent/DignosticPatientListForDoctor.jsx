@@ -222,40 +222,40 @@ function DiagnosticsBooking() {
       });
   };
 
-useEffect(() => {
-  if (formData.paymentStatus === "Paid" && currency && exchangeRates) {
-    // ✅ Always normalize currency to uppercase
-    const normalizedCurrency = currency.toUpperCase();
+  useEffect(() => {
+    if (formData.paymentStatus === "Paid" && currency && exchangeRates) {
+      // ✅ Always normalize currency to uppercase
+      const normalizedCurrency = currency.toUpperCase();
 
-    // ✅ Use USD fallback if currency not found
-    const selectedCurrencyRate = exchangeRates[normalizedCurrency] ?? 1;
+      // ✅ Use USD fallback if currency not found
+      const selectedCurrencyRate = exchangeRates[normalizedCurrency] ?? 1;
 
-    // ✅ Ensure fees are always numeric
-    const fees = selectedPackageObject?.finalPrice
-      ? Number(selectedPackageObject.finalPrice) + Number(formData.testFees)
-      : Number(formData.testFees);
+      // ✅ Ensure fees are always numeric
+      const fees = selectedPackageObject?.finalPrice
+        ? Number(selectedPackageObject.finalPrice) + Number(formData.testFees)
+        : Number(formData.testFees);
 
-    console.log("Currency:", normalizedCurrency);
-    console.log("Selected Rate:", selectedCurrencyRate);
-    console.log("Fees:", fees);
+      console.log("Currency:", normalizedCurrency);
+      console.log("Selected Rate:", selectedCurrencyRate);
+      console.log("Fees:", fees);
 
-    // ✅ Prevent NaN issues by checking validity
-    if (isNaN(fees) || isNaN(selectedCurrencyRate)) {
-      console.warn("Invalid calculation:", { fees, selectedCurrencyRate });
+      // ✅ Prevent NaN issues by checking validity
+      if (isNaN(fees) || isNaN(selectedCurrencyRate)) {
+        console.warn("Invalid calculation:", { fees, selectedCurrencyRate });
+        setTotalFees(null);
+        return;
+      }
+
+      // ✅ Calculate total
+      const totalFeesInSelectedCurrency = fees * selectedCurrencyRate;
+      const formattedTotalFees = totalFeesInSelectedCurrency.toFixed(2);
+
+      console.log("Final Total:", formattedTotalFees);
+      setTotalFees(formattedTotalFees);
+    } else {
       setTotalFees(null);
-      return;
     }
-
-    // ✅ Calculate total
-    const totalFeesInSelectedCurrency = fees * selectedCurrencyRate;
-    const formattedTotalFees = totalFeesInSelectedCurrency.toFixed(2);
-
-    console.log("Final Total:", formattedTotalFees);
-    setTotalFees(formattedTotalFees);
-  } else {
-    setTotalFees(null);
-  }
-}, [currency, formData.testFees, exchangeRates, selectedPackageObject]);
+  }, [currency, formData.testFees, exchangeRates, selectedPackageObject]);
 
   const { t } = useTranslation();
   const locales = { enIN, fr };
@@ -1697,9 +1697,7 @@ useEffect(() => {
                       </td>
                       <td
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          textAlign: "center",
+                          whiteSpace: "nowrap",
                         }}
                       >
                         <button
@@ -1710,18 +1708,6 @@ useEffect(() => {
                         >
                           <FaPencilAlt />
                         </button>
-                        {"  "}{" "}
-                        {/* <button
-                      title={t("diagnsticPatientListTable.DeleteBooking")}
-                      style={{ fontSize: "12px", padding: "4px 5px" }}
-                      className="btn btn-secondary mr-2"
-                      onClick={() => {
-                        setSelectedBookingId(booking.id);
-                        setShowDeleteModal(true);
-                      }}
-                    >
-                      <FaTrashAlt />
-                    </button> */}
                         {roleCurrentUser !== "ROLE_RECEPTIONIST" &&
                           roleCurrentUser !== "ROLE_DOCTOR" && (
                             <UploadDiagnosticImages

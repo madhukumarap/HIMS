@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
-  const Dicom_files = sequelize.define('Dicom_files', {
+  const DicomFile = sequelize.define('DicomFile', {
     id: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
@@ -52,5 +52,5 @@ module.exports = (sequelize) => {
     underscored: false,
   });
 
-  return Dicom_files;
+  return DicomFile;
 };

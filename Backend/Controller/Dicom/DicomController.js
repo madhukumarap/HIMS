@@ -1,42 +1,143 @@
-// const { DicomFile, User } = require("../models/index.model");
-const db = require("../../model/index.model.js");
+// Controller/Dicom/DicomController.js
 const orthanc = require("./orthancService.js");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const { getConnectionList } = require("../../model/index.model3.js");
 
-// Configure multer to store in a temp folder
+// Configure multer with better error handling
 const upload = multer({
   dest: path.join(__dirname, "..", "..", "tmp"),
-  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB limit
+  limits: {
+    fileSize: 500 * 1024 * 1024, // Increase to 500MB
+    files: 1,
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept DICOM files and other medical imaging formats
+    const allowedTypes = [
+      "application/dicom",
+      "application/octet-stream",
+      "image/dicom",
+      "image/x-dicom",
+    ];
+
+    if (
+      allowedTypes.includes(file.mimetype) ||
+      file.originalname.toLowerCase().endsWith(".dcm")
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only DICOM files are allowed"), false);
+    }
+  },
 });
 
+// Error handling middleware for multer
+const handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(413).json({
+        message: "File too large. Maximum size is 500MB",
+      });
+    }
+    if (err.code === "LIMIT_UNEXPECTED_FILE") {
+      return res.status(400).json({
+        message: "Too many files. Only one file allowed",
+      });
+    }
+  }
+  next(err);
+};
+
+// async function listDicomFiles(req, res) {
+//   try {
+//     const database = req.headers.userDatabase;
+//     const connectionList = await getConnectionList(database);
+//     const db = connectionList[database];
+//     const DicomFile = db.DicomFile;
+//     const User = db.user;
+
+//     // Check if user has admin role - adjust based on your auth setup
+//     // You might need to get role from req.role or req.userRole
+//     const isAll =
+//       (req.role === "Admin" || req.userRole === "Admin") &&
+//       req.query.all === "1";
+//     const where = isAll ? {} : { userId: req.userId };
+
+//     const rows = await DicomFile.findAll({
+//       where,
+//       order: [["createdAt", "DESC"]],
+//       include: [
+//         {
+//           model: User,
+//           attributes: ["id", "name", "email"],
+//           as: "user",
+//         },
+//       ],
+//     });
+
+//     return res.json({ count: rows.length, rows });
+//   } catch (err) {
+//     console.error("List DICOM files error:", err);
+//     return res.status(500).json({
+//       message: "Server error",
+//       error: err.message,
+//     });
+//   }
+// }
+
 async function listDicomFiles(req, res) {
+  const database = req.headers.userDatabase;
+  const connectionList = await getConnectionList(database);
+  const db = connectionList[database];
+  const DicomFile = db.DicomFile;
+
   try {
+    // Admin can see all
     const isAll =
       req.user && req.user.role === "Admin" && req.query.all === "1";
-    const where = isAll ? {} : { userId: req.user.id };
-    const rows = await db.Dicom_files.findAll({
+
+    // If not admin, filter by patientId
+    const where = isAll ? {} : { patientId: req.query.patientId };
+
+    const rows = await DicomFile.findAll({
       where,
       order: [["createdAt", "DESC"]],
     });
+
     return res.json({ count: rows.length, rows });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    console.error("List DICOM files error:", err);
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 }
 
 async function getDicomRecord(req, res) {
   try {
+    const database = req.headers.userDatabase;
+    const connectionList = await getConnectionList(database);
+    const db = connectionList[database];
+    const DicomFile = db.DicomFile;
+
     const id = req.params.id;
-    const rec = await db.Dicom_files.findByPk(id);
-    if (!rec) return res.status(404).json({ message: "Record not found" });
-    if (req.user.role !== "Admin" && rec.userId !== req.user.id)
+    const rec = await DicomFile.findByPk(id);
+
+    if (!rec) {
+      return res.status(404).json({ message: "Record not found" });
+    }
+
+    // Check permissions - adjust based on your role setup
+    const isAdmin = req.role === "Admin" || req.userRole === "Admin";
+    if (!isAdmin && rec.userId !== req.userId) {
       return res.status(403).json({ message: "Forbidden" });
+    }
+
     const instanceId = rec.orthancInstanceId;
     let orthancData = null;
+
     if (instanceId) {
       try {
         orthancData = await orthanc.getInstance(instanceId);
@@ -44,65 +145,106 @@ async function getDicomRecord(req, res) {
         orthancData = { error: e.message };
       }
     }
+
     return res.json({ record: rec, orthanc: orthancData });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    console.error("Get DICOM record error:", err);
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 }
 
 async function getDicomTags(req, res) {
   try {
+    const database = req.headers.userDatabase;
+    const connectionList = await getConnectionList(database);
+    const db = connectionList[database];
+    const DicomFile = db.DicomFile;
+
     const id = req.params.id;
-    const rec = await db.Dicom_files.findByPk(id);
-    if (!rec) return res.status(404).json({ message: "Record not found" });
-    if (req.user.role !== "Admin" && rec.userId !== req.user.id)
+    const rec = await DicomFile.findByPk(id);
+
+    if (!rec) {
+      return res.status(404).json({ message: "Record not found" });
+    }
+
+    // Check permissions
+    const isAdmin = req.role === "Admin" || req.userRole === "Admin";
+    if (!isAdmin && rec.userId !== req.userId) {
       return res.status(403).json({ message: "Forbidden" });
-    if (!rec.orthancInstanceId)
+    }
+
+    if (!rec.orthancInstanceId) {
       return res.status(400).json({ message: "No orthanc instance id stored" });
+    }
+
     const tags = await orthanc.getInstanceTags(rec.orthancInstanceId);
     return res.json({ tags });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    console.error("Get DICOM tags error:", err);
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 }
 
 async function downloadDicom(req, res) {
   try {
+    const database = req.headers.userDatabase;
+    const connectionList = await getConnectionList(database);
+    const db = connectionList[database];
+    const DicomFile = db.DicomFile;
+
     const id = req.params.id;
-    const rec = await db.Dicom_files.findByPk(id);
-    if (!rec) return res.status(404).json({ message: "Record not found" });
-    if (!rec.orthancInstanceId)
+    const rec = await DicomFile.findByPk(id);
+
+    if (!rec) {
+      return res.status(404).json({ message: "Record not found" });
+    }
+
+    if (!rec.orthancInstanceId) {
       return res.status(400).json({ message: "No orthanc instance id stored" });
+    }
+
     const streamResp = await orthanc.downloadInstanceFileToStream(
       rec.orthancInstanceId
     );
+
     res.setHeader("Content-Type", "application/dicom");
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${rec.orthancInstanceId}.dcm"`
     );
+
     streamResp.data.pipe(res);
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    console.error("Download DICOM error:", err);
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 }
 
 async function getStudyDetails(req, res) {
   try {
     const studyId = req.params.studyId;
-    if (!studyId) return res.status(400).json({ message: "studyId required" });
+
+    if (!studyId) {
+      return res.status(400).json({ message: "studyId required" });
+    }
+
     const data = await orthanc.getStudy(studyId);
     return res.json({ study: data });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    console.error("Get study details error:", err);
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 }
 
@@ -112,27 +254,57 @@ async function findStudies(req, res) {
     const data = await orthanc.searchStudies(q);
     return res.json({ result: data });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    console.error("Find studies error:", err);
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 }
 
 async function uploadDicomFileHandler(req, res) {
-  try {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+  let filePath = null;
 
-    const { patientId, doctorId, consultationId, useLocal } = req.body;
-    const filePath = req.file.path;
+  const database = req.headers.userDatabase;
+  const connectionList = await getConnectionList(database);
+  const db = connectionList[database];
+
+  try {
+    console.log("Upload request received");
+
+    // Use req.userId (which is set by your auth middleware)
+    if (!req.userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    filePath = req.file.path;
 
     // Read file buffer
     const buffer = fs.readFileSync(filePath);
+    console.log("File read successfully, size:", buffer.length, "bytes");
 
     // Upload to Orthanc
-    const orthancResp = await orthanc.uploadDicom({
-      buffer,
-      useLocal: !!useLocal,
-    });
+    let orthancResp;
+    try {
+      orthancResp = await orthanc.uploadDicom({
+        buffer: buffer,
+        useLocal: !!req.body.useLocal,
+      });
+      console.log("✅ Orthanc upload successful:", orthancResp);
+    } catch (uploadError) {
+      console.error("❌ Orthanc upload failed:", uploadError.message);
+      if (filePath && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      return res.status(502).json({
+        message: "Failed to upload to Orthanc",
+        error: uploadError.message,
+      });
+    }
 
     const orthancInstanceId = orthancResp.ID || orthancResp;
     let orthancStudyId = null;
@@ -145,12 +317,14 @@ async function uploadDicomFileHandler(req, res) {
       orthancStudyId = orthancResp.MainDicomTags.StudyInstanceUID;
     }
 
-    // Save in DB
-    const rec = await db.Dicom_files.create({
-      userId: req.user.id,
-      patientId: patientId || null,
-      doctorId: doctorId || null,
-      consultationId: consultationId || null,
+    const DicomFile = db.DicomFile;
+
+    // Save in DB - use req.userId instead of req.user.id
+    const rec = await DicomFile.create({
+      userId: req.userId,
+      patientId: req.body.patientId || null,
+      doctorId: req.body.doctorId || null,
+      consultationId: req.body.consultationId || null,
       orthancInstanceId: orthancInstanceId || null,
       orthancStudyId: orthancStudyId || null,
       metadata: orthancResp,
@@ -165,13 +339,17 @@ async function uploadDicomFileHandler(req, res) {
       orthanc: orthancResp,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Upload error:", err);
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
     return res
       .status(500)
       .json({ message: "Upload error", error: err.message });
   }
 }
 
+// Export all functions
 module.exports = {
   listDicomFiles,
   getDicomRecord,
@@ -181,4 +359,5 @@ module.exports = {
   findStudies,
   uploadDicomFileHandler,
   upload: upload.single("file"),
+  handleMulterError,
 };

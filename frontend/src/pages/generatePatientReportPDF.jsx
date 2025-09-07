@@ -220,139 +220,161 @@ const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selecte
   yPosition = doc.lastAutoTable.finalY + 15;
 
   // Test Results Tables
-// Test Results Tables
-if (results) {
-  doc.setFontSize(14);
-  doc.setTextColor(105, 105, 105);
-  doc.text("Test Results", 15, yPosition);
-  yPosition += 10;
+  if (results) {
+    doc.setFontSize(14);
+    doc.setTextColor(105, 105, 105);
+    doc.text("Test Results", 15, yPosition);
+    yPosition += 10;
 
-  // Blood Sugar Results
-  if (results.bloodsugarresultmodels) {
-    const bloodSugarResults = results.bloodsugarresultmodels;
-    
-    const bloodSugarData = [
-      ["Blood Sugar Fasting", bloodSugarResults.bloodsugarfasting || "N/A"],
-      ["Comments", bloodSugarResults.Comment || "No comments"]
-    ];
-
-    doc.autoTable({
-      startY: yPosition,
-      head: [["Test", "Result"]],
-      body: bloodSugarData,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [220, 220, 220],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold'
-      },
-      styles: { fontSize: 10 },
-      margin: { left: 15 }
-    });
-
-    yPosition = doc.lastAutoTable.finalY + 15;
-  }
-
-  // Blood Sugar for Fasting Results
-  if (results["bloodsugarforfastingresultmodels"]) {
-    const bloodSugarFastingResults = results["bloodsugarforfastingresultmodels"];
-    
-    const bloodSugarFastingData = [
-      ["Liquid", bloodSugarFastingResults.Liquid || "N/A"],
-      ["Blood New", bloodSugarFastingResults.BloodNew || "N/A"],
-      ["Comments", bloodSugarFastingResults.Comment || "No comments"]
-    ];
-
-    doc.autoTable({
-      startY: yPosition,
-      head: [["Test", "Result"]],
-      body: bloodSugarFastingData,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [220, 220, 220],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold'
-      },
-      styles: { fontSize: 10 },
-      margin: { left: 15 }
-    });
-
-    yPosition = doc.lastAutoTable.finalY + 15;
-  }
-
-  // Ultrasound Abdomen Results (existing code)
-  if (results.ultrasoundabdomenresultmodels) {
-    const abdomenResults = results.ultrasoundabdomenresultmodels;
-    
-    const abdomenData = [
-      ["Kidney", abdomenResults.Kidney || "N/A"]
-    ];
-
-    doc.autoTable({
-      startY: yPosition,
-      head: [["Test", "Result"]],
-      body: abdomenData,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [220, 220, 220],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold'
-      },
-      styles: { fontSize: 10 },
-      margin: { left: 15 }
-    });
-
-    yPosition = doc.lastAutoTable.finalY + 10;
-
-    // Comments as a separate table
-    if (abdomenResults.Comment) {
-      const commentData = [
-        ["Comments", abdomenResults.Comment || "No comments"]
+    // Blood Sugar Results
+    if (results.bloodsugarresultmodels) {
+      const bloodSugarResults = results.bloodsugarresultmodels;
+      
+      const bloodSugarData = [
+        ["Blood Sugar Fasting", bloodSugarResults.bloodsugarfasting || "N/A"],
+        ["Comments", bloodSugarResults.Comment || "No comments"]
       ];
 
       doc.autoTable({
         startY: yPosition,
-        body: commentData,
+        head: [["Test", "Result"]],
+        body: bloodSugarData,
         theme: 'grid',
-        styles: { fontSize: 10 },
-        columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 25 },
-          1: { cellWidth: 'auto' }
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold'
         },
+        styles: { fontSize: 10 },
         margin: { left: 15 }
       });
 
       yPosition = doc.lastAutoTable.finalY + 15;
     }
+
+    // Blood Sugar for Fasting Results
+    if (results["bloodsugarforfastingresultmodels"]) {
+      const bloodSugarFastingResults = results["bloodsugarforfastingresultmodels"];
+      
+      const bloodSugarFastingData = [
+        ["Liquid", bloodSugarFastingResults.Liquid || "N/A"],
+        ["Blood New", bloodSugarFastingResults.BloodNew || "N/A"],
+        ["Comments", bloodSugarFastingResults.Comment || "No comments"]
+      ];
+
+      doc.autoTable({
+        startY: yPosition,
+        head: [["Test", "Result"]],
+        body: bloodSugarFastingData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold'
+        },
+        styles: { fontSize: 10 },
+        margin: { left: 15 }
+      });
+
+      yPosition = doc.lastAutoTable.finalY + 15;
+    }
+
+    // Ultrasound Abdomen Results (existing code)
+    if (results.ultrasoundabdomenresultmodels) {
+      const abdomenResults = results.ultrasoundabdomenresultmodels;
+      
+      const abdomenData = [
+        ["Kidney", abdomenResults.Kidney || "N/A"]
+      ];
+
+      doc.autoTable({
+        startY: yPosition,
+        head: [["Test", "Result"]],
+        body: abdomenData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold'
+        },
+        styles: { fontSize: 10 },
+        margin: { left: 15 }
+      });
+
+      yPosition = doc.lastAutoTable.finalY + 10;
+
+      // Comments as a separate table
+      if (abdomenResults.Comment) {
+        const commentData = [
+          ["Comments", abdomenResults.Comment || "No comments"]
+        ];
+
+        doc.autoTable({
+          startY: yPosition,
+          body: commentData,
+          theme: 'grid',
+          styles: { fontSize: 10 },
+          columnStyles: {
+            0: { fontStyle: 'bold', cellWidth: 25 },
+            1: { cellWidth: 'auto' }
+          },
+          margin: { left: 15 }
+        });
+
+        yPosition = doc.lastAutoTable.finalY + 15;
+      }
+    }
+    
+    // Multiple test results table (existing code)
+    if (Array.isArray(results)) {
+      const testResultsData = results.map(test => [
+        test.testName || "N/A",
+        test.TestStatus || "N/A",
+        test.TestSamplecollectedDateTime ? formatDateSafely(test.TestSamplecollectedDateTime) : "N/A",
+        test.TestCompletedDateTime ? formatDateSafely(test.TestCompletedDateTime) : "N/A"
+      ]);
+
+      doc.autoTable({
+        startY: yPosition,
+        head: [["Test Name", "Status", "Sample Collected", "Completed"]],
+        body: testResultsData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold'
+        },
+        styles: { fontSize: 9 }, // Smaller font to fit more data
+        margin: { left: 15 },
+        pageBreak: 'auto'
+      });
+
+      yPosition = doc.lastAutoTable.finalY + 15;
+    }
   }
+  addText("IMPORTANT INSTRUCTIONS", pageWidth / 2.5, yPosition, {
+    fontSize: 14,
+    align: 'right',
+    color: [0, 0, 0],
+    fontStyle: 'bold'
+  });
+  yPosition += 10;
   
-  // Multiple test results table (existing code)
-  if (Array.isArray(results)) {
-    const testResultsData = results.map(test => [
-      test.testName || "N/A",
-      test.TestStatus || "N/A",
-      test.TestSamplecollectedDateTime ? formatDateSafely(test.TestSamplecollectedDateTime) : "N/A",
-      test.TestCompletedDateTime ? formatDateSafely(test.TestCompletedDateTime) : "N/A"
-    ]);
+ const diabetesInfo = [
+    "1. The diagnosis of Diabetes requires a fasting plasma glucose of > or = 70 mg/dL .",
+    "2. The  random / 2 hr post glucose value of > or = 100 mg/dL on at least 2 occasions.",
+    "3. Very low glucose levels cause severe CNS dysfunction",
+    "4. Very high glucose levels (>450 mg/dL in adults) may result in Diabetic Ketoacidosis & is considered critical"
+  ];
 
-    doc.autoTable({
-      startY: yPosition,
-      head: [["Test Name", "Status", "Sample Collected", "Completed"]],
-      body: testResultsData,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [220, 220, 220],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold'
-      },
-      styles: { fontSize: 9 }, // Smaller font to fit more data
-      margin: { left: 15 },
-      pageBreak: 'auto'
-    });
+  diabetesInfo.forEach(info => {
+    checkPageBreak(20);
+    const formattedInfo = doc.splitTextToSize(info, pageWidth - 30);
+    addText(formattedInfo, 20, yPosition);
+    yPosition += (formattedInfo.length * 7) + 2;
+  });
 
-    yPosition = doc.lastAutoTable.finalY + 15;
-  }
-}
+  yPosition += 15;
   // Check if we need a new page
   checkPageBreak(50);
 
@@ -469,16 +491,23 @@ if (results) {
       yPosition += feedbackHeight + 10;
     }
   }
+
+  // Check if we need a new page for IMPORTANT INSTRUCTIONS
+  checkPageBreak(100);
+
+  // IMPORTANT INSTRUCTIONS Section
+  
+  addLine(yPosition);
+  yPosition += 10;
+
+  // Diabetes diagnosis information
+  yPosition += 10;
+  checkPageBreak(50);
+
+  yPosition += 15;
   
   // Footer
   const footerY = pageHeight - 20;
-  addText(`Note: This report is generated electronically and does not require a signature.`, 
-    pageWidth / 2, footerY - 10, {
-    fontSize: 10,
-    align: 'center',
-    color: [128, 128, 128]
-  });
-  
   addText(`© ${new Date().getFullYear()} ${hospitalData?.hospitalName || "City Care Hospital"} | All Rights Reserved`, 
     pageWidth / 2, footerY, {
     fontSize: 10,

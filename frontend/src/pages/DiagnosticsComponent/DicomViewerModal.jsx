@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Button, ListGroup, Badge, Alert } from "react-bootstrap";
+import { Modal, Button, ListGroup, Badge, Alert, Form } from "react-bootstrap";
 import {
   FaEye,
   FaDownload,
@@ -10,10 +10,17 @@ import {
 import DicomViewer from "../Diacom/DicomViewer";
 import AuthService from "../../services/auth.service";
 
-const DicomViewerModal = ({ show, handleClose, dicomFiles, patientData }) => {
+const DicomViewerModal = ({
+  show,
+  handleClose,
+  dicomFiles,
+  imageFiles,
+  patientData,
+}) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [showDicomViewer, setShowDicomViewer] = useState(false);
   const [selectedDicomId, setSelectedDicomId] = useState(null);
+  const [viewType, setViewType] = useState("dicom"); // "dicom" | "image"
 
   const currentUser = AuthService.getCurrentUser();
 
@@ -67,123 +74,169 @@ const DicomViewerModal = ({ show, handleClose, dicomFiles, patientData }) => {
     handleClose();
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   return (
     <>
       {/* Main Modal */}
       <Modal show={show} onHide={handleCloseModal} size="lg" className="mt-5">
         <Modal.Header closeButton>
           <Modal.Title>
-            <FaEye className="me-2" />
-            DICOM Files for Patient: {patientData?.PatientName} (ID:{" "}
-            {patientData?.PatientID})
+            Files for Patient : {patientData?.PatientName}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {dicomFiles.length === 0 ? (
-            <Alert variant="info" className="text-center">
-              <FaTimes className="me-2" />
-              No DICOM files found for this patient.
-            </Alert>
-          ) : (
-            <div className="row">
-              <div className="col-md-4">
-                <h6>Available DICOM Files ({dicomFiles.length}):</h6>
-                <ListGroup style={{ maxHeight: "400px", overflowY: "auto" }}>
-                  {dicomFiles.map((file) => (
-                    <ListGroup.Item
-                      key={file.id}
-                      action
-                      active={selectedFile?.id === file.id}
-                      onClick={() => handleFileSelect(file)}
-                      className="d-flex justify-content-between align-items-start"
-                    >
-                      <div className="ms-2 me-auto">
-                        <div className="fw-bold">File #{file.id}</div>
-                        <small className="text-muted">
-                          <FaCalendarAlt className="me-1" />
-                          {new Date(file.createdAt).toLocaleDateString()}
-                        </small>
-                      </div>
-                      <Badge
-                        bg={file.orthancInstanceId ? "success" : "warning"}
-                        pill
-                      >
-                        {file.orthancInstanceId ? "Uploaded" : "Pending"}
-                      </Badge>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              </div>
-              <div className="col-md-8">
-                {selectedFile ? (
-                  <div>
-                    <h6>DICOM File Details</h6>
-                    <div className="card">
-                      <div className="card-body">
-                        <p>
-                          <strong>File ID:</strong> {selectedFile.id}
-                        </p>
-                        <p>
-                          <strong>Orthanc Instance ID:</strong>{" "}
-                          {selectedFile.orthancInstanceId || "N/A"}
-                        </p>
-                        <p>
-                          <strong>Orthanc Study ID:</strong>{" "}
-                          {selectedFile.orthancStudyId || "N/A"}
-                        </p>
-                        <p>
-                          <strong>Patient ID:</strong>{" "}
-                          {selectedFile.patientId || "N/A"}
-                        </p>
-                        <p>
-                          <strong>Doctor ID:</strong>{" "}
-                          {selectedFile.doctorId || "N/A"}
-                        </p>
-                        <p>
-                          <strong>Consultation ID:</strong>{" "}
-                          {selectedFile.consultationId || "N/A"}
-                        </p>
-                        <p>
-                          <strong>Created:</strong>{" "}
-                          {new Date(selectedFile.createdAt).toLocaleString()}
-                        </p>
-                        <p>
-                          <strong>Updated:</strong>{" "}
-                          {new Date(selectedFile.updatedAt).toLocaleString()}
-                        </p>
+          {/* Dropdown to choose view type */}
+          <Form.Group className="mb-3">
+            <Form.Label>Choose File Type</Form.Label>
+            <Form.Select
+              value={viewType}
+              onChange={(e) => setViewType(e.target.value)}
+            >
+              <option value="dicom">DICOM Files</option>
+              <option value="image">Images</option>
+            </Form.Select>
+          </Form.Group>
 
-                        {selectedFile.orthancInstanceId && (
-                          <div className="mt-3">
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handleDownload(selectedFile)}
-                              className="me-2"
-                            >
-                              <FaDownload /> Download DICOM
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleViewInViewer(selectedFile)}
-                              style={{ marginTop: "1rem" }}
-                            >
-                              <FaEye /> View in Viewer
-                            </Button>
-                          </div>
-                        )}
+          {/* Conditionally render content */}
+          {viewType === "dicom" ? (
+            dicomFiles.length === 0 ? (
+              <Alert variant="info" className="text-center">
+                <FaTimes className="me-2" />
+                No DICOM files found for this patient.
+              </Alert>
+            ) : (
+              <div className="row">
+                <div className="col-md-4">
+                  <h6>Available DICOM Files ({dicomFiles.length}):</h6>
+                  <ListGroup style={{ maxHeight: "400px", overflowY: "auto" }}>
+                    {dicomFiles.map((file) => (
+                      <ListGroup.Item
+                        key={file.id}
+                        action
+                        active={selectedFile?.id === file.id}
+                        onClick={() => handleFileSelect(file)}
+                        className="d-flex justify-content-between align-items-start"
+                      >
+                        <div className="ms-2 me-auto">
+                          <div className="fw-bold">File #{file.id}</div>
+                          <small className="text-muted">
+                            <FaCalendarAlt className="me-1" />
+                            {formatDate(new Date(file.createdAt))}
+                          </small>
+                        </div>
+                        <Badge
+                          bg={file.orthancInstanceId ? "success" : "warning"}
+                          pill
+                        >
+                          {file.orthancInstanceId ? "Uploaded" : "Pending"}
+                        </Badge>
+                      </ListGroup.Item>
+                    ))}
+                  </ListGroup>
+                </div>
+                <div className="col-md-8">
+                  {selectedFile ? (
+                    <div>
+                      <h6>DICOM File Details</h6>
+                      <div className="card">
+                        <div className="card-body">
+                          <p>
+                            <strong>File ID:</strong> {selectedFile.id}
+                          </p>
+                          <p>
+                            <strong>Orthanc Instance ID:</strong>{" "}
+                            {selectedFile.orthancInstanceId || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Orthanc Study ID:</strong>{" "}
+                            {selectedFile.orthancStudyId || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Patient ID:</strong>{" "}
+                            {selectedFile.patientId || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Doctor ID:</strong>{" "}
+                            {selectedFile.doctorId || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Created:</strong>{" "}
+                            {formatDate(new Date(selectedFile.createdAt))}
+                          </p>
+
+                          {selectedFile.orthancInstanceId && (
+                            <div className="mt-3">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => handleDownload(selectedFile)}
+                                className="me-2"
+                              >
+                                <FaDownload /> Download DICOM
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleViewInViewer(selectedFile)}
+                                style={{ marginTop: "1rem" }}
+                              >
+                                <FaEye /> View in Viewer
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  ) : (
+                    <div className="text-center" style={{ padding: "100px 0" }}>
+                      <p className="h6">Select a DICOM file to view details</p>
+                      <small className="text-muted">
+                        {dicomFiles.length} files available for this patient
+                      </small>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          ) : imageFiles.length === 0 ? (
+            <Alert variant="info" className="text-center">
+              <FaTimes className="me-2" />
+              No Images found for this booking.
+            </Alert>
+          ) : (
+            <div>
+              <h6>Available Images ({imageFiles.length}):</h6>
+              <div className="d-flex flex-wrap">
+                {imageFiles.map((img, index) => (
+                  <div key={img.id} className="m-2 text-center">
+                    <a
+                      href={img.imagePath}
+                      download={`${index + 1}.png`} // <-- numbered names
+                    >
+                      <img
+                        src={img.imagePath}
+                        alt={`Scan ${index + 1}`}
+                        style={{
+                          width: "150px",
+                          height: "150px",
+                          objectFit: "cover",
+                          borderRadius: "4px",
+                          border: "1px solid #ccc",
+                          cursor: "pointer",
+                        }}
+                      />
+                    </a>
+                    <p className="small mt-1">Image {index + 1}</p>
                   </div>
-                ) : (
-                  <div className="text-center" style={{ padding: "100px 0" }}>
-                    <FaEye size={48} className="text-muted mb-3" />
-                    <p>Select a DICOM file to view details</p>
-                    <small className="text-muted">
-                      {dicomFiles.length} files available for this patient
-                    </small>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
           )}
@@ -201,9 +254,9 @@ const DicomViewerModal = ({ show, handleClose, dicomFiles, patientData }) => {
         onHide={handleCloseDicomViewer}
         size="xl"
         fullscreen="lg-down"
-        dialogClassName="dicom-viewer-modal" // Add custom class
-        contentClassName="dicom-viewer-content" // Add custom class for content
-        style={{ marginTop: "2rem", marginLeft: "auto", marginRight: "100px" }} // Push to right
+        dialogClassName="dicom-viewer-modal"
+        contentClassName="dicom-viewer-content"
+        style={{ marginTop: "2rem", marginLeft: "auto", marginRight: "100px" }}
         dialogStyle={{
           maxWidth: "95%",
           width: "95%",
@@ -224,7 +277,6 @@ const DicomViewerModal = ({ show, handleClose, dicomFiles, patientData }) => {
         <Modal.Body
           style={{
             marginTop: "10px",
-            // padding: 0,
             overflow: "hidden",
             minHeight: "80vh",
           }}

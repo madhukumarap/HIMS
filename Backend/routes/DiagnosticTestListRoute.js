@@ -77,10 +77,6 @@ router.get("/getImagesByTestBookingIDAndTestName", async (req, res) => {
   const DiagnosticTestResultImages = db.DiagnosticTestResultImages;
   try {
     const { testBookingID, testName } = req.query;
-
-    console.log("TestNames: " + testName + " " + testBookingID);
-    //  return;
-
     const images = await DiagnosticTestResultImages.findAll({
       where: {
         testName,
@@ -110,5 +106,65 @@ router.get("/getImagesByTestBookingIDAndTestName", async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to fetch images." });
   }
 });
+
+///////
+router.get("/getImagesByBookingId", async (req, res) => {
+  const database = req.headers.userDatabase;
+  const connectionList = await getConnectionList(database);
+  const db = connectionList[database];
+  const DiagnosticTestResultImages = db.DiagnosticTestResultImages;
+
+  try {
+    const bookingId = parseInt(req.query.id, 10);
+
+    if (!bookingId) {
+      return res
+        .status(400)
+        .json({ success: false, error: "id (bookingId) is required" });
+    }
+
+    const files = await DiagnosticTestResultImages.findAll({
+      where: { testBookingID: bookingId },
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (!files || files.length === 0) {
+      return res.json({ success: false, message: "Record not found" });
+    }
+
+    const imageFiles = [];
+
+    for (const file of files) {
+      try {
+        const ext = file.imagePath.split(".").pop().toLowerCase();
+        if (ext === "dcm") continue; // skip dicoms
+
+        const imageBuffer = fs.readFileSync(file.imagePath);
+        const imageBase64 = imageBuffer.toString("base64");
+
+        const mimeType =
+          ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/png";
+
+        imageFiles.push({
+          id: file.id,
+          testBookingID: file.testBookingID,
+          testName: file.testName,
+          testType: file.testType,
+          imagePath: `data:${mimeType};base64,${imageBase64}`,
+          createdAt: file.createdAt,
+          updatedAt: file.updatedAt,
+        });
+      } catch (err) {
+        console.error("Error reading file:", file.imagePath, err);
+      }
+    }
+
+    res.json({ success: true, images: imageFiles });
+  } catch (error) {
+    console.error("Error fetching images by bookingId:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch images." });
+  }
+});
+
 ////////////////////////
 module.exports = router;

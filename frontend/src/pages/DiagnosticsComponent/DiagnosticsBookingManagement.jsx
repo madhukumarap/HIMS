@@ -85,6 +85,7 @@ function DiagnosticsBooking() {
 
   const [showDicomViewerModal, setShowDicomViewerModal] = useState(false);
   const [dicomFiles, setDicomFiles] = useState([]);
+  const [images, setImages] = useState([]);
   const [selectedPatientForDicom, setSelectedPatientForDicom] = useState(null);
   const [loadingDicom, setLoadingDicom] = useState(false);
 
@@ -96,27 +97,81 @@ function DiagnosticsBooking() {
     setShowDicomModal(true);
   };
 
+  // const handleViewDicom = async (booking) => {
+  //   console.log(booking);
+
+  //   try {
+  //     setLoadingDicom(true);
+  //     setSelectedPatientForDicom(booking);
+
+  //     // Fetch DICOM files for this specific patient using your existing API
+  //     const response = await getDicomFiles(booking.PatientID);
+
+  //     if (
+  //       response.data &&
+  //       response.data.rows &&
+  //       response.data.rows.length > 0
+  //     ) {
+  //       setDicomFiles(response.data.rows);
+  //       setShowDicomViewerModal(true);
+  //     } else {
+  //       toast.error("No DICOM files found for this patient");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching DICOM files:", error);
+  //     toast.error("Failed to fetch DICOM files");
+  //   } finally {
+  //     setLoadingDicom(false);
+  //   }
+  // };
+
   const handleViewDicom = async (booking) => {
     try {
       setLoadingDicom(true);
       setSelectedPatientForDicom(booking);
 
-      // Fetch DICOM files for this specific patient using your existing API
-      const response = await getDicomFiles(booking.PatientID);
+      // --- 1. Fetch DICOM files by PatientID ---
+      const dicomResponse = await getDicomFiles(booking.PatientID);
 
       if (
-        response.data &&
-        response.data.rows &&
-        response.data.rows.length > 0
+        dicomResponse.data &&
+        dicomResponse.data.rows &&
+        dicomResponse.data.rows.length > 0
       ) {
-        setDicomFiles(response.data.rows);
+        setDicomFiles(dicomResponse.data.rows);
+      } else {
+        toast.info("No DICOM files found for this patient");
+      }
+
+      // --- 2. Fetch Images by BookingID ---
+      const imageResponse = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/getImagesByBookingId?id=${
+          booking.id
+        }`,
+        {
+          headers: { Authorization: `${currentUser?.Token}` },
+        }
+      );
+
+      console.log("Image API Response:", imageResponse.data);
+
+      const imageFiles = imageResponse.data?.images || [];
+
+      if (imageFiles.length > 0) {
+        setImages(imageFiles);
+      } else {
+        toast.info("No Images found for this booking");
+      }
+
+      // --- Show viewer if any files exist ---
+      if (dicomResponse.data?.rows?.length > 0 || imageFiles.length > 0) {
         setShowDicomViewerModal(true);
       } else {
-        toast.error("No DICOM files found for this patient");
+        toast.error("No files found for this booking");
       }
     } catch (error) {
-      console.error("Error fetching DICOM files:", error);
-      toast.error("Failed to fetch DICOM files");
+      console.error("Error fetching files:", error);
+      toast.error("Failed to fetch files");
     } finally {
       setLoadingDicom(false);
     }
@@ -537,12 +592,12 @@ function DiagnosticsBooking() {
 
   const handleAddResult = (booking) => {
     if (booking?.PaymentStatus === "Not-Paid") {
-      toast.error(t("PaymentNotPaidforthisPatient"));
+      toast.error("Payment Not Paid for this Patient");
       return;
     }
 
     if (booking?.PaymentStatus === "Partial-Paid") {
-      const confirmed = window.confirm(t("PaymentWasPartialAreYouSure"));
+      const confirmed = window.confirm("Payment Was Partial Are You Sure");
       if (!confirmed) {
         return; // User canceled, do nothing
       }
@@ -591,14 +646,6 @@ function DiagnosticsBooking() {
   useEffect(() => {
     fetchEnterCodeData();
   }, []);
-
-  function formatDate2(inputDate) {
-    const date = new Date(inputDate);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
 
   const fetchEnterCodeData = async () => {
     try {
@@ -1160,7 +1207,7 @@ function DiagnosticsBooking() {
           alignItems: "center",
         }}
       >
-        <h2 style={{ fontSize: "16px" }}>"Test Booking Patient List</h2>
+        <h2 style={{ fontSize: "16px" }}>Test Booking Patient List</h2>
       </header>
       <br />
       <button
@@ -1835,7 +1882,7 @@ function DiagnosticsBooking() {
                     {roleCurrentUser !== "ROLE_RECEPTIONIST" &&
                       roleCurrentUser !== "ROLE_DOCTOR" && (
                         <button
-                          title={t("diagnsticPatientListTable.AddResult")}
+                          title="Add Result"
                           style={{ fontSize: "12px", padding: "4px 5px" }}
                           className="btn btn-secondary mr-2"
                           onClick={() => handleAddResult(booking)}
@@ -1859,7 +1906,7 @@ function DiagnosticsBooking() {
                     )}
                     {roleCurrentUser !== "ROLE_RECEPTIONIST" && (
                       <button
-                        title="diagnstic Patient List Table.DownloadReport"
+                        title="Download Report"
                         style={{
                           whiteSpace: "nowrap",
                           fontSize: "12px",
@@ -2018,11 +2065,12 @@ function DiagnosticsBooking() {
                       <UploadDiagnosticImages
                         testBookingID={booking.id}
                         SelectedTest={booking.selectedTests}
+                        bookingData={booking}
                       />
                     )}
                     {roleCurrentUser !== "ROLE_RECEPTIONIST" && (
                       <button
-                        title={t("diagnsticPatientListTable.AddResult")}
+                        title="Add Result"
                         style={{ fontSize: "12px", padding: "4px 5px" }}
                         className="btn btn-secondary mr-2"
                         onClick={() => handleAddResult(booking)}
@@ -2032,7 +2080,7 @@ function DiagnosticsBooking() {
                     )}
                     {roleCurrentUser !== "ROLE_RECEPTIONIST" && (
                       <button
-                        title={t("diagnsticPatientListTable.DownloadReport")}
+                        title="Download Report"
                         style={{
                           whiteSpace: "nowrap",
                           fontSize: "12px",
@@ -2044,7 +2092,7 @@ function DiagnosticsBooking() {
                         <FaDownload />
                       </button>
                     )}
-                    <button
+                    {/* <button
                       title="Upload DICOM File"
                       style={{
                         fontSize: "12px",
@@ -2057,25 +2105,23 @@ function DiagnosticsBooking() {
                       onClick={() => handleDicomUpload(booking)}
                     >
                       <FaPlusSquare /> Add Dicom
-                    </button>
+                    </button> */}
                     <button
-                      title="View DICOM File"
+                      title="View Uploaded Image"
                       style={{
                         fontSize: "12px",
                         padding: "4px 5px",
                         marginTop: "0px",
-                        backgroundColor: "#1111",
-                        color: "black",
                       }}
                       className="btn btn-secondary mr-1"
                       onClick={() => handleViewDicom(booking)}
                       disabled={loadingDicom}
                     >
                       {loadingDicom ? (
-                        "Loading..."
+                        <FaRegEye />
                       ) : (
                         <>
-                          <FaRegEye /> View Dicom
+                          <FaRegEye />
                         </>
                       )}
                     </button>
@@ -2094,7 +2140,6 @@ function DiagnosticsBooking() {
         bookingData={selectedBookingForDicom}
         onUploadSuccess={() => {
           toast.success("DICOM file uploaded successfully");
-          // You might want to refresh data or perform other actions
         }}
       />
       <DicomViewerModal
@@ -2105,6 +2150,7 @@ function DiagnosticsBooking() {
         }}
         dicomFiles={dicomFiles}
         patientData={selectedPatientForDicom}
+        imageFiles={images}
       />
       <Modal
         style={{ marginTop: "20px", fontSize: "13px" }}

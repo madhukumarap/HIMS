@@ -21,11 +21,10 @@ import { initReactI18next } from "react-i18next";
 import { format as formatDate, isDate } from "date-fns";
 import { fr, enIN } from "date-fns/locale";
 import AuthService from "../../services/auth.service";
+import { uploadDicomFile } from "../Diacom/api/dicom";
 
-function ImageUploader({ testBookingID, SelectedTest }) {
-  //alert(SelectedTest);
+function ImageUploader({ testBookingID, SelectedTest, bookingData }) {
   const currentUser = AuthService.getCurrentUser();
-
   const { t } = useTranslation();
 
   const locales = { enIN, fr };
@@ -62,35 +61,42 @@ function ImageUploader({ testBookingID, SelectedTest }) {
 
     initializei18n();
   }, []);
+
   const formatDateInSelectedLanguage = (date) => {
     const selectedLanguage = i18n.language || "en";
     const format = "PPPP";
     const locale = locales[selectedLanguage];
     return formatDate(date, format, { locale });
   };
+
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewImageIndex, setViewImageIndex] = useState(0);
   const [tableData, setTableData] = useState([]);
   const [selectedTest, setSelectedTest] = useState("");
   const [testNames, setTestNames] = useState([]);
+  const [uploadType, setUploadType] = useState("regular"); // 'regular' or 'dicom'
+
   useEffect(() => {
     const testNamesArray = SelectedTest.split(",");
-
     setTestNames(testNamesArray);
   }, [SelectedTest]);
+
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [id, setId] = useState("");
   const [viewImageSrc, setViewImageSrc] = useState(null);
+
   const handleViewImage = (index) => {
     setViewImageSrc(URL.createObjectURL(selectedFiles[index]));
     setShowViewModal(true);
   };
+
   const handleViewImages = (base64String) => {
     console.log("base64String:" + base64String);
     setViewImageSrc(base64String);
     setShowViewModal(true);
   };
+
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
     tableData.forEach((item, index) => {
@@ -149,14 +155,47 @@ function ImageUploader({ testBookingID, SelectedTest }) {
     };
     fetchData();
   }, []);
+
   const handleUpload = async () => {
     if (!selectedTest || !selectedFiles || !testBookingID) {
       toast.error(t("PleaseSelecttest"));
       return;
     }
+
+    // Check file types
+    const hasDicomFiles = selectedFiles.some(
+      (file) =>
+        file.name.toLowerCase().endsWith(".dcm") ||
+        file.type === "application/dicom"
+    );
+
+    const hasRegularImages = selectedFiles.some(
+      (file) =>
+        file.type.startsWith("image/") &&
+        !file.name.toLowerCase().endsWith(".dcm") &&
+        file.type !== "application/dicom"
+    );
+
+    // If mixed file types, show error
+    if (hasDicomFiles && hasRegularImages) {
+      toast.error(t("CannotMixDICOMAndRegularImages"));
+      return;
+    }
+
+    // Determine upload type based on file types
+    const finalUploadType = hasDicomFiles ? "dicom" : "regular";
+
+    if (finalUploadType === "regular") {
+      await uploadRegularImages();
+    } else {
+      await uploadDicomFiles();
+    }
+  };
+
+  const uploadRegularImages = async () => {
     const formData = new FormData();
-    formData.append("id", "1"); // Convert to string
-    formData.append("testBookingID", testBookingID); // Convert to string
+    formData.append("id", "1");
+    formData.append("testBookingID", testBookingID);
     formData.append("testName", selectedTest.trim());
     formData.append("testType", "testType");
 
@@ -171,16 +210,39 @@ function ImageUploader({ testBookingID, SelectedTest }) {
         {
           headers: {
             Authorization: `${currentUser?.Token}`,
+            "Content-Type": "multipart/form-data",
           },
         }
       );
-      // alert("Images uploaded successfully");
       toast.success(t("Imagesuploadedsuccessfully"));
       setSelectedTest("");
       setSelectedFiles([]);
       setShowModal(false);
     } catch (error) {
       console.error("Error uploading images:", error);
+      toast.error(t("ErrorUploadingImages"));
+    }
+  };
+
+  const uploadDicomFiles = async () => {
+    try {
+      // Loop over selected DICOM files
+      for (let dicomFile of selectedFiles) {
+        const formData = new FormData();
+        formData.append("file", dicomFile); // backend expects "file"
+        formData.append("patientId", bookingData?.PatientID);
+        formData.append("doctorId", bookingData?.doctorId);
+
+        await uploadDicomFile(formData);
+      }
+
+      toast.success(t("DICOMUploadSuccess"));
+      setSelectedTest("");
+      setSelectedFiles([]);
+      setShowModal(false);
+    } catch (err) {
+      console.error("Error uploading DICOM:", err);
+      toast.error("File upload failed. Please try again.");
     }
   };
 
@@ -191,13 +253,10 @@ function ImageUploader({ testBookingID, SelectedTest }) {
     input.onchange = handleFileChange;
     input.click();
   };
+
   const handleTestSelect = (e) => {
     const selectedTest = e.target.value;
     setSelectedTest(selectedTest);
-    if (!selectedTest) {
-    }
-    // alert(selectedTest);
-    // setFormData({});
   };
 
   return (
@@ -205,45 +264,12 @@ function ImageUploader({ testBookingID, SelectedTest }) {
       <Button
         style={{ marginTop: "0px", fontSize: "12px", padding: "4px 5px" }}
         variant="secondary"
-        title={t("UploadResultImages")}
+        title="Upload Result Images"
         className="btn btn-secondary mr-2"
         onClick={() => setShowModal(true)}
       >
         <FaUpload />
       </Button>
-      {/* <Button variant="success" onClick={handleDownloadPDF}>
-        Download Images PDF
-      </Button> */}
-      {/* <Table striped bordered hover>
-        <thead>
-          <tr>
-                          <th style={{ textAlign: "center" }}>ID</th>
-                          <th style={{ textAlign: "center" }}>Test Booking ID</th>
-                          <th style={{ textAlign: "center" }}>Test Name</th>
-                          <th style={{ textAlign: "center" }}>Test Type</th>
-                          <th style={{ textAlign: "center" }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tableData.map((item) => (
-            <tr key={item.id}>
-              <td>{item.id}</td>
-              <td>{item.testBookingID}</td>
-              <td>{item.testName}</td>
-              <td>{item.testType}</td>
-              <td>
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  onClick={() => handleViewImages(item.imagePath)}
-                >
-                  View Images
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table> */}
 
       <Modal
         centered
@@ -254,17 +280,12 @@ function ImageUploader({ testBookingID, SelectedTest }) {
       >
         <Modal.Header closeButton>
           <Modal.Title style={{ fontSize: "18px" }}>
-            {" "}
-            {t("UploadTestResultImages")}
+            Upload Test Result Images
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <br></br>
-          <hr />
-
           <Form>
             <Form.Group controlId="selectTest">
-              {" "}
               <Form.Label style={{ fontSize: "14px", fontWeight: "bold" }}>
                 {t("SelectTest")}
               </Form.Label>
@@ -283,28 +304,30 @@ function ImageUploader({ testBookingID, SelectedTest }) {
               </Form.Select>
             </Form.Group>
           </Form>
-          <hr />
-          <br></br>
           <Form.Group controlId="images">
-            <Form.Label>{t("UploadImages")}:</Form.Label>
+            <Form.Label>Upload Images:</Form.Label>
             <Button
-              style={{ fontSize: "12px" }}
+              style={{ fontSize: "12px", marginRight: "10px" }}
               variant="secondary"
               onClick={addMoreInput}
             >
-              {t("UploadMultiple")}
+              Upload Images
             </Button>
+            <small className="text-muted">
+              Supported formats: JPEG, PNG, DICOM (.dcm)
+            </small>
           </Form.Group>
         </Modal.Body>
         <Modal.Body>
           {selectedFiles.length > 0 && (
             <div>
-              <h5>{t("SelectedImages")}:</h5>
+              <h5>Selected Files:</h5>
               <Table striped bordered hover>
                 <thead>
                   <tr>
-                    <th style={{ textAlign: "center" }}>{t("ImageName")}</th>
-                    <th style={{ textAlign: "center" }}>{t("Actions")}</th>
+                    <th style={{ textAlign: "center" }}>File Name</th>
+                    <th style={{ textAlign: "center" }}>Type</th>
+                    <th style={{ textAlign: "center" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -312,22 +335,32 @@ function ImageUploader({ testBookingID, SelectedTest }) {
                     <tr key={index}>
                       <td style={{ textAlign: "center" }}>{file.name}</td>
                       <td style={{ textAlign: "center" }}>
+                        {file.name.toLowerCase().endsWith(".dcm") ||
+                        file.type === "application/dicom"
+                          ? "DICOM"
+                          : "Image"}
+                      </td>
+                      <td style={{ textAlign: "center" }}>
                         <Button
                           variant="danger"
-                          size="lg"
-                          style={{ fontSize: "12px" }}
+                          size="sm"
+                          style={{ fontSize: "12px", marginRight: "5px" }}
                           onClick={() => handleRemoveFile(index)}
                         >
                           {t("Remove")}
-                        </Button>{" "}
-                        <Button
-                          variant="secondary"
-                          size="lg"
-                          style={{ fontSize: "12px" }}
-                          onClick={() => handleViewImage(index)}
-                        >
-                          {t("View")}
                         </Button>
+                        {file.type.startsWith("image/") &&
+                          !file.name.toLowerCase().endsWith(".dcm") &&
+                          file.type !== "application/dicom" && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              style={{ fontSize: "12px" }}
+                              onClick={() => handleViewImage(index)}
+                            >
+                              {t("View")}
+                            </Button>
+                          )}
                       </td>
                     </tr>
                   ))}
@@ -365,8 +398,8 @@ function ImageUploader({ testBookingID, SelectedTest }) {
           {viewImageSrc && (
             <img
               src={viewImageSrc}
-              // alt={`View ${selectedFiles[viewImageIndex].name}`}
-              style={{ width: "50%", height: "50%" }}
+              alt="Uploaded preview"
+              style={{ width: "100%", height: "auto" }}
             />
           )}
         </Modal.Body>

@@ -3,6 +3,22 @@ import { format, isDate } from "date-fns";
 
 const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selectedTests, doctor, results, medicineData) => {
   console.log(hospitalData, pathologyTest, selectedTests, doctor, results, medicineData);
+  const normalize = (str) => str.toLowerCase().replace(/[\s()]+/g, "");
+
+// Create mapping dynamically
+const mappedResults = {};
+
+selectedTests.forEach(testName => {
+    const normalizedName = normalize(testName);
+
+    // Find matching key in results dynamically
+    const matchedKey = Object.keys(results).find(key => normalize(key).includes(normalizedName));
+
+    mappedResults[testName] = matchedKey ? results[matchedKey] : null;
+});
+
+console.log(mappedResults);
+
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -57,21 +73,6 @@ const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selecte
     }
   }
 
-  // Header
-  // addText(hospitalData?.hospitalName || "City Care Hospital", pageWidth / 2, yPosition, {
-    // fontSize: 18,
-    // align: 'center',
-    // color: [0, 0, 255]
-  // });
-  yPosition += 8;
-  
-  // addText("Patient Diagnosis Report", pageWidth / 2, yPosition, {
-    // fontSize: 16,
-    // align: 'center',
-    // color: [0, 128, 0]
-  // });
-  yPosition += 15;
-
   // Hospital & Report Info
   const hospitalInfoX = 15;
   const reportInfoX = pageWidth - 15;
@@ -94,7 +95,6 @@ const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selecte
   yRight += 7;
   addText(`Date: ${pathologyTest?.createdAt ? new Date(pathologyTest.createdAt).toLocaleDateString() : "N/A"}`, reportInfoX, yRight, {align: 'right'});
   yRight += 7;
-  addText(`Doctor: ${doctor?.FirstName || ""} ${doctor?.LastName || ""}`, reportInfoX, yRight, {align: 'right'});
   
   yPosition = Math.max(yPosition, yRight) + 15;
   addLine(yPosition);
@@ -105,9 +105,9 @@ const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selecte
     fontSize: 14,
     color: [105, 105, 105]
   });
-  yPosition += 8;
+  yPosition += 4;
   addLine(yPosition);
-  yPosition += 10;
+  yPosition += 5;
 
   // Patient details in table-like format
   const col1 = 15;
@@ -131,6 +131,22 @@ const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selecte
   addText(pathologyTest?.PatientPhoneNo || "N/A", col2, yPosition);
   addText("Address", col3, yPosition, {fontStyle: 'bold'});
   addText(pathologyTest?.Address || "N/A", col4, yPosition);
+  yPosition += 15;
+
+  // Check if we need a new page
+  checkPageBreak(50);
+ addText("Doctor Details", 15, yPosition, {
+    fontSize: 14,
+    color: [105, 105, 105]
+  });
+  yPosition += 5;
+  addLine(yPosition);
+  yPosition += 5;
+
+  addText("Doctor Name", col1, yPosition, {fontStyle: 'bold'});
+  addText(`${doctor?.FirstName || pathologyTest?.DoctorName} ${doctor?.LastName || ""}`, col2, yPosition);
+
+
   yPosition += 15;
 
   // Check if we need a new page
@@ -187,171 +203,150 @@ const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selecte
   checkPageBreak(50);
 
   // Diagnosis Details
-   doc.setFontSize(14);
+  doc.setFontSize(14);
   doc.setTextColor(105, 105, 105);
   doc.text("Diagnosis Details", 15, yPosition);
-  yPosition += 10;
-
-  const diagnosisData = [
-    ["Test Name", pathologyTest?.selectedTests || "N/A", "Procedure", pathologyTest?.procedure || "N/A"],
-    ["Status", pathologyTest?.status || "N/A", "Authorization", pathologyTest?.Authorization || "N/A"]
-  ];
-
-  doc.autoTable({
-    startY: yPosition,
-    head: [["Field", "Value", "Field", "Value"]],
-    body: diagnosisData,
-    theme: 'grid',
-    headStyles: {
-      fillColor: [220, 220, 220],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold'
-    },
-    styles: { fontSize: 10 },
-    columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 30 },
-      1: { cellWidth: 50 },
-      2: { fontStyle: 'bold', cellWidth: 30 },
-      3: { cellWidth: 50 }
-    },
-    margin: { left: 15 }
-  });
-
-  yPosition = doc.lastAutoTable.finalY + 15;
-
-  // Test Results Tables
-  if (results) {
+  yPosition += 5;
+if (mappedResults) {
     doc.setFontSize(14);
     doc.setTextColor(105, 105, 105);
-    doc.text("Test Results", 15, yPosition);
     yPosition += 10;
 
-    // Blood Sugar Results
-    if (results.bloodsugarresultmodels) {
-      const bloodSugarResults = results.bloodsugarresultmodels;
-      
-      const bloodSugarData = [
-        ["Blood Sugar Fasting", bloodSugarResults.bloodsugarfasting || "N/A"],
-        ["Comments", bloodSugarResults.Comment || "No comments"]
-      ];
+    const testResultsData = [];
 
-      doc.autoTable({
-        startY: yPosition,
-        head: [["Test", "Result"]],
-        body: bloodSugarData,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [220, 220, 220],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold'
-        },
-        styles: { fontSize: 10 },
-        margin: { left: 15 }
-      });
+    // Function to determine unit & reference dynamically
+    const getReferenceAndUnit = (fieldName) => {
+        fieldName = fieldName.toLowerCase();
 
-      yPosition = doc.lastAutoTable.finalY + 15;
-    }
+        if (fieldName.includes("glucose") ||fieldName.includes("Glucose")|| fieldName.includes("sugar") ||fieldName.includes("Sugar") || fieldName.includes("blood") ||fieldName.includes("Blood")) {
+            return { referenceRange: "70-140", unit: "mg/dL" };
+        } else if (fieldName.includes("kidney")) {
+            return { referenceRange: "Normal", unit: "" };
+        } else {
+            return { referenceRange: "70-150", unit: "mg/dL" };
+        }
+    };
 
-    // Blood Sugar for Fasting Results
-    if (results["bloodsugarforfastingresultmodels"]) {
-      const bloodSugarFastingResults = results["bloodsugarforfastingresultmodels"];
-      
-      const bloodSugarFastingData = [
-        ["Liquid", bloodSugarFastingResults.Liquid || "N/A"],
-        ["Blood New", bloodSugarFastingResults.BloodNew || "N/A"],
-        ["Comments", bloodSugarFastingResults.Comment || "No comments"]
-      ];
+    // Function to check if value is abnormal dynamically
+    const isAbnormalValue = (fieldName, value) => {
+        if (!value || value === "N/A" || isNaN(value)) return false;
+        fieldName = fieldName.toLowerCase();
+        const numericValue = parseFloat(value);
 
-      doc.autoTable({
-        startY: yPosition,
-        head: [["Test", "Result"]],
-        body: bloodSugarFastingData,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [220, 220, 220],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold'
-        },
-        styles: { fontSize: 10 },
-        margin: { left: 15 }
-      });
+        if (fieldName.includes("blood") || fieldName.includes("sugar") || fieldName.includes("glucose")) {
+            // General ranges for blood/glucose-related tests
+            if (fieldName.includes("fasting")) {
+                return numericValue >= 126; // Fasting abnormal threshold
+            }
+            return numericValue >= 200; // Post-meal abnormal threshold
+        }
+        if (fieldName.includes("kidney")) {
+            return value !== "Normal" && value !== "normal";
+        }
+        return false;
+    };
 
-      yPosition = doc.lastAutoTable.finalY + 15;
-    }
+    // Process each test dynamically from mappedResults
+    Object.keys(mappedResults).forEach(testName => {
+        const resultData = mappedResults[testName];
+        if (!resultData) return;
 
-    // Ultrasound Abdomen Results (existing code)
-    if (results.ultrasoundabdomenresultmodels) {
-      const abdomenResults = results.ultrasoundabdomenresultmodels;
-      
-      const abdomenData = [
-        ["Kidney", abdomenResults.Kidney || "N/A"]
-      ];
+        // Dynamically pick the first numeric or relevant field from resultData
+        const valueField = Object.keys(resultData).find(key =>
+            typeof resultData[key] === "string" &&
+            (/\d/.test(resultData[key]) || key.toLowerCase().includes("kidney"))
+        );
 
-      doc.autoTable({
-        startY: yPosition,
-        head: [["Test", "Result"]],
-        body: abdomenData,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [220, 220, 220],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold'
-        },
-        styles: { fontSize: 10 },
-        margin: { left: 15 }
-      });
+        const value = valueField ? resultData[valueField] : "N/A";
+        const { referenceRange, unit } = getReferenceAndUnit(valueField || "70 - 150");
+        const abnormal = isAbnormalValue(valueField || "", value);
+        const indicator = abnormal ? "Abnormal" : "Normal";
 
-      yPosition = doc.lastAutoTable.finalY + 10;
+        testResultsData.push([
+            testName,
+            value,
+            referenceRange,
+            unit,
+            indicator,
+            abnormal
+        ]);
+    });
 
-      // Comments as a separate table
-      if (abdomenResults.Comment) {
-        const commentData = [
-          ["Comments", abdomenResults.Comment || "No comments"]
-        ];
-
+    // Create the dynamic test results table
+    if (testResultsData.length > 0) {
         doc.autoTable({
-          startY: yPosition,
-          body: commentData,
-          theme: 'grid',
-          styles: { fontSize: 10 },
-          columnStyles: {
-            0: { fontStyle: 'bold', cellWidth: 25 },
-            1: { cellWidth: 'auto' }
-          },
-          margin: { left: 15 }
+            startY: yPosition,
+            head: [["Test Name", "Result", "Unit", "Reference Range", "Indicator"]],
+            body: testResultsData.map(row => [row[0], row[1], row[3], row[2], row[4]]),
+            theme: 'grid',
+            headStyles: {
+                fillColor: [220, 220, 220],
+                textColor: [0, 0, 0],
+                fontStyle: 'bold'
+            },
+            styles: { fontSize: 10 },
+            margin: { left: 15 },
+            didDrawCell: (data) => {
+                const rowIndex = data.row.index;
+                const isAbnormal = testResultsData[rowIndex][5];
+
+                if ((data.column.index === 1 || data.column.index === 4) && isAbnormal) {
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(255, 0, 0);
+                }
+            },
+            willDrawCell: () => {
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(0, 0, 0);
+            }
         });
 
         yPosition = doc.lastAutoTable.finalY + 15;
-      }
     }
-    
-    // Multiple test results table (existing code)
-    if (Array.isArray(results)) {
-      const testResultsData = results.map(test => [
-        test.testName || "N/A",
-        test.TestStatus || "N/A",
-        test.TestSamplecollectedDateTime ? formatDateSafely(test.TestSamplecollectedDateTime) : "N/A",
-        test.TestCompletedDateTime ? formatDateSafely(test.TestCompletedDateTime) : "N/A"
-      ]);
 
-      doc.autoTable({
-        startY: yPosition,
-        head: [["Test Name", "Status", "Sample Collected", "Completed"]],
-        body: testResultsData,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [220, 220, 220],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold'
-        },
-        styles: { fontSize: 9 }, // Smaller font to fit more data
-        margin: { left: 15 },
-        pageBreak: 'auto'
-      });
+    // Add dynamic comments section
+    let comments = [];
+    Object.keys(mappedResults).forEach(testName => {
+        const resultData = mappedResults[testName];
+        if (resultData && resultData.Comment) {
+            comments.push(`${testName}: ${resultData.Comment}`);
+        }
+    });
 
-      yPosition = doc.lastAutoTable.finalY + 15;
-    }
-  }
+    if (comments.length > 0) {
+    doc.setFontSize(12);
+    doc.setTextColor(105, 105, 105);
+    doc.text("Comments:", 15, yPosition);
+    yPosition += 8;
+
+    comments.forEach((comment, index) => {
+        checkPageBreak(20);
+
+        // Split the comment into lines if it's too long
+        const formattedComment = doc.splitTextToSize(comment, pageWidth - 30);
+
+        // Set proper font and color for the comment
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text(formattedComment, 20, yPosition);
+
+        // Increase yPosition based on actual text height, without adding extra space
+        yPosition += formattedComment.length * 5;
+
+        // Add small spacing ONLY between comments (not after the last one)
+        if (index < comments.length - 1) {
+            yPosition += 3;
+        }
+    });
+
+    yPosition += 5;
+}
+
+}
+
+
+  // Important Instructions
+  checkPageBreak(50);
   addText("IMPORTANT INSTRUCTIONS", pageWidth / 2.5, yPosition, {
     fontSize: 14,
     align: 'right',
@@ -360,9 +355,9 @@ const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selecte
   });
   yPosition += 10;
   
- const diabetesInfo = [
-    "1. The diagnosis of Diabetes requires a fasting plasma glucose of > or = 70 mg/dL .",
-    "2. The  random / 2 hr post glucose value of > or = 100 mg/dL on at least 2 occasions.",
+  const diabetesInfo = [
+    "1. The diagnosis of Diabetes requires a fasting plasma glucose of > or = 126 mg/dL .",
+    "2. The  random / 2 hr post glucose value of > or = 200 mg/dL on at least 2 occasions.",
     "3. Very low glucose levels cause severe CNS dysfunction",
     "4. Very high glucose levels (>450 mg/dL in adults) may result in Diabetic Ketoacidosis & is considered critical"
   ];
@@ -374,70 +369,13 @@ const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selecte
     yPosition += (formattedInfo.length * 7) + 2;
   });
 
-  yPosition += 15;
-  // Check if we need a new page
-  checkPageBreak(50);
-
-  // Payment Details
-  addText("Payment Details", 15, yPosition, {
-    fontSize: 14,
-    color: [105, 105, 105]
-  });
-  yPosition += 8;
-  addLine(yPosition);
-  yPosition += 10;
-
-  addText("Total Fees", col1, yPosition, {fontStyle: 'bold'});
-  addText(`${pathologyTest?.Currency || "INR"} ${pathologyTest?.TotalFees || "0.00"}`, col2, yPosition);
-  addText("Paid Amount", col3, yPosition, {fontStyle: 'bold'});
-  addText(`${pathologyTest?.Currency || "INR"} ${pathologyTest?.PaidAmount || "0.00"}`, col4, yPosition);
-  yPosition += 7;
-
-  addText("Payment Status", col1, yPosition, {fontStyle: 'bold'});
-  addText(pathologyTest?.PaymentStatus || "N/A", col2, yPosition);
-  addText("Payment Date", col3, yPosition, {fontStyle: 'bold'});
-  addText(pathologyTest?.PaymentDate || "N/A", col4, yPosition);
-  yPosition += 7;
-
-  if (pathologyTest?.commissionType) {
-    addText("Commission Type", col1, yPosition, {fontStyle: 'bold'});
-    addText(pathologyTest.commissionType === "1" ? "Percentage" : "Fixed", col2, yPosition);
-    yPosition += 7;
-    
-    addText("Commission Value", col1, yPosition, {fontStyle: 'bold'});
-    addText(pathologyTest.commissionValue || "N/A", col2, yPosition);
-    yPosition += 7;
-  }
-  yPosition += 15;
+  yPosition += 5;
 
   // Check if we need a new page
   checkPageBreak(50);
 
   // Doctor Details
-  addText("Doctor Details", 15, yPosition, {
-    fontSize: 14,
-    color: [105, 105, 105]
-  });
-  yPosition += 8;
-  addLine(yPosition);
-  yPosition += 10;
-
-  addText("Doctor Name", col1, yPosition, {fontStyle: 'bold'});
-  addText(`${doctor?.FirstName || ""} ${doctor?.LastName || ""}`, col2, yPosition);
-  addText("Registration No", col3, yPosition, {fontStyle: 'bold'});
-  addText(doctor?.registrationNo || "N/A", col4, yPosition);
-  yPosition += 7;
-
-  addText("Email", col1, yPosition, {fontStyle: 'bold'});
-  addText(doctor?.email || "N/A", col2, yPosition);
-  addText("Phone", col3, yPosition, {fontStyle: 'bold'});
-  addText(`${doctor?.countryCode || ""} ${doctor?.phoneNo || "N/A"}`, col4, yPosition);
-  yPosition += 7;
-
-  addText("Address", col1, yPosition, {fontStyle: 'bold'});
-  addText(doctor?.address || "N/A", col2, yPosition);
-  yPosition += 15;
-
+  
   // Check if we need a new page
   checkPageBreak(50);
 
@@ -492,22 +430,12 @@ const generatePatientReportPDF = (typeData, hospitalData, pathologyTest, selecte
     }
   }
 
-  // Check if we need a new page for IMPORTANT INSTRUCTIONS
-  checkPageBreak(100);
+  yPosition += 5;
 
-  // IMPORTANT INSTRUCTIONS Section
-  
-  addLine(yPosition);
-  yPosition += 10;
-
-  // Diabetes diagnosis information
-  yPosition += 10;
-  checkPageBreak(50);
-
-  yPosition += 15;
-  
   // Footer
   const footerY = pageHeight - 20;
+    
+  // Add copyright text
   addText(`© ${new Date().getFullYear()} ${hospitalData?.hospitalName || "City Care Hospital"} | All Rights Reserved`, 
     pageWidth / 2, footerY, {
     fontSize: 10,

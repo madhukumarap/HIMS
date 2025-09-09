@@ -4,7 +4,7 @@ require('dotenv').config(); // Load environment variables
 
 module.exports = {
   // Database configuration
-  HOST: process.env.DB_HOST || "127.0.0.1",
+  HOST: process.env.DB_HOST || "localhost",
   USER: process.env.DB_USER || "root",
   PASSWORD: process.env.DB_PASSWORD || "silfra@123", // Use DB_PASSWORD from env
   DB: process.env.DB_NAME || "healthcare",

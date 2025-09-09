@@ -644,6 +644,7 @@ router.post("/getColumnsInTable", async (req, res) => {
     // Check if the table exists in the database
     const tableExists = await sequelize.getQueryInterface().showAllTables();
     const lowerCaseTableName = tableName.toLowerCase();
+    console.log(lowerCaseTableName,"lowerCaseTableName")
 
     if (!tableExists.includes(lowerCaseTableName)) {
       return res.status(404).send("Table not found");

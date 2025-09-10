@@ -163,7 +163,6 @@ if (mappedResults) {
     doc.setTextColor(105, 105, 105);
     yPosition += 10;
 
-
 const getReferenceAndUnit = (fieldName) => {
     fieldName = fieldName.toLowerCase();
 
@@ -221,17 +220,23 @@ const getReferenceAndUnit = (fieldName) => {
     }
 
     // ✅ Lipid Profile
-    else if (fieldName.includes("cholesterol")) {
+    else if (fieldName.includes("total cholesterol") || (fieldName.includes("cholesterol") && !fieldName.includes("hdl") && !fieldName.includes("ldl") && !fieldName.includes("vldl"))) {
         return { referenceRange: "< 200", unit: "mg/dL" };
     }
     else if (fieldName.includes("hdl")) {
-        return { referenceRange: "≥ 40", unit: "mg/dL" };
+        return { referenceRange: "≥ 40 (men), ≥ 50 (women)", unit: "mg/dL" };
     }
     else if (fieldName.includes("ldl")) {
-        return { referenceRange: "< 130", unit: "mg/dL" };
+        return { referenceRange: "< 100 (optimal)", unit: "mg/dL" };
+    }
+    else if (fieldName.includes("vldl")) {
+        return { referenceRange: "5 - 30", unit: "mg/dL" };
     }
     else if (fieldName.includes("triglyceride")) {
         return { referenceRange: "< 150", unit: "mg/dL" };
+    }
+    else if (fieldName.includes("cholesterol/hdl ratio") || fieldName.includes("hdl ratio")) {
+        return { referenceRange: "< 5.0 (ideal < 3.5)", unit: "ratio" };
     }
 
     // ✅ Thyroid Function Tests
@@ -270,40 +275,8 @@ const getReferenceAndUnit = (fieldName) => {
         return { referenceRange: "200 - 900", unit: "pg/mL" };
     }
 
-    // ✅ Ultrasound (Abdominal) Measurements
-    else if (fieldName.includes("liver size") || fieldName.includes("liver")) {
-        return { referenceRange: "13 - 15", unit: "cm" };
-    }
-    else if (fieldName.includes("gallbladder wall")) {
-        return { referenceRange: "≤ 3", unit: "mm" };
-    }
-    else if (fieldName.includes("common bile duct") || fieldName.includes("cbd")) {
-        return { referenceRange: "4 - 6", unit: "mm" };
-    }
-    else if (fieldName.includes("spleen size") || fieldName.includes("spleen")) {
-        return { referenceRange: "≤ 12", unit: "cm" };
-    }
-    else if (fieldName.includes("kidney size") || fieldName.includes("kidney")) {
-        return { referenceRange: "9 - 12", unit: "cm" };
-    }
-    else if (fieldName.includes("bladder wall")) {
-        return { referenceRange: "≤ 3 (full) / ≤ 5 (empty)", unit: "mm" };
-    }
-    else if (fieldName.includes("prostate")) {
-        return { referenceRange: "≤ 30", unit: "cc" };
-    }
-    else if (fieldName.includes("uterus")) {
-        return { referenceRange: "7 - 9", unit: "cm" };
-    }
-    else if (fieldName.includes("ovary") || fieldName.includes("ovaries")) {
-        return { referenceRange: "≤ 10", unit: "cc" };
-    }
-    else if (fieldName.includes("portal vein")) {
-        return { referenceRange: "≤ 13", unit: "mm" };
-    }
-
-    // ✅ Final Fallback → Default Range for Unlisted Tests
-    return { referenceRange: "70 - 150", unit: "mg/dL" };
+    // ✅ Final Fallback → Default Range
+    return { referenceRange: "N/A", unit: "" };
 };
 
     // Function to check if value is abnormal dynamically

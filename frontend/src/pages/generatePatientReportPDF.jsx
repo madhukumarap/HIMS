@@ -152,55 +152,6 @@ console.log(mappedResults);
   // Check if we need a new page
   checkPageBreak(50);
 
-  // Medicine Details (if available)
-  if (medicineData && medicineData.length > 0) {
-    addText("Medicine Details", 15, yPosition, {
-      fontSize: 14,
-      color: [105, 105, 105]
-    });
-    yPosition += 8;
-    addLine(yPosition);
-    yPosition += 10;
-
-    // Table headers
-    addText("Medicine Name", col1, yPosition, {fontStyle: 'bold'});
-    addText("Expiry Date", col3, yPosition, {fontStyle: 'bold'});
-    addText("Qty", col4, yPosition, {fontStyle: 'bold'});
-    yPosition += 7;
-
-    addText("Unit Price", col1, yPosition, {fontStyle: 'bold'});
-    addText("Total Cost", col2, yPosition, {fontStyle: 'bold'});
-    yPosition += 7;
-
-    addLine(yPosition);
-    yPosition += 5;
-
-    // Medicine items
-    medicineData.forEach((medicine, index) => {
-      // Check if we need a new page
-      checkPageBreak(30);
-      
-      addText(medicine.MedicineName || "N/A", col1, yPosition);
-      addText(formatDateSafely(medicine.ExpiryDate), col3, yPosition);
-      addText(medicine.Quantity || "N/A", col4, yPosition);
-      yPosition += 7;
-
-      addText(`${medicine.UnitPrice || "0.00"}`, col1, yPosition);
-      addText(`${medicine.EachmedicineCost || "0.00"}`, col2, yPosition);
-      yPosition += 10;
-
-      // Add line between items (except after last item)
-      if (index < medicineData.length - 1) {
-        addLine(yPosition);
-        yPosition += 5;
-      }
-    });
-
-    yPosition += 15;
-  }
-
-  // Check if we need a new page
-  checkPageBreak(50);
 
   // Diagnosis Details
   doc.setFontSize(14);
@@ -212,72 +163,209 @@ if (mappedResults) {
     doc.setTextColor(105, 105, 105);
     yPosition += 10;
 
-    const testResultsData = [];
 
-    // Function to determine unit & reference dynamically
-    const getReferenceAndUnit = (fieldName) => {
-        fieldName = fieldName.toLowerCase();
+const getReferenceAndUnit = (fieldName) => {
+    fieldName = fieldName.toLowerCase();
 
-        if (fieldName.includes("glucose") ||fieldName.includes("Glucose")|| fieldName.includes("sugar") ||fieldName.includes("Sugar") || fieldName.includes("blood") ||fieldName.includes("Blood")) {
-            return { referenceRange: "70-140", unit: "mg/dL" };
-        } else if (fieldName.includes("kidney")) {
-            return { referenceRange: "Normal", unit: "" };
-        } else {
-            return { referenceRange: "70-150", unit: "mg/dL" };
-        }
-    };
+    // ✅ Glucose & Sugar Tests
+    if (fieldName.includes("glucose") || fieldName.includes("sugar") || fieldName.includes("blood glucose")) {
+        return { referenceRange: "70 - 140", unit: "mg/dL" };
+    }
+
+    // ✅ Electrolytes
+    else if (fieldName.includes("sodium")) {
+        return { referenceRange: "135 - 145", unit: "mmol/L" };
+    }
+    else if (fieldName.includes("potassium")) {
+        return { referenceRange: "3.5 - 5.1", unit: "mmol/L" };
+    }
+    else if (fieldName.includes("chloride")) {
+        return { referenceRange: "98 - 107", unit: "mmol/L" };
+    }
+    else if (fieldName.includes("calcium")) {
+        return { referenceRange: "8.5 - 10.5", unit: "mg/dL" };
+    }
+    else if (fieldName.includes("magnesium")) {
+        return { referenceRange: "1.7 - 2.2", unit: "mg/dL" };
+    }
+    else if (fieldName.includes("phosphorus")) {
+        return { referenceRange: "2.5 - 4.5", unit: "mg/dL" };
+    }
+
+    // ✅ Kidney Function Tests
+    else if (fieldName.includes("creatinine")) {
+        return { referenceRange: "0.6 - 1.3", unit: "mg/dL" };
+    }
+    else if (fieldName.includes("bun") || fieldName.includes("urea")) {
+        return { referenceRange: "7 - 20", unit: "mg/dL" };
+    }
+    else if (fieldName.includes("uric acid")) {
+        return { referenceRange: "3.5 - 7.2", unit: "mg/dL" };
+    }
+
+    // ✅ Liver Function Tests
+    else if (fieldName.includes("sgpt") || fieldName.includes("alt")) {
+        return { referenceRange: "7 - 56", unit: "U/L" };
+    }
+    else if (fieldName.includes("sgot") || fieldName.includes("ast")) {
+        return { referenceRange: "10 - 40", unit: "U/L" };
+    }
+    else if (fieldName.includes("bilirubin")) {
+        return { referenceRange: "0.3 - 1.2", unit: "mg/dL" };
+    }
+    else if (fieldName.includes("alkaline phosphatase")) {
+        return { referenceRange: "44 - 147", unit: "U/L" };
+    }
+    else if (fieldName.includes("albumin")) {
+        return { referenceRange: "3.5 - 5.0", unit: "g/dL" };
+    }
+
+    // ✅ Lipid Profile
+    else if (fieldName.includes("cholesterol")) {
+        return { referenceRange: "< 200", unit: "mg/dL" };
+    }
+    else if (fieldName.includes("hdl")) {
+        return { referenceRange: "≥ 40", unit: "mg/dL" };
+    }
+    else if (fieldName.includes("ldl")) {
+        return { referenceRange: "< 130", unit: "mg/dL" };
+    }
+    else if (fieldName.includes("triglyceride")) {
+        return { referenceRange: "< 150", unit: "mg/dL" };
+    }
+
+    // ✅ Thyroid Function Tests
+    else if (fieldName.includes("tsh")) {
+        return { referenceRange: "0.4 - 4.0", unit: "µIU/mL" };
+    }
+    else if (fieldName.includes("t3")) {
+        return { referenceRange: "80 - 200", unit: "ng/dL" };
+    }
+    else if (fieldName.includes("t4")) {
+        return { referenceRange: "4.5 - 11.2", unit: "µg/dL" };
+    }
+
+    // ✅ CBC (Complete Blood Count)
+    else if (fieldName.includes("hemoglobin") || fieldName.includes("hb")) {
+        return { referenceRange: "12 - 16", unit: "g/dL" };
+    }
+    else if (fieldName.includes("rbc")) {
+        return { referenceRange: "4.7 - 6.1", unit: "mill/µL" };
+    }
+    else if (fieldName.includes("wbc") || fieldName.includes("white blood cell")) {
+        return { referenceRange: "4,000 - 11,000", unit: "/µL" };
+    }
+    else if (fieldName.includes("platelet")) {
+        return { referenceRange: "150,000 - 450,000", unit: "/µL" };
+    }
+    else if (fieldName.includes("mcv")) {
+        return { referenceRange: "80 - 100", unit: "fL" };
+    }
+
+    // ✅ Vitamin Tests
+    else if (fieldName.includes("vitamin d")) {
+        return { referenceRange: "20 - 50", unit: "ng/mL" };
+    }
+    else if (fieldName.includes("vitamin b12")) {
+        return { referenceRange: "200 - 900", unit: "pg/mL" };
+    }
+
+    // ✅ Ultrasound (Abdominal) Measurements
+    else if (fieldName.includes("liver size") || fieldName.includes("liver")) {
+        return { referenceRange: "13 - 15", unit: "cm" };
+    }
+    else if (fieldName.includes("gallbladder wall")) {
+        return { referenceRange: "≤ 3", unit: "mm" };
+    }
+    else if (fieldName.includes("common bile duct") || fieldName.includes("cbd")) {
+        return { referenceRange: "4 - 6", unit: "mm" };
+    }
+    else if (fieldName.includes("spleen size") || fieldName.includes("spleen")) {
+        return { referenceRange: "≤ 12", unit: "cm" };
+    }
+    else if (fieldName.includes("kidney size") || fieldName.includes("kidney")) {
+        return { referenceRange: "9 - 12", unit: "cm" };
+    }
+    else if (fieldName.includes("bladder wall")) {
+        return { referenceRange: "≤ 3 (full) / ≤ 5 (empty)", unit: "mm" };
+    }
+    else if (fieldName.includes("prostate")) {
+        return { referenceRange: "≤ 30", unit: "cc" };
+    }
+    else if (fieldName.includes("uterus")) {
+        return { referenceRange: "7 - 9", unit: "cm" };
+    }
+    else if (fieldName.includes("ovary") || fieldName.includes("ovaries")) {
+        return { referenceRange: "≤ 10", unit: "cc" };
+    }
+    else if (fieldName.includes("portal vein")) {
+        return { referenceRange: "≤ 13", unit: "mm" };
+    }
+
+    // ✅ Final Fallback → Default Range for Unlisted Tests
+    return { referenceRange: "70 - 150", unit: "mg/dL" };
+};
 
     // Function to check if value is abnormal dynamically
-    const isAbnormalValue = (fieldName, value) => {
+     const isAbnormalValue = (fieldName, value) => {
         if (!value || value === "N/A" || isNaN(value)) return false;
-        fieldName = fieldName.toLowerCase();
         const numericValue = parseFloat(value);
+        fieldName = fieldName.toLowerCase();
 
-        if (fieldName.includes("blood") || fieldName.includes("sugar") || fieldName.includes("glucose")) {
-            // General ranges for blood/glucose-related tests
-            if (fieldName.includes("fasting")) {
-                return numericValue >= 126; // Fasting abnormal threshold
-            }
-            return numericValue >= 200; // Post-meal abnormal threshold
+        if (fieldName.includes("glucose") || fieldName.includes("sugar") || fieldName.includes("blood")) {
+            return numericValue < 70 || numericValue > 140;
         }
-        if (fieldName.includes("kidney")) {
-            return value !== "Normal" && value !== "normal";
+        if (fieldName.includes("sodium")) {
+            return numericValue < 135 || numericValue > 145;
+        }
+        if (fieldName.includes("calcium")) {
+            return numericValue < 8.5 || numericValue > 10.5;
         }
         return false;
     };
 
     // Process each test dynamically from mappedResults
+    const testResultsData = [];
     Object.keys(mappedResults).forEach(testName => {
         const resultData = mappedResults[testName];
         if (!resultData) return;
 
-        // Dynamically pick the first numeric or relevant field from resultData
-        const valueField = Object.keys(resultData).find(key =>
-            typeof resultData[key] === "string" &&
-            (/\d/.test(resultData[key]) || key.toLowerCase().includes("kidney"))
-        );
+        Object.keys(resultData).forEach(field => {
+            if (["id", "PatientID", "TestManagementID", "Comment", "PatientTestBookingID", "createdAt", "updatedAt"].includes(field)) {
+                return;
+            }
 
-        const value = valueField ? resultData[valueField] : "N/A";
-        const { referenceRange, unit } = getReferenceAndUnit(valueField || "70 - 150");
-        const abnormal = isAbnormalValue(valueField || "", value);
-        const indicator = abnormal ? "Abnormal" : "Normal";
+            const value = resultData[field] || "N/A";
+            const { referenceRange, unit } = getReferenceAndUnit(field);
+            const abnormal = isAbnormalValue(field, value);
+            const indicator = abnormal ? "Abnormal" : "Normal";
 
-        testResultsData.push([
-            testName,
-            value,
-            referenceRange,
-            unit,
-            indicator,
-            abnormal
-        ]);
+            testResultsData.push([
+                testName,
+                field,
+                value,
+                unit,
+                referenceRange,
+                indicator,
+                abnormal
+            ]);
+        });
     });
+
 
     // Create the dynamic test results table
     if (testResultsData.length > 0) {
         doc.autoTable({
             startY: yPosition,
-            head: [["Test Name", "Result", "Unit", "Reference Range", "Indicator"]],
-            body: testResultsData.map(row => [row[0], row[1], row[3], row[2], row[4]]),
+            head: [["Test Name", "Parameter","Result", "Unit", "Reference Range", "Indicator"]],
+body: testResultsData.map(row => [
+    row[0], // Test Name
+    row[1], // Parameter
+    row[2], // Result ✅ FIXED
+    row[3], // Unit
+    row[4], // Reference Range ✅ FIXED
+    row[5]  // Indicator (Normal / Abnormal) ✅ FIXED
+]),
             theme: 'grid',
             headStyles: {
                 fillColor: [220, 220, 220],
@@ -410,25 +498,36 @@ if (mappedResults) {
     }
 
     if (pathologyTest?.feedback) {
-      // Check page break before adding feedback
-      checkPageBreak(30);
-      
-      addText("Feedback:", col1, yPosition, {fontStyle: 'bold'});
-      const feedback = doc.splitTextToSize(pathologyTest.feedback, pageWidth - 30);
-      
-      // Calculate height needed for feedback
-      const feedbackHeight = feedback.length * 7;
-      
-      // Check if we need a new page for feedback
-      if (yPosition + feedbackHeight > pageHeight - 20) {
-        doc.addPage();
-        yPosition = 15;
-      }
-      
-      addText(feedback, col1, yPosition + 7);
-      yPosition += feedbackHeight + 10;
+  // Check page break before adding feedback heading
+  checkPageBreak(30);
+
+  // Add "Feedback:" label
+  addText("Feedback:", col1, yPosition, { fontStyle: 'bold' });
+
+  const feedbackLines = doc.splitTextToSize(pathologyTest.feedback, pageWidth - 30);
+  const lineHeight = 7;
+
+  // Start slightly below the heading
+  yPosition += 7;
+
+  // Loop through each line and handle page breaks properly
+  feedbackLines.forEach((line) => {
+    // Check if there's enough space on the current page
+    if (yPosition + lineHeight > pageHeight - 20) {
+      doc.addPage();
+      yPosition = 15; // Reset Y position for new page
     }
-  }
+
+    // Add the feedback line
+    addText(line, col1, yPosition);
+    yPosition += lineHeight;
+  });
+
+  // Add some spacing after feedback
+  yPosition += 10;
+}
+
+}
 
   yPosition += 5;
 

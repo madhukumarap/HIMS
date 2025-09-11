@@ -132,7 +132,7 @@ function DiagnosticsBooking() {
 
       // --- 1. Fetch DICOM files by PatientID ---
       const dicomResponse = await getDicomFiles(booking.PatientID);
-
+      console.log(dicomResponse,"dicomResponse")
       if (
         dicomResponse.data &&
         dicomResponse.data.rows &&

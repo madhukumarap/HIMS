@@ -19,8 +19,10 @@ import {
   Form,
   Row,
   Col,
+  ProgressBar,
+  Badge,
+  ListGroup,
 } from "react-bootstrap";
-// import { BSE_URL } from "../Constant";
 import AuthService from "../../services/auth.service";
 
 const getAuthHeader = (): { Authorization: string } => {
@@ -31,10 +33,17 @@ const getAuthHeader = (): { Authorization: string } => {
 };
 
 type Props = {
+  consultationFiles: any[];
   dicomId: number;
   onBack: () => void;
 };
-
+interface SeriesImage {
+  id: number;
+  image: any;
+  imageId: string;
+  metadata?: any;
+  fileName: string;
+}
 interface ViewportState {
   scale: number;
   translation?: { x: number; y: number };
@@ -81,6 +90,12 @@ const viewportLayouts: ViewportLayout[] = [
   { rows: 1, cols: 2, total: 2 },
   { rows: 2, cols: 2, total: 4 },
   { rows: 3, cols: 3, total: 9 },
+];
+
+const orientations = [
+  { name: "Axial", rotation: 0, hflip: false, vflip: false },
+  { name: "Coronal", rotation: 90, hflip: false, vflip: false },
+  { name: "Sagittal", rotation: 90, hflip: true, vflip: false },
 ];
 
 let cornerstoneInitialized = false;
@@ -132,10 +147,18 @@ const initializeCornerstone = () => {
   }
 };
 
-const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
+const DicomViewer: React.FC<Props> = ({ consultationFiles, dicomId, onBack }) => {
   const elementRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const compareLeftRef = useRef<HTMLDivElement | null>(null);
+  const compareRightRef = useRef<HTMLDivElement | null>(null);
   const [tags, setTags] = useState<Record<string, any> | null>(null);
+  const [autoPlay, setAutoPlay] = useState(false);
+  const [playInterval, setPlayInterval] = useState<NodeJS.Timeout | null>(null);
+  const [playSpeed, setPlaySpeed] = useState(1000);
+  const [selectedOrientation, setSelectedOrientation] = useState("Axial");
   const [loading, setLoading] = useState(false);
+  const [seriesLoading, setSeriesLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [activeKey, setActiveKey] = useState<string>("viewer");
   const [activeTool, setActiveTool] = useState<string>("Wwwc");
@@ -163,8 +186,18 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
   const [imageStack, setImageStack] = useState<any[]>([]);
   const [showTextModal, setShowTextModal] = useState(false);
   const [textAnnotation, setTextAnnotation] = useState("");
-
-   const currentUser = AuthService.getCurrentUser();
+  // Compare mode state
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareSelection, setCompareSelection] = useState<number[]>([]);
+  const [compareImages, setCompareImages] = useState<{
+    left?: SeriesImage;
+    right?: SeriesImage;
+  }>({});
+  const [seriesImages, setSeriesImages] = useState<SeriesImage[]>([]);
+  const [currentSeriesIndex, setCurrentSeriesIndex] = useState(0);
+  
+  const currentUser = AuthService.getCurrentUser();
+  const dicomFiles = consultationFiles.filter((file) => file.is_dicom);
 
   useEffect(() => {
     try {
@@ -183,6 +216,187 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
       setError("Failed to initialize DICOM viewer");
     }
   }, []);
+
+  useEffect(() => {
+    if (initialized && dicomFiles.length > 0) {
+      loadSeriesImages();
+    }
+  }, [initialized, dicomFiles]);
+
+  const loadSeriesImages = async () => {
+    setSeriesLoading(true);
+    setLoadingProgress(0);
+    
+    try {
+      const images: SeriesImage[] = [];
+      
+      for (let i = 0; i < dicomFiles.length; i++) {
+        const file = dicomFiles[i];
+        
+        try {
+          const headers = {
+            Authorization: `${currentUser?.Token}`,
+          };
+          
+          const fileResp = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/dicom/${file.id}/download`,
+            {
+              responseType: "arraybuffer",
+              headers,
+              onDownloadProgress: (progressEvent) => {
+                if (progressEvent.total) {
+                  const percentCompleted = Math.round(
+                    (progressEvent.loaded * 100) / progressEvent.total
+                  );
+                  setLoadingProgress(percentCompleted);
+                }
+              }
+            }
+          );
+          
+          const arrayBuffer = fileResp.data as ArrayBuffer;
+          const blob = new Blob([arrayBuffer], { type: "application/dicom" });
+          const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(blob);
+          
+          const image = await cornerstone.loadImage(imageId);
+          
+          images.push({
+            id: file.id,
+            image,
+            imageId,
+            fileName: file.file_name,
+          });
+          
+        } catch (err) {
+          console.error(`Error loading DICOM file ${file.id}:`, err);
+        }
+      }
+      
+      setSeriesImages(images);
+      if (images.length > 0) {
+        setCurrentSeriesIndex(0);
+      }
+    } catch (err) {
+      console.error("Error loading series images:", err);
+      setError("Failed to load DICOM series");
+    } finally {
+      setSeriesLoading(false);
+    }
+  };
+
+  const toggleCompareMode = () => {
+    if (compareMode) {
+      clearCompare();
+    } else {
+      if (seriesImages.length > 0) {
+        const currentImage = seriesImages[currentSeriesIndex];
+        setCompareSelection([currentImage.id]);
+        setCompareImages({ left: currentImage });
+        setCompareMode(true);
+      }
+    }
+  };
+
+  const handleCompareSelect = (imageId: number) => {
+    if (!compareMode) return;
+
+    const image = seriesImages.find((img) => img.id === imageId);
+    if (!image) return;
+
+    let newSelection = [...compareSelection];
+    let newCompareImages = { ...compareImages };
+
+    if (compareSelection.includes(imageId)) {
+      // Unselect image
+      newSelection = newSelection.filter((id) => id !== imageId);
+
+      if (newCompareImages.left?.id === imageId) {
+        newCompareImages.left = newCompareImages.right;
+        newCompareImages.right = undefined;
+      } else if (newCompareImages.right?.id === imageId) {
+        newCompareImages.right = undefined;
+      }
+    } else {
+      // Select image
+      if (newSelection.length >= 2) {
+        // Replace the right image
+        newSelection[1] = imageId;
+        newCompareImages.right = image;
+      } else {
+        newSelection.push(imageId);
+        if (!newCompareImages.left) {
+          newCompareImages.left = image;
+        } else {
+          newCompareImages.right = image;
+        }
+      }
+    }
+
+    setCompareSelection(newSelection);
+    setCompareImages(newCompareImages);
+  };
+
+  const clearCompare = () => {
+    setCompareMode(false);
+    setCompareSelection([]);
+    setCompareImages({});
+    cleanupCompareViewports();
+  };
+  
+  const cleanupCompareViewports = () => {
+    [compareLeftRef.current, compareRightRef.current].forEach((element) => {
+      if (element) {
+        try {
+          cornerstone.getEnabledElement(element);
+          cornerstone.disable(element);
+        } catch (error) {
+          // Element not enabled
+        }
+      }
+    });
+  };
+
+  const setupCompareViewport = (element: HTMLDivElement, image: any) => {
+    if (!element || !image) return;
+
+    try {
+      let isEnabled = false;
+      try {
+        cornerstone.getEnabledElement(element);
+        isEnabled = true;
+      } catch (err) {
+        isEnabled = false;
+      }
+
+      if (!isEnabled) {
+        cornerstone.enable(element);
+      }
+
+      cornerstone.displayImage(element, image);
+      setupTools(element);
+    } catch (err) {
+      console.error("Compare viewport setup error:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (compareMode && initialized) {
+      setTimeout(() => {
+        if (compareImages.left) {
+          setupCompareViewport(
+            compareLeftRef.current as HTMLDivElement,
+            compareImages.left.image
+          );
+        }
+        if (compareImages.right) {
+          setupCompareViewport(
+            compareRightRef.current as HTMLDivElement,
+            compareImages.right.image
+          );
+        }
+      }, 100);
+    }
+  }, [compareMode, compareImages, initialized]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -259,13 +473,13 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
       setError(null);
 
       try {
-        const headers = getAuthHeader();
+        const headers = {
+          Authorization: `${currentUser?.Token}`,
+        };
 
         const tagsResp = await axios.get(
           `${import.meta.env.VITE_API_URL}/api/dicom/${dicomId}/tags`,
-          {headers:{
-            Authorization: `${currentUser?.Token}`,
-          }}
+          { headers }
         );
         if (cancelled) return;
         setTags(tagsResp.data.tags ?? {});
@@ -274,9 +488,7 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
           `${import.meta.env.VITE_API_URL}/api/dicom/${dicomId}/download`,
           {
             responseType: "arraybuffer",
-           headers:{
-            Authorization: `${currentUser?.Token}`,
-          }
+            headers
           }
         );
         if (cancelled) return;
@@ -536,6 +748,79 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
       }
     }
     setActiveTool(toolName);
+  };
+
+  const nextSeries = () => {
+    if (seriesImages.length > 1 && !compareMode) {
+      setCurrentSeriesIndex((prev) => (prev + 1) % seriesImages.length);
+    }
+  };
+
+  const previousSeries = () => {
+    if (seriesImages.length > 1 && !compareMode) {
+      setCurrentSeriesIndex(
+        (prev) => (prev - 1 + seriesImages.length) % seriesImages.length
+      );
+    }
+  };
+
+  const goToSeries = (index: number) => {
+    if (compareMode) {
+      const image = seriesImages[index];
+      if (image) {
+        handleCompareSelect(image.id);
+      }
+    } else {
+      if (index >= 0 && index < seriesImages.length) {
+        setCurrentSeriesIndex(index);
+      }
+    }
+  };
+
+  const toggleAutoPlay = () => {
+    if (autoPlay) {
+      stopAutoPlay();
+    } else {
+      startAutoPlay();
+    }
+  };
+
+  const startAutoPlay = () => {
+    if (seriesImages.length <= 1) return;
+    setAutoPlay(true);
+    const interval = setInterval(() => {
+      setCurrentSeriesIndex((prev) => (prev + 1) % seriesImages.length);
+    }, playSpeed);
+    setPlayInterval(interval);
+  };
+
+  const stopAutoPlay = () => {
+    setAutoPlay(false);
+    if (playInterval) {
+      clearInterval(playInterval);
+      setPlayInterval(null);
+    }
+  };
+
+  const applyOrientation = (orientation: any) => {
+    setSelectedOrientation(orientation.name);
+    const elements = compareMode
+      ? [compareLeftRef.current, compareRightRef.current].filter((el) => el)
+      : elementRefs.current.slice(0, currentLayout.total);
+
+    elements.forEach((element) => {
+      if (element) {
+        try {
+          const currentViewport = cornerstone.getViewport(element);
+          currentViewport.rotation = orientation.rotation;
+          currentViewport.hflip = orientation.hflip;
+          currentViewport.vflip = orientation.vflip;
+          cornerstone.setViewport(element, currentViewport);
+        } catch (err) {
+          console.error("Error applying orientation:", err);
+        }
+      }
+    });
   };
 
   const resetViewport = () => {
@@ -862,11 +1147,37 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
   return (
     <div
       className="p-3"
-      style={{ ...containerStyle, marginTop: "-50px", marginLeft: "-20px" }}
+      style={{ ...containerStyle, marginTop: "20px", marginLeft: "-20px" }}
     >
       <div className="d-flex align-items-center gap-2 mb-3">
+        <Button size="sm" onClick={onBack} variant="outline-secondary">
+          ← Back
+        </Button>
         {loading && <small className="text-muted">Loading...</small>}
         {error && <small className="text-danger ms-2">{error}</small>}
+
+        {/* Compare Mode Button */}
+        {seriesImages.length > 1 && (
+          <Button
+            size="sm"
+            onClick={toggleCompareMode}
+            variant={compareMode ? "primary" : "outline-primary"}
+          >
+            {compareMode ? "Exit Compare" : "🔍 Compare"}
+          </Button>
+        )}
+
+        {compareMode && (
+          <Button size="sm" onClick={clearCompare} variant="outline-danger">
+            Clear
+          </Button>
+        )}
+
+        {compareMode && (
+          <small className="text-info">
+            Selected: {compareSelection.length}/2 images
+          </small>
+        )}
       </div>
 
       <div
@@ -878,6 +1189,29 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
           border: "1px solid #dee2e6",
         }}
       >
+        {seriesLoading && (
+          <div className="mb-3">
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <span style={{ color: darkTheme ? "white" : "black" }}>Loading DICOM Series...</span>
+              <Badge style={{ backgroundColor: "#004e64", color: "white" }}>
+                {Math.round(loadingProgress)}%
+              </Badge>
+            </div>
+            <ProgressBar
+              now={loadingProgress}
+              style={{
+                height: "8px",
+                backgroundColor: "#e1e8ed",
+              }}
+            >
+              <ProgressBar
+                now={loadingProgress}
+                style={{ backgroundColor: "#004e64" }}
+              />
+            </ProgressBar>
+          </div>
+        )}
+
         <Row className="mb-2">
           <Col md={6}>
             <div className="d-flex align-items-center gap-2 flex-wrap">
@@ -1142,6 +1476,9 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
                   >
                     ➡️ Arrow
                   </Dropdown.Item>
+                  <Dropdown.Item onClick={addTextAnnotation}>
+                    📝 Text
+                  </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
             </div>
@@ -1251,26 +1588,53 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
       >
         <Tab eventKey="viewer" title="DICOM Viewer">
           <div style={{ position: "relative" }}>
-            <div style={viewerContainerStyle} className="mx-auto">
-              {Array.from({ length: currentLayout.total }).map((_, index) => (
+            {compareMode ? (
+              <div style={{ display: "flex", gap: "10px", height: "600px" }}>
                 <div
-                  key={index}
-                  ref={(el) => (elementRefs.current[index] = el)}
+                  ref={compareLeftRef}
                   style={{
-                    width: "100%",
-                    height: "100%",
+                    flex: 1,
                     background: darkTheme ? "#000000" : "#000000",
-                    border: `2px solid ${
-                      index === activeViewport ? "#007bff" : "#666666"
-                    }`,
+                    border: "2px solid #007bff",
                     borderRadius: "4px",
-                    cursor: activeTool === "Pan" ? "grab" : "crosshair",
+                    cursor: "crosshair",
                     position: "relative",
                   }}
-                  onClick={() => setActiveViewport(index)}
                 />
-              ))}
-            </div>
+                <div
+                  ref={compareRightRef}
+                  style={{
+                    flex: 1,
+                    background: darkTheme ? "#000000" : "#000000",
+                    border: "2px solid #007bff",
+                    borderRadius: "4px",
+                    cursor: "crosshair",
+                    position: "relative",
+                  }}
+                />
+              </div>
+            ) : (
+              <div style={viewerContainerStyle} className="mx-auto">
+                {Array.from({ length: currentLayout.total }).map((_, index) => (
+                  <div
+                    key={index}
+                    ref={(el) => (elementRefs.current[index] = el)}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      background: darkTheme ? "#000000" : "#000000",
+                      border: `2px solid ${
+                        index === activeViewport ? "#007bff" : "#666666"
+                      }`,
+                      borderRadius: "4px",
+                      cursor: activeTool === "Pan" ? "grab" : "crosshair",
+                      position: "relative",
+                    }}
+                    onClick={() => setActiveViewport(index)}
+                  />
+                ))}
+              </div>
+            )}
 
             <div style={{ ...overlayStyle, top: 10, left: 10 }}>
               <div>
@@ -1278,9 +1642,11 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
               </div>
               <div>📚 Study: {tags?.["0020,0010"]?.Value?.[0] || "N/A"}</div>
               <div>🏥 Modality: {tags?.["0008,0060"]?.Value?.[0] || "N/A"}</div>
-              <div>
-                🖼️ Viewport: {activeViewport + 1}/{currentLayout.total}
-              </div>
+              {!compareMode && (
+                <div>
+                  🖼️ Viewport: {activeViewport + 1}/{currentLayout.total}
+                </div>
+              )}
             </div>
 
             <div style={{ ...overlayStyle, top: 10, right: 10 }}>
@@ -1365,6 +1731,7 @@ const DicomViewer: React.FC<Props> = ({ dicomId, onBack }) => {
           <div className="mt-3">
             <Row>
               <Col md={showHistogram ? 6 : 8}>
+                
                 <h6>📖 Keyboard Shortcuts</h6>
                 <small className="text-muted">
                   <strong>W:</strong> Window/Level • <strong>P:</strong> Pan •{" "}

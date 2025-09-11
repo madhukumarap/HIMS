@@ -24,6 +24,22 @@ const DicomViewerModal = ({
 
   const currentUser = AuthService.getCurrentUser();
 
+  // Convert dicomFiles to the format expected by DicomViewer
+  const convertedFiles = dicomFiles.map(file => ({
+    id: file.id,
+    original_name: `DICOM-${file.orthancInstanceId || file.id}`,
+    file_name: `DICOM-${file.orthancInstanceId || file.id}`,
+    file_size: 0, // You might need to get this from your API
+    file_type: "dicom",
+    mime_type: "application/dicom",
+    is_dicom: true,
+    orthanc_instance_id: file.orthancInstanceId,
+    orthanc_study_id: file.orthancStudyId,
+    dicom_metadata: file.metadata || {},
+    consultation_id: 0, // You might need to get this from your API
+    tenant_id: 0, // You might need to get this from your API
+  }));
+
   const handleFileSelect = (file) => {
     setSelectedFile(file);
   };
@@ -284,6 +300,7 @@ const DicomViewerModal = ({
           {selectedDicomId && (
             <DicomViewer
               dicomId={selectedDicomId}
+              consultationFiles={convertedFiles} // Pass the converted files
               onBack={handleCloseDicomViewer}
             />
           )}

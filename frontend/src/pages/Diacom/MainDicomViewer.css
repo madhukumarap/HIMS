@@ -1,0 +1,464 @@
+:root {
+  --font-family: "Roboto", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.25rem;
+  --color-primary: #004e64;
+  --color-primary-light: #0089a8;
+  --color-primary-dark: #00384f;
+  --color-accent: #ffb703;
+  --color-sidebar-bg: #043d56;
+  --color-sidebar-active: #0089a8;
+  --color-surface: #ffffff;
+  --color-background: #f6f8fa;
+  --color-text: #1a1a1a;
+  --color-text-light: #ffffff;
+  --color-border: #e1e8ed;
+  --color-success: #25d366;
+}
+
+* {
+  font-family: var(--font-family) !important;
+  font-size: var(--fs-sm);
+}
+
+/* DICOM Viewer Container */
+.dicom-viewer-container {
+  background: var(--color-background);
+  color: var(--color-text);
+  min-height: 100vh;
+  margin-top: 0px;
+  margin-left: 0px;
+  padding: 1rem;
+}
+
+.dicom-toolbar {
+  background: var(--color-surface);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 2px 8px rgba(0, 78, 100, 0.1);
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+/* Primary header line */
+.dicom-toolbar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    var(--color-primary-light) 100%
+  );
+  border-radius: 8px 8px 0 0;
+}
+
+.dicom-toolbar-header-line::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--color-primary);
+  border-radius: 8px 8px 0 0;
+}
+
+.dicom-toolbar .btn {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin: 2px;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid transparent;
+}
+
+.dicom-toolbar .btn-primary {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-text-light) !important;
+  box-shadow: 0 2px 4px rgba(0, 78, 100, 0.3);
+}
+
+.dicom-toolbar .btn-primary:hover,
+.dicom-toolbar .btn-primary:focus {
+  background: var(--color-primary-dark) !important;
+  border-color: var(--color-primary-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 78, 100, 0.4);
+}
+
+.dicom-toolbar .btn-outline-primary {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: transparent;
+}
+
+.dicom-toolbar .btn-outline-primary:hover,
+.dicom-toolbar .btn-outline-primary:focus {
+  background: var(--color-primary-light) !important;
+  border-color: var(--color-primary-light) !important;
+  color: var(--color-text-light) !important;
+  transform: translateY(-1px);
+}
+
+.dicom-toolbar .btn-outline-secondary {
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.dicom-toolbar .btn-outline-secondary:hover {
+  background: var(--color-primary-light) !important;
+  border-color: var(--color-primary-light) !important;
+  color: var(--color-text-light) !important;
+}
+
+.dicom-toolbar .btn-outline-info {
+  color: var(--color-primary-light);
+  border-color: var(--color-primary-light);
+}
+
+.dicom-toolbar .btn-outline-info:hover {
+  background: var(--color-primary-light) !important;
+  color: var(--color-text-light) !important;
+}
+
+.dicom-toolbar .btn-outline-warning {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.dicom-toolbar .btn-outline-warning:hover {
+  background: var(--color-accent) !important;
+  color: var(--color-text) !important;
+}
+
+.dicom-toolbar .btn-outline-success {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.dicom-toolbar .btn-outline-success:hover {
+  background: var(--color-success) !important;
+  color: var(--color-text-light) !important;
+}
+
+.dicom-toolbar .btn-outline-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.dicom-toolbar .btn-outline-danger:hover {
+  background: #dc3545 !important;
+  color: var(--color-text-light) !important;
+}
+
+.dicom-toolbar .btn-success {
+  background: var(--color-success) !important;
+  border-color: var(--color-success) !important;
+  color: var(--color-text-light) !important;
+}
+
+/* Dropdown Styling */
+.dicom-toolbar .dropdown-menu {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 78, 100, 0.15);
+}
+
+.dicom-toolbar .dropdown-item {
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  padding: 8px 16px;
+}
+
+.dicom-toolbar .dropdown-item:hover {
+  background: var(--color-primary-light);
+  color: var(--color-text-light);
+}
+
+/* Tabs Styling */
+.nav-tabs {
+  /* border-bottom: 2px solid var(--color-primary-light); */
+  margin-bottom: 0rem;
+}
+
+.nav-tabs .nav-link {
+  color: var(--color-primary);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  padding: 6px 15px;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  margin-right: 4px;
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-tabs .nav-link:hover {
+  background: var(--color-background);
+  color: var(--color-primary-dark);
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--color-text-light) !important;
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  font-weight: 600;
+}
+
+/* Viewer Container */
+.dicom-viewer-grid {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 78, 100, 0.1);
+}
+
+.dicom-viewport {
+  background: #000000;
+  border-radius: 4px;
+  cursor: crosshair;
+  position: relative;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.dicom-viewport.active {
+  border: 3px solid var(--color-primary-light) !important;
+  box-shadow: 0 0 12px rgba(0, 137, 168, 0.5);
+}
+
+.dicom-viewport.inactive {
+  border: 2px solid #666666 !important;
+}
+
+/* Info Overlays */
+.dicom-overlay {
+  position: absolute;
+  color: var(--color-text-light);
+  font-size: var(--fs-xs);
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  background: rgba(0, 78, 100, 0.85);
+  padding: 6px 10px;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(0, 137, 168, 0.3);
+}
+
+.dicom-overlay div {
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+.dicom-overlay div:last-child {
+  margin-bottom: 0;
+}
+
+/* Loading and Error States */
+.dicom-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--color-text-light);
+  background: rgba(0, 78, 100, 0.9);
+  padding: 20px 24px;
+  border-radius: 8px;
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+
+.dicom-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--color-text-light);
+  background: rgba(220, 53, 69, 0.9);
+  padding: 20px 24px;
+  border-radius: 8px;
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+
+/* Tags Table Container */
+.tags-container {
+  background: var(--color-surface);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.tags-container h6 {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding: 0 4px;
+}
+
+/* Keyboard Shortcuts Info */
+.shortcuts-info {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 12px;
+  font-size: var(--fs-xs);
+}
+
+.shortcuts-info h6 {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.shortcuts-info strong {
+  color: var(--color-primary);
+}
+
+/* Histogram */
+.histogram-container {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px;
+  height: 120px;
+  display: flex;
+  align-items: end;
+  justify-content: space-around;
+}
+
+.histogram-bar {
+  background: var(--color-primary-light);
+  border-radius: 1px;
+  margin: 0 1px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.histogram-bar:hover {
+  background: var(--color-accent);
+}
+
+/* Viewport Info Panel */
+.viewport-info {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.viewport-info h6 {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.viewport-info small {
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+/* Tooltips */
+.tooltip-inner {
+  background-color: var(--color-primary-dark) !important;
+  color: var(--color-text-light) !important;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+.bs-tooltip-top .tooltip-arrow::before {
+  border-top-color: var(--color-primary-dark) !important;
+}
+
+.bs-tooltip-bottom .tooltip-arrow::before {
+  border-bottom-color: var(--color-primary-dark) !important;
+}
+
+.bs-tooltip-start .tooltip-arrow::before {
+  border-left-color: var(--color-primary-dark) !important;
+}
+
+.bs-tooltip-end .tooltip-arrow::before {
+  border-right-color: var(--color-primary-dark) !important;
+}
+
+/* Modal Styling */
+.modal-header {
+  background: var(--color-primary);
+  color: var(--color-text-light);
+  border-bottom: none;
+}
+
+.modal-title {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+
+.modal-body {
+  background: var(--color-surface);
+}
+
+.modal-footer {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Dark Theme Overrides */
+.dark-theme {
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.dark-theme .dicom-toolbar {
+  background: #2a2a2a;
+  border-color: #444444;
+}
+
+.dark-theme .dicom-overlay {
+  background: rgba(42, 42, 42, 0.9);
+  border-color: rgba(68, 68, 68, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dicom-toolbar {
+    padding: 8px;
+  }
+
+  .dicom-toolbar .btn {
+    font-size: var(--fs-xs);
+    padding: 4px 8px;
+    margin: 1px;
+  }
+
+  .dicom-overlay {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+
+  .nav-tabs .nav-link {
+    padding: 8px 12px;
+    font-size: var(--fs-sm);
+  }
+}
+
+@media (max-width: 576px) {
+  .dicom-viewer-container {
+    margin-left: -10px;
+    padding: 0.5rem;
+  }
+
+  .dicom-toolbar {
+    padding: 6px;
+  }
+}

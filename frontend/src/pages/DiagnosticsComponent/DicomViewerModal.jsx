@@ -102,8 +102,8 @@ const DicomViewerModal = ({
   return (
     <>
       {/* Main Modal */}
-      <Modal show={show} onHide={handleCloseModal} size="lg" className="mt-5">
-        <Modal.Header closeButton>
+      <Modal show={show} onHide={handleCloseModal} size="lg" className="mt-5 ">
+        <Modal.Header className=" text-white" style={{backgroundColor:'#19498f'}} closeButton>
           <Modal.Title>
             Files for Patient : {patientData?.PatientName}
           </Modal.Title>
@@ -143,8 +143,8 @@ const DicomViewerModal = ({
                       >
                         <div className="ms-2 me-auto">
                           <div className="fw-bold">File #{file.id}</div>
-                          <small className="text-muted">
-                            <FaCalendarAlt className="me-1" />
+                          <small className=" text-white">
+                            <FaCalendarAlt className="me-1 text-white" />
                             {formatDate(new Date(file.createdAt))}
                           </small>
                         </div>
@@ -284,7 +284,7 @@ const DicomViewerModal = ({
             <FaEye className="me-2" />
             DICOM Viewer - File #{selectedDicomId}
             {selectedFile && (
-              <small className="text-muted ms-2">
+              <small className="text-white ms-2">
                 Patient: {patientData?.PatientName}
               </small>
             )}

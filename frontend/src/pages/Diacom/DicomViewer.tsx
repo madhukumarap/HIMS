@@ -1203,7 +1203,7 @@ const currentUser = AuthService.getCurrentUser();
           <small className="text-muted">Loading...</small>
         )}
         {error && <small className="text-danger ms-2">{error}</small>}
-        {onBack && (
+        {/* {onBack && (
           <Button
             variant="outline-secondary"
             size="sm"
@@ -1216,7 +1216,7 @@ const currentUser = AuthService.getCurrentUser();
           >
             ← Back
           </Button>
-        )}
+        )} */}
 
         {/* Compare Mode Button */}
         {seriesImages.length > 1 && (

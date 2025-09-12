@@ -5,12 +5,12 @@
   --fs-md: 1rem;
   --fs-lg: 1.125rem;
   --fs-xl: 1.25rem;
-  --color-primary: #004e64;
+  --color-primary: #19498f;
   --color-primary-light: #0089a8;
-  --color-primary-dark: #00384f;
+  --color-primary-dark: #19498f;
   --color-accent: #ffb703;
-  --color-sidebar-bg: #043d56;
-  --color-sidebar-active: #0089a8;
+  --color-sidebar-bg: #19498f;
+  --color-sidebar-active: #19498f;
   --color-surface: #ffffff;
   --color-background: #f6f8fa;
   --color-text: #1a1a1a;

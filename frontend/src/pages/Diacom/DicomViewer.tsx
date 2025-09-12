@@ -1211,7 +1211,7 @@ const DicomViewer: React.FC<Props> = ({ consultationFiles, dicomId, onBack }) =>
             </ProgressBar>
           </div>
         )}
-
+{/* updates abou the dicom compare */}
         <Row className="mb-2">
           <Col md={6}>
             <div className="d-flex align-items-center gap-2 flex-wrap">

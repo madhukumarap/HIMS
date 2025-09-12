@@ -1819,7 +1819,7 @@ const currentUser = AuthService.getCurrentUser();
                 )}
 
                 <div className="dicom-overlay" style={{ top: 10, left: 10 }}>
-                  <div>
+                  <div >
                     👤 Patient: {tags?.["0010,0010"]?.Value?.[0] || "Unknown"}
                   </div>
                   <div>

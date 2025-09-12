@@ -278,7 +278,7 @@ function ImageUploader({ testBookingID, SelectedTest, bookingData }) {
         show={showModal}
         onHide={() => setShowModal(false)}
       >
-        <Modal.Header closeButton>
+        <Modal.Header style={{backgroundColor:'#19498f'}} closeButton>
           <Modal.Title style={{ fontSize: "18px" }}>
             Upload Test Result Images
           </Modal.Title>

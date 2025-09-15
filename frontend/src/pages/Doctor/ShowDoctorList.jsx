@@ -11,7 +11,13 @@ import {
   Button,
   Form,
 } from "react-bootstrap";
-import { FaRegEye, FaPencilAlt, FaTimes, FaDownload } from "react-icons/fa";
+import {
+  FaRegEye,
+  FaPencilAlt,
+  FaTimes,
+  FaDownload,
+  FaMoneyBillAlt,
+} from "react-icons/fa";
 import DownloadDoctorEarningsReport from "./DownloadDoctorEarningsReport";
 import DownloadDoctorReferalEarningsReport from "./DownloadDoctorReferalEarningsReport";
 import { toast } from "react-toastify";
@@ -56,7 +62,11 @@ const ShowDoctorList = () => {
   const [editingDoctor, setEditingDoctor] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  //
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingPayments, setPendingPayments] = useState([]);
+  const [selectedPayments, setSelectedPayments] = useState([]);
+  const [paymentStatus, setPaymentStatus] = useState({});
 
   useEffect(() => {
     fetchDoctorList();
@@ -66,6 +76,43 @@ const ShowDoctorList = () => {
     fetchBookings();
     getEnterCodeList();
   }, []);
+
+  const fetchPaymentStatus = async (doctorId) => {
+    try {
+      const response = await axios.get(
+        `${
+          import.meta.env.VITE_API_URL
+        }/api/doctorPayments/payment-status/${doctorId}`,
+        {
+          headers: {
+            Authorization: `${currentUser?.Token}`,
+            userDatabase: currentUser?.database,
+          },
+        }
+      );
+
+      setPaymentStatus((prev) => ({
+        ...prev,
+        [doctorId]: response.data,
+      }));
+    } catch (error) {
+      console.error("Error fetching payment status:", error);
+      // Set default status if error occurs
+      setPaymentStatus((prev) => ({
+        ...prev,
+        [doctorId]: {
+          status: "Unknown",
+          lastPaymentDate: null,
+          totalPaid: 0,
+          consultationPayments: 0,
+          pathologyPayments: 0,
+          diagnosisPayments: 0,
+        },
+      }));
+    }
+  };
+
+  console.log(paymentStatus, "paymentStatus");
 
   const fetchDoctorFees = async () => {
     try {
@@ -157,11 +204,6 @@ const ShowDoctorList = () => {
     }
   };
 
-  console.log(diagnosticsBookings, "diagnosticsBookings");
-  console.log(patients, "patients");
-  console.log(pathologyBookings, "bookings");
-  console.log(enterCodes, "enterCodes");
-
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -208,6 +250,7 @@ const ShowDoctorList = () => {
   };
 
   const handleViewConsultations = (doctor) => {
+    fetchPaymentStatus(doctor.id);
     setSelectedDoctor(doctor);
     setSelectedDoctorId(doctor.id);
     setSelectedDoctorName(
@@ -242,6 +285,7 @@ const ShowDoctorList = () => {
   };
 
   const handleViewReferrals = (doctor) => {
+    fetchPaymentStatus(doctor.id);
     const latestFee = getLatestDoctorFee(doctor.id);
 
     setSelectedDoctor(doctor);
@@ -268,11 +312,23 @@ const ShowDoctorList = () => {
       (booking) => booking.doctorId === doctor.id
     );
 
-    // Combine all referral data
+    // ✅ Attach consultationId / diagnosisId / pathologyId so they match doctorPayments
     const allReferrals = [
-      ...filteredPatients.map((item) => ({ ...item, type: "Consultation" })),
-      ...filteredDiagnostics.map((item) => ({ ...item, type: "Diagnostics" })),
-      ...filteredPathology.map((item) => ({ ...item, type: "Pathology" })),
+      ...filteredPatients.map((item) => ({
+        ...item,
+        type: "Consultation",
+        consultationId: item.id, // match doctorPayments.consultationId
+      })),
+      ...filteredDiagnostics.map((item) => ({
+        ...item,
+        type: "Diagnostics",
+        diagnosisId: item.id, // match doctorPayments.diagnosisId
+      })),
+      ...filteredPathology.map((item) => ({
+        ...item,
+        type: "Pathology",
+        pathologyId: item.id, // match doctorPayments.pathologyId
+      })),
     ];
 
     setDoctorReferrals(allReferrals);
@@ -294,23 +350,20 @@ const ShowDoctorList = () => {
     let doctorTotalEarnings = 0;
 
     allReferrals.forEach((referral) => {
-      // For consultation referrals
       if (referral.type === "Consultation") {
+        // Consultation referral → fixed fee
         const applicableFee = getApplicableFee(
           doctor.id,
           referral.bookingStartDate,
           "referral"
         );
         doctorTotalEarnings += applicableFee;
-      }
-      // For diagnostics and pathology referrals
-      else if (referral.commissionValue) {
-        // Find the enter code
+      } else if (referral.commissionValue) {
+        // Diagnostics or Pathology referral → commission %
         const enterCode = enterCodes.find(
           (code) => code.codeType === referral.commissionValue
         );
         if (enterCode) {
-          // Extract percentage value (e.g., "10%" -> 10)
           const percentage = parseFloat(enterCode.value);
           const amount =
             parseFloat(referral.PaidAmount) ||
@@ -342,6 +395,8 @@ const ShowDoctorList = () => {
   };
 
   const handleEditDoctor = (doctor) => {
+    console.log(doctor, "doctor");
+
     setEditingDoctor(doctor);
 
     // Get the latest fee for this doctor
@@ -510,29 +565,150 @@ const ShowDoctorList = () => {
     setDateRange({ startDate: "", endDate: "" });
 
     if (modalType === "consultation") {
-      // ... existing consultation code
-    } else {
-      setFilteredReferrals(doctorReferrals);
+      setFilteredConsultations(doctorConsultations);
 
-      // Recalculate totals for all data
-      const totalPatientFees = doctorReferrals.reduce((sum, patient) => {
-        return sum + (parseFloat(patient.amount) || 0);
-      }, 0);
-      setTotalReferralFees(totalPatientFees);
+      // Recalculate ONLY doctor's consultation earnings
+      let totalDoctorEarnings = 0;
 
-      // Recalculate referral earnings based on applicable fees
-      let doctorTotalEarnings = 0;
-      doctorReferrals.forEach((patient) => {
+      doctorConsultations.forEach((patient) => {
         const applicableFee = getApplicableFee(
           selectedDoctorId,
           patient.bookingStartDate,
-          "referral"
+          "consultation"
         );
-        doctorTotalEarnings += applicableFee;
+        totalDoctorEarnings += applicableFee;
       });
+
+      setTotalConsultationFees(0); // hide patient fees, only consultation fee counts
+      setDoctorEarnings(totalDoctorEarnings);
+    } else {
+      setFilteredReferrals(doctorReferrals);
+
+      // Recalculate ONLY referral earnings (ignore patient totals)
+      let doctorTotalEarnings = 0;
+      doctorReferrals.forEach((referral) => {
+        if (referral.type === "Consultation") {
+          const applicableFee = getApplicableFee(
+            selectedDoctorId,
+            referral.bookingStartDate,
+            "referral"
+          );
+          doctorTotalEarnings += applicableFee;
+        } else if (referral.commissionValue) {
+          const enterCode = enterCodes.find(
+            (code) => code.codeType === referral.commissionValue
+          );
+          if (enterCode) {
+            const percentage = parseFloat(enterCode.value);
+            const amount =
+              parseFloat(referral.PaidAmount) ||
+              parseFloat(referral.TotalFees) ||
+              0;
+            doctorTotalEarnings += (amount * percentage) / 100;
+          }
+        }
+      });
+
+      setTotalReferralFees(0); // hide patient total fees
       setReferralEarnings(doctorTotalEarnings);
     }
   };
+
+  // Fetch pending payments for a doctor
+  const handleViewPayments = async (doctor) => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/doctorPayments/pending/${
+          doctor.id
+        }`,
+        {
+          headers: {
+            Authorization: `${currentUser?.Token}`,
+            userDatabase: currentUser?.database,
+          },
+        }
+      );
+
+      setPendingPayments(response.data || []);
+      setSelectedPayments(response.data.map((p) => p.id));
+      setSelectedDoctor(doctor);
+      setShowPaymentModal(true);
+    } catch (error) {
+      console.error("Error fetching pending payments:", error);
+      toast.error("Failed to load payments");
+    }
+  };
+
+  // Toggle one payment
+  const togglePayment = (paymentId) => {
+    setSelectedPayments((prev) =>
+      prev.includes(paymentId)
+        ? prev.filter((id) => id !== paymentId)
+        : [...prev, paymentId]
+    );
+  };
+
+  // Toggle all payments
+  const toggleAllPayments = () => {
+    if (selectedPayments.length === pendingPayments.length) {
+      setSelectedPayments([]);
+    } else {
+      setSelectedPayments(pendingPayments.map((p) => p.id));
+    }
+  };
+
+  // Make payments (bulk)
+  const handleMakePayments = async (doctorId) => {
+    console.log(doctorId, "doctorId");
+
+    try {
+      const selectedData = pendingPayments.filter((p) =>
+        selectedPayments.includes(p.id)
+      );
+
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/doctorPayments/pay`,
+        {
+          doctorId,
+          payments: selectedData.map((p) => ({
+            id: p.id,
+            type: p.type,
+            amount: p.amount,
+            date: p.date,
+          })),
+        },
+        {
+          headers: {
+            Authorization: `${currentUser?.Token}`,
+            userDatabase: currentUser?.database,
+          },
+        }
+      );
+
+      toast.success("Payments saved successfully!");
+      setShowPaymentModal(false);
+      setPendingPayments([]);
+      setSelectedPayments([]);
+    } catch (error) {
+      console.error("Error processing payments:", error);
+      toast.error("Failed to process payments");
+    }
+  };
+
+  // Get the payment array for selected doctor
+  const doctorPayments = Array.isArray(paymentStatus[selectedDoctorId])
+    ? paymentStatus[selectedDoctorId]
+    : []; // if it's not an array (like doctor 2), return empty array
+
+  // Then in your table, you can match each row like this:
+  filteredConsultations.map((patient) => {
+    const paymentRecord = doctorPayments.find(
+      (p) =>
+        p.consultationId === patient.id ||
+        p.pathologyId === patient.pathologyId ||
+        p.diagnosisId === patient.diagnosisId
+    );
+  });
 
   return (
     <div style={{ padding: "2rem" }}>
@@ -652,10 +828,25 @@ const ShowDoctorList = () => {
                                   backgroundColor: "#1111",
                                   color: "black",
                                 }}
-                                className="btn btn-info mr-1"
+                                className="btn btn-secondary mr-1"
                                 onClick={() => handleViewReferrals(doctor)}
                               >
                                 <FaRegEye /> Referrals
+                              </button>
+
+                              <button
+                                title="Payment"
+                                className="btn btn-secondary mr-1"
+                                style={{
+                                  fontSize: "12px",
+                                  padding: "4px 5px",
+                                  marginTop: "0px",
+                                  backgroundColor: "#1111",
+                                  color: "black",
+                                }}
+                                onClick={() => handleViewPayments(doctor)}
+                              >
+                                <FaMoneyBillAlt /> Payments
                               </button>
 
                               <button
@@ -667,7 +858,7 @@ const ShowDoctorList = () => {
                                   backgroundColor: "#1111",
                                   color: "black",
                                 }}
-                                className="btn btn-warning mr-1"
+                                className="btn btn-secondary mr-1"
                                 onClick={() => handleEditDoctor(doctor)}
                               >
                                 <FaPencilAlt />
@@ -685,6 +876,88 @@ const ShowDoctorList = () => {
         </Row>
       </Container>
 
+      {/* Payment Modal */}
+
+      <Modal
+        backdrop="static"
+        dialogClassName="modal-lg"
+        style={{ marginTop: "20px" }}
+        centered
+        show={showPaymentModal}
+        onHide={() => setShowPaymentModal(false)}
+      >
+        <Modal.Header
+          closeButton
+          style={{
+            backgroundColor: "#f8f9fa",
+            borderBottom: "1px solid #dee2e6",
+            display: "flex",
+            justifyContent: "space-between", // pushes title left & button right
+            alignItems: "center",
+            color: "black",
+          }}
+        >
+          <Modal.Title>Pending Payments</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {pendingPayments.length > 0 ? (
+            <Table bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>
+                    <Form.Check
+                      type="checkbox"
+                      checked={
+                        selectedPayments.length === pendingPayments.length
+                      }
+                      onChange={toggleAllPayments}
+                    />
+                  </th>
+                  <th>Patient Name</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Consultation Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingPayments.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      <Form.Check
+                        type="checkbox"
+                        checked={selectedPayments.includes(p.id)}
+                        onChange={() => togglePayment(p.id)}
+                      />
+                    </td>
+                    <td>{p.patientName}</td>
+                    <td>{p.type}</td>
+                    <td>{p.amount.toFixed(2)}</td>
+                    <td>{formatDate(p.date)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          ) : (
+            <p className="text-center text-muted">No pending payments found.</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowPaymentModal(false)}
+          >
+            Close
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => handleMakePayments(selectedDoctor.id)}
+            disabled={selectedPayments.length === 0}
+          >
+            Pay Selected
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       {/* Consultation Modal */}
       <Modal
         backdrop="static"
@@ -699,19 +972,30 @@ const ShowDoctorList = () => {
           style={{
             backgroundColor: "#f8f9fa",
             borderBottom: "1px solid #dee2e6",
+            display: "flex",
+            justifyContent: "space-between", // pushes title left & button right
+            alignItems: "center",
           }}
         >
-          <Modal.Title style={{ fontSize: "18px", fontWeight: "bold" }}>
-            Patient Consultations for Dr. {selectedDoctorName}
+          <Modal.Title
+            style={{ fontSize: "18px", fontWeight: "500", color: "black" }}
+          >
+            Patient Consultations for {selectedDoctorName}
           </Modal.Title>
+
           <Button
             variant="light"
             onClick={handleCloseConsultationModal}
-            style={{ padding: "0.25rem 0.5rem" }}
+            style={{
+              padding: "0.25rem 0.5rem",
+              display: "flex",
+              alignItems: "center",
+            }}
           >
             <FaTimes />
           </Button>
         </Modal.Header>
+
         <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
           {/* Date Range Filter */}
           <div className="mb-3 p-3 border rounded">
@@ -779,8 +1063,9 @@ const ShowDoctorList = () => {
                   <th>Reason</th>
                   <th>Amount Paid</th>
                   <th>Applicable Doctor Fee</th>
-                  <th>Patient Payment Status</th>
-                  <th>Consultation Date</th>
+                  <th>Doctor Payment Status</th>
+                  <th>Payment Date</th>
+                  {/* <th>Consultation Date</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -790,13 +1075,21 @@ const ShowDoctorList = () => {
                     patient.bookingStartDate,
                     "consultation"
                   );
-                  const applicableFeeRecord = doctorFees
-                    .filter((fee) => fee.doctorId === selectedDoctorId)
-                    .find(
-                      (fee) =>
-                        new Date(patient.bookingStartDate) >=
-                        new Date(fee.feeUpdatedAt)
-                    );
+
+                  // Get the payment array for the selected doctor
+                  const doctorPayments = Array.isArray(
+                    paymentStatus[selectedDoctorId]
+                  )
+                    ? paymentStatus[selectedDoctorId]
+                    : [];
+
+                  // Match payment history for this patient/consultation
+                  const paymentRecord = doctorPayments.find(
+                    (payment) =>
+                      payment.consultationId === patient.id || // match consultation
+                      payment.pathologyId === patient.pathologyId || // match pathology
+                      payment.diagnosisId === patient.diagnosisId // match diagnosis
+                  );
 
                   return (
                     <tr key={patient.id}>
@@ -810,20 +1103,31 @@ const ShowDoctorList = () => {
                       </td>
                       <td>
                         {applicableFee}{" "}
-                        {applicableFeeRecord?.consultationCurrency || "INR"}
+                        {doctorFees.find(
+                          (fee) => fee.doctorId === selectedDoctorId
+                        )?.consultationCurrency || "INR"}
                       </td>
                       <td>
-                        <span
-                          className={`badge ${
-                            patient.paymentStatus === "paid"
-                              ? "bg-success"
-                              : "bg-danger"
-                          }`}
-                        >
-                          {patient.paymentStatus}
-                        </span>
+                        {paymentRecord ? (
+                          <span
+                            className={`badge ${
+                              paymentRecord.status === "Paid"
+                                ? "bg-success"
+                                : "bg-danger"
+                            }`}
+                          >
+                            {paymentRecord.status}
+                          </span>
+                        ) : (
+                          <span className="badge bg-warning">Unpaid</span>
+                        )}
                       </td>
-                      <td>{formatDate(patient.bookingStartDate)}</td>
+                      <td>
+                        {paymentRecord
+                          ? formatDate(paymentRecord.paymentDateTime)
+                          : "-"}
+                      </td>
+                      {/* <td>{formatDate(patient.bookingStartDate)}</td> */}
                     </tr>
                   );
                 })}
@@ -874,15 +1178,24 @@ const ShowDoctorList = () => {
           style={{
             backgroundColor: "#f8f9fa",
             borderBottom: "1px solid #dee2e6",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          <Modal.Title style={{ fontSize: "18px", fontWeight: "bold" }}>
-            Patient Referrals for Dr. {selectedDoctorName}
+          <Modal.Title
+            style={{ fontSize: "18px", fontWeight: "500", color: "black" }}
+          >
+            Patient Referrals for {selectedDoctorName}
           </Modal.Title>
           <Button
             variant="light"
             onClick={handleCloseReferralModal}
-            style={{ padding: "0.25rem 0.5rem" }}
+            style={{
+              padding: "0.25rem 0.5rem",
+              display: "flex",
+              alignItems: "center",
+            }}
           >
             <FaTimes />
           </Button>
@@ -957,7 +1270,8 @@ const ShowDoctorList = () => {
                   <th>Procedure/Visit Type</th>
                   <th>Amount Paid</th>
                   <th>Referral Fee</th>
-                  <th>Payment Status</th>
+                  <th>Doctor Payment Status</th>
+                  <th>Payment Date</th>
                   <th>Date</th>
                 </tr>
               </thead>
@@ -968,9 +1282,8 @@ const ShowDoctorList = () => {
                   let patientName = "";
                   let phone = "";
                   let amountPaid = 0;
-                  let paymentStatus = "";
-                  let date = "";
                   let currency = "INR";
+                  let date = "";
 
                   // Consultation referral
                   if (referral.type === "Consultation") {
@@ -978,7 +1291,6 @@ const ShowDoctorList = () => {
                     patientName = referral.PatientName;
                     phone = referral.PatientPhone;
                     amountPaid = parseFloat(referral.amount) || 0;
-                    paymentStatus = referral.paymentStatus;
                     date = formatDate(referral.bookingStartDate);
                     currency = referral.Currency || "INR";
 
@@ -998,13 +1310,11 @@ const ShowDoctorList = () => {
                       parseFloat(referral.PaidAmount) ||
                       parseFloat(referral.TotalFees) ||
                       0;
-                    paymentStatus = referral.PaymentStatus;
                     date = formatDate(
                       referral.PaymentDate || referral.createdAt
                     );
                     currency = referral.Currency || "INR";
 
-                    // Calculate referral fee based on enter code
                     const enterCode = enterCodes.find(
                       (code) => code.codeType === referral.commissionValue
                     );
@@ -1013,6 +1323,20 @@ const ShowDoctorList = () => {
                       referralFee = (amountPaid * percentage) / 100;
                     }
                   }
+
+                  // ✅ Get payment history same as consultation
+                  const doctorPayments = Array.isArray(
+                    paymentStatus[selectedDoctorId]
+                  )
+                    ? paymentStatus[selectedDoctorId]
+                    : [];
+
+                  const paymentRecord = doctorPayments.find(
+                    (payment) =>
+                      payment.consultationId === referral.consultationId ||
+                      payment.pathologyId === referral.pathologyId ||
+                      payment.diagnosisId === referral.diagnosisId
+                  );
 
                   return (
                     <tr key={`${referral.type}-${referral.id}`}>
@@ -1028,15 +1352,24 @@ const ShowDoctorList = () => {
                         {referralFee.toFixed(2)} {selectedDoctorCurrency}
                       </td>
                       <td>
-                        <span
-                          className={`badge ${
-                            paymentStatus === "paid" || paymentStatus === "Paid"
-                              ? "bg-success"
-                              : "bg-danger"
-                          }`}
-                        >
-                          {paymentStatus}
-                        </span>
+                        {paymentRecord ? (
+                          <span
+                            className={`badge ${
+                              paymentRecord.status === "Paid"
+                                ? "bg-success"
+                                : "bg-danger"
+                            }`}
+                          >
+                            {paymentRecord.status}
+                          </span>
+                        ) : (
+                          <span className="badge bg-warning">Unpaid</span>
+                        )}
+                      </td>
+                      <td>
+                        {paymentRecord
+                          ? formatDate(paymentRecord.paymentDateTime)
+                          : "-"}
                       </td>
                       <td>{date}</td>
                     </tr>
@@ -1081,11 +1414,15 @@ const ShowDoctorList = () => {
           style={{
             backgroundColor: "#f8f9fa",
             borderBottom: "1px solid #dee2e6",
+            display: "flex",
+            justifyContent: "space-between", // pushes title left & button right
+            alignItems: "center",
           }}
         >
-          <Modal.Title style={{ fontSize: "18px", fontWeight: "bold" }}>
-            Edit Doctor Fees - Dr. {selectedDoctor?.FirstName}{" "}
-            {selectedDoctor?.LastName}
+          <Modal.Title
+            style={{ fontSize: "18px", fontWeight: "500", color: "black" }}
+          >
+            Edit Doctor Fees
           </Modal.Title>
           <Button
             variant="light"

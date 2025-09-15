@@ -1,22 +1,22 @@
 // controllers/doctorPayment.controller.js
 const { getConnectionList } = require("../model/index.model3");
 
-const getUnpaidPayments = async (req, res) => {
-  try {
-    const database = req.headers.userDatabase;
-    const connectionList = await getConnectionList(database);
-    const db = connectionList[database];
-    const DoctorPaymentHistory = db.doctorPaymentHistory;
+// const getUnpaidPayments = async (req, res) => {
+//   try {
+//     const database = req.headers.userDatabase;
+//     const connectionList = await getConnectionList(database);
+//     const db = connectionList[database];
+//     const DoctorPaymentHistory = db.doctorPaymentHistory;
 
-    const unpaid = await DoctorPaymentHistory.findAll({
-      where: { status: "Unpaid" },
-    });
-    res.status(200).json(unpaid);
-  } catch (err) {
-    console.error("Get unpaid error:", err);
-    res.status(500).json({ error: "Failed to fetch unpaid payments" });
-  }
-};
+//     const unpaid = await DoctorPaymentHistory.findAll({
+//       where: { status: "Unpaid" },
+//     });
+//     res.status(200).json(unpaid);
+//   } catch (err) {
+//     console.error("Get unpaid error:", err);
+//     res.status(500).json({ error: "Failed to fetch unpaid payments" });
+//   }
+// };
 
 // doctorPayment.controller.js
 const makePayments = async (req, res) => {
@@ -47,49 +47,6 @@ const makePayments = async (req, res) => {
   } catch (err) {
     console.error("Error saving payments:", err);
     res.status(500).json({ error: "Failed to record payments" });
-  }
-};
-
-const getPaymentHistory = async (req, res) => {
-  try {
-    const { doctorId } = req.params;
-    const database = req.headers.userDatabase;
-
-    const connectionList = await getConnectionList(database);
-    const db = connectionList[database];
-    const DoctorPaymentHistory = db.doctorPaymentHistory;
-
-    const history = await DoctorPaymentHistory.findAll({
-      where: { doctorId },
-      order: [["paymentDateTime", "DESC"]],
-    });
-
-    res.status(200).json(history);
-  } catch (err) {
-    console.error("History error:", err);
-    res.status(500).json({ error: "Failed to fetch doctor payment history" });
-  }
-};
-
-// doctorPayment.controller.js
-const getDoctorPaidIds = async (req, res) => {
-  try {
-    const { doctorId } = req.params;
-    const database = req.headers.userDatabase;
-
-    const connectionList = await getConnectionList(database);
-    const db = connectionList[database];
-    const DoctorPaymentHistory = db.doctorPaymentHistory;
-
-    const history = await DoctorPaymentHistory.findAll({
-      where: { doctorId },
-      attributes: ["consultationId", "pathologyId", "diagnosisId"],
-    });
-
-    res.status(200).json(history);
-  } catch (err) {
-    console.error("Error fetching paid IDs:", err);
-    res.status(500).json({ error: "Failed to fetch doctor paid IDs" });
   }
 };
 
@@ -348,10 +305,7 @@ const getDoctorPaymentHistory = async (req, res) => {
 };
 
 module.exports = {
-  getUnpaidPayments,
   makePayments,
-  getPaymentHistory,
-  getDoctorPaidIds,
   getPendingPayments,
   getDoctorPaymentHistory,
 };

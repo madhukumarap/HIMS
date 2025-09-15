@@ -17,6 +17,10 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.INTEGER,
         allowNull: true,
       },
+      referralId: {   // 👈 NEW COLUMN for referral consultations
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      },
       pathologyId: {
         type: Sequelize.INTEGER,
         allowNull: true,
@@ -41,7 +45,7 @@ module.exports = (sequelize, Sequelize) => {
     },
     {
       tableName: "doctor_payment_history", // Explicitly set the table name
-      timestamps: true, // if you have createdAt/updatedAt fields
+      timestamps: true, // Adds createdAt and updatedAt
     }
   );
 

@@ -1272,7 +1272,6 @@ const ShowDoctorList = () => {
                   <th>Referral Fee</th>
                   <th>Doctor Payment Status</th>
                   <th>Payment Date</th>
-                  <th>Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -1334,6 +1333,7 @@ const ShowDoctorList = () => {
                   const paymentRecord = doctorPayments.find(
                     (payment) =>
                       payment.consultationId === referral.consultationId ||
+                      payment.referralId === referral.id || // 👈 NEW for referrals
                       payment.pathologyId === referral.pathologyId ||
                       payment.diagnosisId === referral.diagnosisId
                   );
@@ -1371,7 +1371,6 @@ const ShowDoctorList = () => {
                           ? formatDate(paymentRecord.paymentDateTime)
                           : "-"}
                       </td>
-                      <td>{date}</td>
                     </tr>
                   );
                 })}

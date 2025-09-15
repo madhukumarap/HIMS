@@ -3,19 +3,13 @@ const express = require("express");
 const router = express.Router();
 const doctorPaymentController = require("../Controller/doctorPaymentHistoryController");
 
-// Get all unpaid payments
-router.get("/unpaid", doctorPaymentController.getUnpaidPayments);
-
-// Make payments (bulk update)
+// post the payments
 router.post("/pay", doctorPaymentController.makePayments);
 
-// Get doctor payment history
-router.get("/history/:doctorId", doctorPaymentController.getPaymentHistory);
-
-// router.get("/paidIds/:doctorId", doctorPaymentController.getDoctorPaidIds);
-
+// get the data for paymnets
 router.get("/pending/:doctorId", doctorPaymentController.getPendingPayments);
 
+// get the data to recognise weather its paid or not
 router.get(
   "/payment-status/:doctorId",
   doctorPaymentController.getDoctorPaymentHistory

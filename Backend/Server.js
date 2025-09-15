@@ -282,6 +282,11 @@ app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/dicom", dicomRoutes);
 ////
 
+const doctorPaymentRoutes = require("./routes/doctorPaymentHistory.routes");
+app.use("/api/doctorPayments", doctorPaymentRoutes);
+
+/// 
+
 const PORT = process.env.PORT || 7000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);

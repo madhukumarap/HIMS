@@ -24,6 +24,11 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING(255),
       allowNull: true,
     },
+    testBookingID: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
+    },
     orthancInstanceId: {
       type: DataTypes.STRING(255),
       allowNull: true,

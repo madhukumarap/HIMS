@@ -5,8 +5,9 @@ module.exports = (sequelize, DataTypes) => {
     doctor_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "doctor_id", // Explicitly map to the database column
       references: {
-        model: "Doctors", // Table name of Doctor model
+        model: "doctors", // Use lowercase to match actual table name
         key: "id",
       },
       onDelete: "CASCADE",
@@ -35,13 +36,19 @@ module.exports = (sequelize, DataTypes) => {
     },
     updatedAt: {
       type: DataTypes.DATE,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
+      defaultValue: Sequelize.literal(
+        "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+      ),
     },
+  }, {
+    // THESE OPTIONS GO IN THE THIRD PARAMETER, NOT IN FIELD DEFINITIONS
+    tableName: "doctor_fees",
+    timestamps: true,
   });
 
-  // Associations
+  // Associations - use lowercase 'doctor' to match your available models
   DoctorFee.associate = (models) => {
-    DoctorFee.belongsTo(models.Doctor, {
+    DoctorFee.belongsTo(models.doctor, { // Changed from models.Doctor to models.doctor
       foreignKey: "doctor_id",
       as: "doctor",
       onDelete: "CASCADE",

@@ -90,39 +90,11 @@ function DiagnosticsBooking() {
   const [loadingDicom, setLoadingDicom] = useState(false);
 
   // Add this function to handle the Dicom button click:
-  const handleDicomUpload = (booking) => {
-    console.log(booking, "booking");
+  // const handleDicomUpload = (booking) => {
+  //   console.log(booking, "booking");
 
-    setSelectedBookingForDicom(booking);
-    setShowDicomModal(true);
-  };
-
-  // const handleViewDicom = async (booking) => {
-  //   console.log(booking);
-
-  //   try {
-  //     setLoadingDicom(true);
-  //     setSelectedPatientForDicom(booking);
-
-  //     // Fetch DICOM files for this specific patient using your existing API
-  //     const response = await getDicomFiles(booking.PatientID);
-
-  //     if (
-  //       response.data &&
-  //       response.data.rows &&
-  //       response.data.rows.length > 0
-  //     ) {
-  //       setDicomFiles(response.data.rows);
-  //       setShowDicomViewerModal(true);
-  //     } else {
-  //       toast.error("No DICOM files found for this patient");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching DICOM files:", error);
-  //     toast.error("Failed to fetch DICOM files");
-  //   } finally {
-  //     setLoadingDicom(false);
-  //   }
+  //   setSelectedBookingForDicom(booking);
+  //   setShowDicomModal(true);
   // };
 
   const handleViewDicom = async (booking) => {
@@ -130,9 +102,8 @@ function DiagnosticsBooking() {
       setLoadingDicom(true);
       setSelectedPatientForDicom(booking);
 
-      // --- 1. Fetch DICOM files by PatientID ---
-      const dicomResponse = await getDicomFiles(booking.PatientID);
-      console.log(dicomResponse,"dicomResponse")
+      // --- 1. Fetch DICOM files by PatientID AND testBookingID ---
+      const dicomResponse = await getDicomFiles(booking.PatientID, booking.id); // Pass both patientId and testBookingID
       if (
         dicomResponse.data &&
         dicomResponse.data.rows &&
@@ -140,7 +111,7 @@ function DiagnosticsBooking() {
       ) {
         setDicomFiles(dicomResponse.data.rows);
       } else {
-        toast.info("No DICOM files found for this patient");
+        toast.info("No DICOM files found for this patient and booking");
       }
 
       // --- 2. Fetch Images by BookingID ---

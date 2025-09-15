@@ -30,8 +30,6 @@ const DownloadDoctorEarningsReport = ({
     }
   };
 
-  console.log(doctor, "doctor");
-
   // Function to get applicable fee for a patient
   const getApplicableFee = (doctorId, consultationDate) => {
     const doctorFeeHistory = doctorFees.filter(
@@ -291,13 +289,9 @@ const DownloadDoctorEarningsReport = ({
     <button
       title="Download Earnings Report"
       style={{
-        fontSize: "12px",
-        padding: "4px 5px",
-        marginTop: "25px",
-        backgroundColor: "#1111",
-        color: "black",
+        marginTop: "22px",
       }}
-      className="btn btn-secondary mr-2"
+      className="btn btn-secondary"
       onClick={downloadDoctorEarningsReport}
     >
       <FaDownload /> Download Report

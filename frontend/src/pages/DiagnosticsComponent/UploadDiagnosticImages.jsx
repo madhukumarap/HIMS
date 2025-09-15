@@ -232,6 +232,7 @@ function ImageUploader({ testBookingID, SelectedTest, bookingData }) {
         formData.append("file", dicomFile); // backend expects "file"
         formData.append("patientId", bookingData?.PatientID);
         formData.append("doctorId", bookingData?.doctorId);
+        formData.append("testBookingID", testBookingID);
 
         await uploadDicomFile(formData);
       }

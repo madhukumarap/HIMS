@@ -35,6 +35,7 @@ const CreateDatabaseandTables = (database, hospitalNamewithdot) => {
 
   db.Sequelize = Sequelize;
   db.sequelize = sequelize;
+  db.DoctorFee = require("./Doctors_Fees.js")(sequelize, DataTypes);
   db.DicomFile = require("./Dicom_Files.js")(sequelize, DataTypes);
   db.userRole = require("./userRole.model")(sequelize, Sequelize);
   db.Hospital = require("./Hospital.js")(sequelize, DataTypes);

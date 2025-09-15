@@ -95,6 +95,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     referraldoctorId: {
       type: DataTypes.INTEGER,
+      field: "referralDoctorId", // match the actual DB column name exactly
       allowNull: true,
     },
   });

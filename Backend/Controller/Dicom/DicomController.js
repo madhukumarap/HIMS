@@ -49,43 +49,6 @@ const handleMulterError = (err, req, res, next) => {
   next(err);
 };
 
-// async function listDicomFiles(req, res) {
-//   try {
-//     const database = req.headers.userDatabase;
-//     const connectionList = await getConnectionList(database);
-//     const db = connectionList[database];
-//     const DicomFile = db.DicomFile;
-//     const User = db.user;
-
-//     // Check if user has admin role - adjust based on your auth setup
-//     // You might need to get role from req.role or req.userRole
-//     const isAll =
-//       (req.role === "Admin" || req.userRole === "Admin") &&
-//       req.query.all === "1";
-//     const where = isAll ? {} : { userId: req.userId };
-
-//     const rows = await DicomFile.findAll({
-//       where,
-//       order: [["createdAt", "DESC"]],
-//       include: [
-//         {
-//           model: User,
-//           attributes: ["id", "name", "email"],
-//           as: "user",
-//         },
-//       ],
-//     });
-
-//     return res.json({ count: rows.length, rows });
-//   } catch (err) {
-//     console.error("List DICOM files error:", err);
-//     return res.status(500).json({
-//       message: "Server error",
-//       error: err.message,
-//     });
-//   }
-// }
-
 async function listDicomFiles(req, res) {
   const database = req.headers.userDatabase;
   const connectionList = await getConnectionList(database);
@@ -93,12 +56,30 @@ async function listDicomFiles(req, res) {
   const DicomFile = db.DicomFile;
 
   try {
-    // Admin can see all
+    const { patientId, testBookingID } = req.query;
+
+    // Admin can see all if no specific filters
     const isAll =
       req.user && req.user.role === "Admin" && req.query.all === "1";
 
-    // If not admin, filter by patientId
-    const where = isAll ? {} : { patientId: req.query.patientId };
+    // Build where clause
+    let where = {};
+
+    if (!isAll) {
+      // For non-admin OR when specific filters are provided
+      if (patientId) {
+        where.patientId = patientId;
+      }
+
+      if (testBookingID) {
+        where.testBookingID = testBookingID;
+      }
+
+      // If no filters provided for non-admin, return empty or handle as needed
+      if (Object.keys(where).length === 0 && !isAll) {
+        return res.json({ count: 0, rows: [] });
+      }
+    }
 
     const rows = await DicomFile.findAll({
       where,
@@ -296,7 +277,7 @@ async function uploadDicomFileHandler(req, res) {
       });
       console.log("✅ Orthanc upload successful:", orthancResp);
     } catch (uploadError) {
-      console.log(uploadError)
+      console.log(uploadError);
       console.error("❌ Orthanc upload failed:", uploadError.message);
       if (filePath && fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
@@ -320,11 +301,14 @@ async function uploadDicomFileHandler(req, res) {
 
     const DicomFile = db.DicomFile;
 
+    console.log(req.body.testBookingID, "orthancResp");
+
     // Save in DB - use req.userId instead of req.user.id
     const rec = await DicomFile.create({
       userId: req.userId,
       patientId: req.body.patientId || null,
       doctorId: req.body.doctorId || null,
+      testBookingID: req.body.testBookingID || null,
       consultationId: req.body.consultationId || null,
       orthancInstanceId: orthancInstanceId || null,
       orthancStudyId: orthancStudyId || null,

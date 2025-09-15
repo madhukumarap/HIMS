@@ -6,26 +6,20 @@ import AuthService from "../../../services/auth.service";
 
 const currentUser = AuthService.getCurrentUser();
 
-const getToken = () => localStorage.getItem('xpert_token');
-
-
-// export const getDicomFiles = () => {
-//   return axios.get(`${import.meta.env.VITE_API_URL}/api/getDicom`, {
-//     headers: { Authorization: `${currentUser?.Token}`, },
-//   });
-// };
-
-// api/dicom.js
-export const getDicomFiles = (patientId = null) => {
+export const getDicomFiles = (patientId = null, testBookingID = null) => {
   const currentUser = AuthService.getCurrentUser();
   const params = {};
   
   if (patientId) {
     params.patientId = patientId;
   }
+  
+  if (testBookingID) {
+    params.testBookingID = testBookingID;
+  }
 
   return axios.get(`${import.meta.env.VITE_API_URL}/api/getDicom`, {
-    params, // Add patientId as query parameter
+    params, // Add both patientId and testBookingID as query parameters
     headers: { 
       Authorization: `${currentUser?.Token}`,
     },

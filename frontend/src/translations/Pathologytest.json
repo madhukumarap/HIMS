@@ -25,7 +25,7 @@
     "Delete": "Delete",
     "BookingDeletedSuccessfully": "Booking deleted successfully",
     "FailedtoDeleteBooking": "Failed to delete booking",
-    "TestBookingPatientList": "Test Booking(Patient List)",
+    "Test Booking(Patient List)": "Test Booking(Patient List)",
     "TestRegistration": "Test Registration",
     "SearchbyPatientNameorPhone": "Search by Patient Name or Phone",
     "SearchpatientbyNameorPhone": "Search patient by Name or Phone",

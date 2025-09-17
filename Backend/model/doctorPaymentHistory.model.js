@@ -13,11 +13,15 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
+      patientId: {
+        type: Sequelize.INTEGER,
+        allowNull: false, // or true if sometimes you don’t have it
+      },
       consultationId: {
         type: Sequelize.INTEGER,
         allowNull: true,
       },
-      referralId: {   // 👈 NEW COLUMN for referral consultations
+      referralId: {
         type: Sequelize.INTEGER,
         allowNull: true,
       },

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { FaDownload } from "react-icons/fa";
@@ -10,6 +10,7 @@ const DownloadDoctorEarningsReport = ({
   patients,
   doctorFees,
   dateRange,
+  paymentStatus,
 }) => {
   const currentUser = AuthService.getCurrentUser();
 
@@ -18,9 +19,7 @@ const DownloadDoctorEarningsReport = ({
       const response = await axios.get(
         `${import.meta.env.VITE_API_URL}/api/getLastCreatedHospital`,
         {
-          headers: {
-            Authorization: `${currentUser?.Token}`,
-          },
+          headers: { Authorization: `${currentUser?.Token}` },
         }
       );
       return response.data.data;
@@ -30,53 +29,46 @@ const DownloadDoctorEarningsReport = ({
     }
   };
 
-  // Function to get applicable fee for a patient
   const getApplicableFee = (doctorId, consultationDate) => {
     const doctorFeeHistory = doctorFees.filter(
       (fee) => fee.doctorId === doctorId
     );
-
     if (doctorFeeHistory.length === 0) return 0;
 
-    // Sort fees by feeUpdatedAt date (newest first)
     const sortedFees = doctorFeeHistory.sort(
       (a, b) => new Date(b.feeUpdatedAt) - new Date(a.feeUpdatedAt)
     );
 
-    // Find the fee that was applicable at the time of consultation
     const consultationDateTime = new Date(consultationDate);
-
     for (const fee of sortedFees) {
-      const feeUpdatedAt = new Date(fee.feeUpdatedAt);
-      if (consultationDateTime >= feeUpdatedAt) {
+      if (consultationDateTime >= new Date(fee.feeUpdatedAt)) {
         return parseFloat(fee.consultationFee);
       }
     }
-
-    // If no fee found that was updated before consultation, use the oldest fee
-    const oldestFee = sortedFees[sortedFees.length - 1];
-    return parseFloat(oldestFee.consultationFee);
+    return parseFloat(sortedFees[sortedFees.length - 1].consultationFee);
   };
 
-  // Filter patients by date range if provided
   const filterPatientsByDateRange = () => {
     if (!dateRange.startDate && !dateRange.endDate) return patients;
-
     const start = dateRange.startDate ? new Date(dateRange.startDate) : null;
     const end = dateRange.endDate ? new Date(dateRange.endDate) : null;
 
     return patients.filter((patient) => {
       const patientDate = new Date(patient.bookingStartDate);
-
-      if (start && end) {
-        return patientDate >= start && patientDate <= end;
-      } else if (start) {
-        return patientDate >= start;
-      } else if (end) {
-        return patientDate <= end;
-      }
+      if (start && end) return patientDate >= start && patientDate <= end;
+      if (start) return patientDate >= start;
+      if (end) return patientDate <= end;
       return true;
     });
+  };
+
+  const getPaymentRecord = (patient) => {
+    const doctorPayments = Array.isArray(paymentStatus?.[doctor.id])
+      ? paymentStatus[doctor.id]
+      : [];
+    return doctorPayments.find(
+      (p) => Number(p.patientId) === Number(patient.id)
+    );
   };
 
   const downloadDoctorEarningsReport = async () => {
@@ -90,53 +82,40 @@ const DownloadDoctorEarningsReport = ({
 
     const doc = new jsPDF();
 
-    // If hospital and logo exist
-    if (hospital && hospital.logo) {
-      const hospitalLogoBase64 = hospital.logo;
-      const hospitalLogo = new Image();
-      hospitalLogo.src = `data:image/png;base64,${hospitalLogoBase64}`;
-
-      hospitalLogo.onload = () => {
-        doc.addImage(hospitalLogo, "PNG", 160, 15, 30, 30);
-        addHospitalInfo(hospital);
-        addDoctorEarningsInfo(filteredPatients);
-        addPatientTable(filteredPatients);
-        addPageNumbers(doc);
-        doc.save(`Doctor_Consultation_Earnings_Report_${doctor.id}.pdf`);
-      };
-    } else {
-      // Generate without logo if not available
+    // Handle hospital logo
+    const addReportContent = () => {
       addHospitalInfo(hospital);
       addDoctorEarningsInfo(filteredPatients);
       addPatientTable(filteredPatients);
       addPageNumbers(doc);
       doc.save(`Doctor_Consultation_Earnings_Report_${doctor.id}.pdf`);
+    };
+
+    if (hospital && hospital.logo) {
+      const hospitalLogoBase64 = hospital.logo;
+      const hospitalLogo = new Image();
+      hospitalLogo.src = `data:image/png;base64,${hospitalLogoBase64}`;
+      hospitalLogo.onload = () => {
+        doc.addImage(hospitalLogo, "PNG", 160, 15, 30, 30);
+        addReportContent();
+      };
+    } else {
+      addReportContent();
     }
 
     function addHospitalInfo(hospitalData) {
-      if (hospitalData) {
-        const hospitalName = hospitalData.hospitalName || "";
-        const hospitalAddressLine1 = hospitalData.address || "";
-        const hospitalAddressLine2 = hospitalData.pincode
-          ? `${hospitalData.pincode}, India`
-          : "";
-        const email = hospitalData.email ? `Mail: ${hospitalData.email}` : "";
-        const landline = hospitalData.landline
-          ? `Tel: ${hospitalData.landline}`
-          : "";
-
-        doc.setFontSize(16);
-        doc.text(hospitalName, 20, 20);
-        doc.setFontSize(12);
-        if (hospitalAddressLine1) doc.text(hospitalAddressLine1, 20, 30);
-        if (hospitalAddressLine2) doc.text(hospitalAddressLine2, 20, 35);
-        if (landline) doc.text(landline, 20, 40);
-        if (email) doc.text(email, 20, 45);
-      }
+      if (!hospitalData) return;
+      const { hospitalName, address, pincode, email, landline } = hospitalData;
+      doc.setFontSize(16);
+      doc.text(hospitalName || "", 20, 20);
+      doc.setFontSize(12);
+      if (address) doc.text(address, 20, 30);
+      if (pincode) doc.text(`${pincode}, India`, 20, 35);
+      if (landline) doc.text(`Tel: ${landline}`, 20, 40);
+      if (email) doc.text(`Mail: ${email}`, 20, 45);
     }
 
     function addDoctorEarningsInfo(filteredPatients) {
-      // Add title
       doc.setFillColor("#48bcdf");
       const titleHeight = 10;
       doc.rect(0, 53, doc.internal.pageSize.getWidth(), titleHeight, "F");
@@ -149,20 +128,20 @@ const DownloadDoctorEarningsReport = ({
         { align: "center" }
       );
 
-      // Add date range info if filtered
       if (dateRange.startDate || dateRange.endDate) {
         doc.setTextColor("#000000");
         doc.setFontSize(10);
-        const dateRangeText = `Date Range: ${
-          dateRange.startDate || "Start"
-        } to ${dateRange.endDate || "End"}`;
-        doc.text(dateRangeText, 20, 70);
+        doc.text(
+          `Date Range: ${dateRange.startDate || "Start"} to ${
+            dateRange.endDate || "End"
+          }`,
+          20,
+          70
+        );
       }
 
       doc.setTextColor("#000000");
       doc.setFontSize(12);
-
-      // Add doctor information
       doc.text("Doctor Information:", 20, 75);
       doc.setFontSize(9);
       doc.text(
@@ -176,15 +155,11 @@ const DownloadDoctorEarningsReport = ({
 
       doc.line(0, 105, doc.internal.pageSize.getWidth(), 105);
 
-      // Calculate total earnings with applicable fees
-      let totalEarnings = 0;
-      filteredPatients.forEach((patient) => {
-        const applicableFee = getApplicableFee(
-          doctor.id,
-          patient.bookingStartDate
-        );
-        totalEarnings += applicableFee;
-      });
+      const totalEarnings = filteredPatients.reduce(
+        (sum, patient) =>
+          sum + getApplicableFee(doctor.id, patient.bookingStartDate),
+        0
+      );
 
       doc.setFontSize(12);
       doc.text("Earnings Summary:", 20, 115);
@@ -199,12 +174,7 @@ const DownloadDoctorEarningsReport = ({
           doctor.id,
           patient.bookingStartDate
         );
-        const applicableFeeRecord = doctorFees
-          .filter((fee) => fee.doctorId === doctor.id)
-          .find(
-            (fee) =>
-              new Date(patient.bookingStartDate) >= new Date(fee.feeUpdatedAt)
-          );
+        const paymentRecord = getPaymentRecord(patient);
 
         return [
           index + 1,
@@ -212,12 +182,13 @@ const DownloadDoctorEarningsReport = ({
           patient.PatientPhone,
           patient.visitType,
           patient.reason,
-          `${patient.amount} ${patient.Currency}`,
-          `${applicableFee} ${
-            applicableFeeRecord?.consultationCurrency || "INR"
-          }`,
+          `${patient.amount} ${patient.Currency || "INR"}`,
+          `${applicableFee} INR`,
           new Date(patient.bookingStartDate).toLocaleDateString(),
-          patient.paymentStatus,
+          paymentRecord ? paymentRecord.status : "Unpaid",
+          paymentRecord
+            ? new Date(paymentRecord.paymentDateTime).toLocaleDateString()
+            : "-",
         ];
       });
 
@@ -233,28 +204,23 @@ const DownloadDoctorEarningsReport = ({
             "Doctor's Fee",
             "Consultation Date",
             "Payment Status",
+            "Payment Date",
           ],
         ],
         body: tableData,
         startY: 140,
-        styles: {
-          fontSize: 8,
-          cellPadding: 2,
-        },
+        styles: { fontSize: 8, cellPadding: 2 },
         headStyles: {
           fillColor: [72, 188, 223],
           textColor: [255, 255, 255],
           fontStyle: "bold",
         },
-        alternateRowStyles: {
-          fillColor: [240, 240, 240],
-        },
+        alternateRowStyles: { fillColor: [240, 240, 240] },
       });
     }
 
     function addPageNumbers(doc) {
       const totalPages = doc.internal.getNumberOfPages();
-
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
         doc.setFontSize(10);
@@ -265,7 +231,6 @@ const DownloadDoctorEarningsReport = ({
           doc.internal.pageSize.getHeight() - 10
         );
 
-        // Add footer
         doc.setFillColor("#48bcdf");
         doc.rect(
           0,
@@ -288,9 +253,7 @@ const DownloadDoctorEarningsReport = ({
   return (
     <button
       title="Download Earnings Report"
-      style={{
-        marginTop: "22px",
-      }}
+      style={{ marginTop: "22px" }}
       className="btn btn-secondary"
       onClick={downloadDoctorEarningsReport}
     >

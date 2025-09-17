@@ -112,8 +112,6 @@ const ShowDoctorList = () => {
     }
   };
 
-  console.log(paymentStatus, "paymentStatus");
-
   const fetchDoctorFees = async () => {
     try {
       const response = await axios.get(
@@ -639,6 +637,8 @@ const ShowDoctorList = () => {
     }
   };
 
+  console.log(pendingPayments);
+
   // Toggle one payment
   const togglePayment = (paymentId) => {
     setSelectedPayments((prev) =>
@@ -672,6 +672,7 @@ const ShowDoctorList = () => {
           doctorId,
           payments: selectedData.map((p) => ({
             id: p.id,
+            patientId: p.patientId,
             type: p.type,
             amount: p.amount,
             date: p.date,
@@ -877,7 +878,6 @@ const ShowDoctorList = () => {
       </Container>
 
       {/* Payment Modal */}
-
       <Modal
         backdrop="static"
         dialogClassName="modal-lg"
@@ -1041,6 +1041,7 @@ const ShowDoctorList = () => {
                 patients={filteredConsultations}
                 doctorFees={doctorFees}
                 dateRange={dateRange}
+                paymentStatus={paymentStatus}
               />
             </div>
           </div>
@@ -1248,6 +1249,7 @@ const ShowDoctorList = () => {
                 patients={filteredReferrals}
                 dateRange={dateRange}
                 enterCodes={enterCodes}
+                paymentStatus={paymentStatus}
               />
             </div>
           </div>

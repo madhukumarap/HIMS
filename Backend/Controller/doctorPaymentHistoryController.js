@@ -21,10 +21,8 @@ const { getConnectionList } = require("../model/index.model3");
 // doctorPayment.controller.js
 const makePayments = async (req, res) => {
   try {
-    const { doctorId, payments } = req.body; // payments: [{ id, type, amount }]
+    const { doctorId, payments } = req.body;
     const database = req.headers.userDatabase;
-
-    console.log(doctorId, payments, "Raw Data");
 
     const connectionList = await getConnectionList(database);
     const db = connectionList[database];
@@ -32,8 +30,9 @@ const makePayments = async (req, res) => {
 
     const records = payments.map((p) => ({
       doctorId,
+      patientId: p.patientId, // ✅ Add patientId here
       consultationId: p.type === "Consultation" ? p.id : null,
-      referralId: p.type === "Referral" ? p.id : null, // 👈 NEW (store consultationId in referralId for referrals)
+      referralId: p.type === "Referral" ? p.id : null,
       pathologyId: p.type === "Pathology" ? p.id : null,
       diagnosisId: p.type === "Diagnosis" ? p.id : null,
       paidAmount: p.amount,
@@ -147,6 +146,7 @@ const getPendingPayments = async (req, res) => {
         "bookingStartDate",
         "referralDoctorId",
         "doctorId",
+        "patientId", // Added patientId
       ],
     });
 
@@ -175,6 +175,7 @@ const getPendingPayments = async (req, res) => {
           amount: fee,
           date: c.dataValues.bookingStartDate,
           currency: c.dataValues.Currency || "INR",
+          patientId: c.dataValues.patientId || null, // Added patientId
         });
       }
 
@@ -196,6 +197,7 @@ const getPendingPayments = async (req, res) => {
           amount: referralFee,
           date: c.dataValues.bookingStartDate,
           currency: c.dataValues.Currency || "INR",
+          patientId: c.dataValues.patientId || null, // Added patientId
         });
       }
     });
@@ -213,6 +215,7 @@ const getPendingPayments = async (req, res) => {
         "PaymentDate",
         "selectedTests",
         "commissionType",
+        "PatientID", // Added PatientID
       ],
     });
 
@@ -232,6 +235,7 @@ const getPendingPayments = async (req, res) => {
           date: p.PaymentDate,
           currency: p.Currency || "INR",
           testName: p.selectedTests || "N/A",
+          patientId: p.PatientID || null, // Added patientId
         });
       }
     });
@@ -249,6 +253,7 @@ const getPendingPayments = async (req, res) => {
         "PaymentDate",
         "selectedTests",
         "commissionType",
+        "PatientID", // Added PatientID
       ],
     });
 
@@ -268,6 +273,7 @@ const getPendingPayments = async (req, res) => {
           date: d.PaymentDate,
           currency: d.Currency || "INR",
           testName: d.selectedTests || "N/A",
+          patientId: d.PatientID || null, // Added patientId
         });
       }
     });
@@ -287,9 +293,9 @@ const getDoctorPaymentHistory = async (req, res) => {
     const connectionList = await getConnectionList(database);
     const db = connectionList[database];
 
-    // Get all payments for this doctor
+    // Get all payments for this doctor including patientId
     const [paymentHistory] = await db.sequelize.query(
-      `SELECT id, doctorId, consultationId, referralId, pathologyId, diagnosisId, 
+      `SELECT id, doctorId, patientId, consultationId, referralId, pathologyId, diagnosisId, 
               paidAmount, paymentDateTime, status, createdAt, updatedAt
        FROM doctor_payment_history
        WHERE doctorId = ?

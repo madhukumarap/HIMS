@@ -135,12 +135,9 @@ const SaveDoctor = async (req, res) => {
   const connectionList = await getConnectionList(database);
   const db = connectionList[database];
   const Doctor = db.doctor;
-  const DoctorFee = db.DoctorFee;
   const User = db.user;
-  const Test = db.DiagnosticsBookingModel;
 
   try {
-    // Extract the data from the request body
     const {
       firstName,
       middleName,
@@ -159,142 +156,155 @@ const SaveDoctor = async (req, res) => {
       referralFee,
     } = req.body;
 
-    // check if user already exist in doctor table;
-
-    const existingDoc = await Doctor.findOne({
-      where: { username },
-    });
-    console.log("existingDoc: " + JSON.stringify(existingDoc));
+    // Check if doctor already exists
+    const existingDoc = await Doctor.findOne({ where: { username } });
     if (existingDoc) {
-      // Update the doctor
-      try {
-        if (consultationFee !== undefined)
-          existingDoc.consultationFee = consultationFee;
-        if (discount !== undefined) existingDoc.discount = discount;
-        if (consultationCurrency !== undefined)
-          existingDoc.consultationCurrency = consultationCurrency;
-
-        await existingDoc.save();
-
-        res.status(200).json({ message: "Doctor updated successfully" });
-        return;
-      } catch (e) {
-        console.log("errr ", e);
-        res.status(400).json({ message: "Failed to update doctor!" });
-        return;
-      }
-
-      return;
+      if (consultationFee !== undefined)
+        existingDoc.consultationFee = consultationFee;
+      if (discount !== undefined) existingDoc.discount = discount;
+      if (consultationCurrency !== undefined)
+        existingDoc.consultationCurrency = consultationCurrency;
+      await existingDoc.save();
+      return res.status(200).json({ message: "Doctor updated successfully" });
     }
-    const signatureImage = req.file;
-    let imageBuffer;
-    let imageBinaryData;
-    if (signatureImage) {
-      imageBuffer = fs.readFileSync(req.file.path);
+
+    // Handle signature image
+    let imageBinaryData = null;
+    if (req.file) {
+      const imageBuffer = fs.readFileSync(req.file.path);
       imageBinaryData = Buffer.from(imageBuffer).toString("base64");
     }
-    //return;
-    // Call the signup API to create a new user
-    const HospitalName = await checkUser(req, res);
-    console.log("ClientName2: " + HospitalName);
 
-    const signupResponse = await axios.post(
-      `${process.env.REMOTE_SERVER_BASE_URL}/api/${HospitalName}/auth/signup`,
-      {
-        name: firstName + " " + middleName + " " + lastName,
-        username: username,
-        email: email,
-        phoneNumber: phoneNo,
-        password: password,
-        status: "active",
-        roles: ["doctor"],
+    const HospitalName = req.HospitalName;
+
+    const mainDbConnection = await getConnectionList("healthcare");
+    const mainDb = mainDbConnection["healthcare"];
+
+    const hospitalRecord = await mainDb.HospitalMain.findOne({
+      where: { databaseName: HospitalName },
+    });
+
+    const hospitalId = hospitalRecord?.id;
+
+    // Call signup API to create user
+    try {
+      await axios.post(
+        `${process.env.REMOTE_SERVER_BASE_URL}/api/${HospitalName}/auth/signup`,
+        {
+          name: `${firstName} ${middleName} ${lastName}`,
+          username,
+          email,
+          phoneNumber: phoneNo,
+          password,
+          status: "active",
+          roles: ["doctor"],
+          hospitalId: hospitalId,
+        }
+      );
+    } catch (axiosError) {
+      if (
+        axiosError.response &&
+        axiosError.response.status === 400 &&
+        axiosError.response.data.message === "Duplicate record found"
+      ) {
+        return res.status(400).json({
+          message: `Doctor user already exists in system (username/email/phone duplicate)`,
+        });
+      } else {
+        console.error("Error calling signup API:", axiosError.message);
+        return res.status(500).json({
+          message: "Error creating doctor user",
+          error: axiosError.message,
+        });
       }
-    );
+    }
+
+    // Send registration email
     const mailOptions = {
       from: "hims.pharmacy.tech@gmail.com",
       to: email,
       subject: "Registration Successful",
       html: `
-    <h3>Registration Successful - HIMS </h3>
-    <p>Your registration with HIMS is complete.</p>
-    <p>Your account details:</p>
-    <ul>
-        <li><strong>Name:</strong>Dr. ${firstName} ${middleName} ${lastName}</li>
-       <li><strong>RegistrationNo:</strong> ${registrationNo}</li>
-        <li><strong>Username:</strong> ${username}</li>
-        <li><strong>Email:</strong> ${email}</li>
-        <li><strong>Phone Number:</strong>  ${phoneNo}</li>
-    </ul>
-    <p>Please use the provided username to reset your password using forgot password option.</p>
-    <p>Thank you!</p>
-`,
+        <h3>Registration Successful - HIMS</h3>
+        <p>Your registration with HIMS is complete.</p>
+        <p>Your account details:</p>
+        <ul>
+          <li><strong>Name:</strong> Dr. ${firstName} ${middleName} ${lastName}</li>
+          <li><strong>RegistrationNo:</strong> ${registrationNo}</li>
+          <li><strong>Username:</strong> ${username}</li>
+          <li><strong>Email:</strong> ${email}</li>
+          <li><strong>Phone Number:</strong> ${phoneNo}</li>
+        </ul>
+      `,
     };
 
-    // Create a new doctor instance
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) console.log("Error sending email:", error);
+      else console.log("Email sent:", info.response);
+    });
+
+    // Create doctor in database
     const doctor = await Doctor.create({
       Dr: "DR",
       FirstName: firstName,
-      MiddleName: middleName,
+      MiddleName: middleName || null,
       LastName: lastName,
       registrationNo,
       phoneNo,
       countryCode,
-      email: email,
-      address: address,
-      username: username,
-      signatureImage: imageBinaryData,
-      consultationFee: consultationFee ? consultationFee : 0,
+      email,
+      address,
+      username,
+      signatureImage: imageBinaryData || null,
+      consultationFee: consultationFee || 0,
       consultationCurrency,
       doctorsType,
-      referralFee: referralFee.length == 0 ? 0 : referralFee,
+      referralFee: referralFee || 0,
     });
 
-    const dataFee = await db.sequelize.query(
-      `
+    // Call UpdateDoctorFees after creating the doctor
+    await UpdateDoctorFeesHelper(
+      db,
+      doctor.id,
+      consultationFee,
+      referralFee,
+      consultationCurrency
+    );
+
+    res.status(200).json({ message: "Doctor saved successfully" });
+  } catch (error) {
+    console.error("Error saving doctor:", error);
+    return res.status(500).json({
+      message: "An error occurred while saving the doctor",
+      error: error.message,
+    });
+  }
+};
+
+// Helper to call UpdateDoctorFees logic
+const UpdateDoctorFeesHelper = async (
+  db,
+  doctorId,
+  consultationFee = 0,
+  referralFee = 0,
+  consultationCurrency = "INR"
+) => {
+  await db.sequelize.query(
+    `
     INSERT INTO doctor_fees 
     (doctor_id, consultationFee, consultationCurrency, referralFee, createdAt, updatedAt)
     VALUES (?, ?, ?, ?, NOW(), NOW())
-  `,
-      {
-        replacements: [
-          doctor.id, // doctor_id
-          consultationFee ? consultationFee : 0, // consultationFee
-          consultationCurrency || "INR", // consultationCurrency
-          referralFee.length === 0 ? 0 : referralFee, // referralFee
-        ],
-        type: QueryTypes.INSERT,
-      }
-    );
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log("Error sending  email:", error);
-        // res.status(500).json({ message: 'Error sending  email' });
-      } else {
-        console.log("hello");
-
-        console.log(" email sent:", info.response);
-      }
-    });
-    // Send a success response
-    res.status(200).json({ message: "Doctor saved successfully" });
-  } catch (signupError) {
-    // Handle any errors
-    console.log("Error during signup:", signupError);
-    console.log("Error during signup:", signupError.response);
-    if (
-      signupError.response &&
-      signupError.response.data &&
-      signupError.response.data.message
-    ) {
-      return res.status(400).json({
-        message: `Failed to create Doctor. ${signupError.response.data.message}`,
-      });
-    } else {
-      res
-        .status(500)
-        .json({ message: "An error occurred while saving the doctor" });
+    `,
+    {
+      replacements: [
+        doctorId,
+        consultationFee,
+        consultationCurrency,
+        referralFee,
+      ],
+      type: QueryTypes.INSERT,
     }
-  }
+  );
 };
 
 const getDoctorData = async (req, res) => {

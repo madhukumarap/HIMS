@@ -10,6 +10,7 @@ const DownloadDoctorReferalEarningsReport = ({
   patients,
   dateRange,
   enterCodes,
+  paymentStatus,
 }) => {
   const currentUser = AuthService.getCurrentUser();
 
@@ -40,7 +41,6 @@ const DownloadDoctorReferalEarningsReport = ({
     return patients.filter((patient) => {
       let patientDate;
 
-      // Handle different date fields for different referral types
       if (patient.bookingStartDate) {
         patientDate = new Date(patient.bookingStartDate);
       } else if (patient.PaymentDate) {
@@ -62,20 +62,15 @@ const DownloadDoctorReferalEarningsReport = ({
     });
   };
 
-  // Calculate referral fee based on type and enter codes
+  // Calculate referral fee
   const calculateReferralFee = (referral) => {
-    // For consultation referrals
     if (referral.type === "Consultation") {
       return parseFloat(doctor.referralFee) || 0;
-    }
-    // For diagnostics and pathology referrals
-    else if (referral.commissionValue) {
-      // Find the enter code
+    } else if (referral.commissionValue) {
       const enterCode = enterCodes.find(
         (code) => code.codeType === referral.commissionValue
       );
       if (enterCode) {
-        // Extract percentage value (e.g., "10%" -> 10)
         const percentage = parseFloat(enterCode.value);
         const amount =
           parseFloat(referral.PaidAmount) ||
@@ -85,6 +80,35 @@ const DownloadDoctorReferalEarningsReport = ({
       }
     }
     return 0;
+  };
+
+  const getPaymentRecord = (patient) => {
+    const doctorPayments = Array.isArray(paymentStatus?.[doctor.id])
+      ? paymentStatus[doctor.id]
+      : [];
+
+    // Match by patientId AND type
+    return doctorPayments.find((p) => {
+      if (patient.type === "Consultation") {
+        return Number(p.patientId) === Number(patient.id);
+      }
+      if (patient.type === "Diagnostics") {
+        return Number(p.patientId) === Number(patient.id);
+      }
+      if (patient.type === "Pathology") {
+        return Number(p.patientId) === Number(patient.id);
+      }
+      return false;
+    });
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0-based
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const downloadDoctorEarningsReport = async () => {
@@ -98,7 +122,22 @@ const DownloadDoctorReferalEarningsReport = ({
 
     const doc = new jsPDF();
 
-    // If hospital and logo exist
+    // ✅ build filename here
+    let fileName = `Doctor_Referral_Earnings_Report_${doctor.id}.pdf`;
+
+    if (dateRange.startDate || dateRange.endDate) {
+      const doctorName = `Dr_${doctor.FirstName || ""}_${doctor.LastName || ""}`
+        .replace(/\s+/g, "_")
+        .replace(/[^\w]/g, "");
+
+      const startDate = dateRange.startDate
+        ? formatDate(dateRange.startDate)
+        : "Start";
+      const endDate = dateRange.endDate ? formatDate(dateRange.endDate) : "End";
+
+      fileName = `${doctorName}_Referral_Report_${startDate}_to_${endDate}.pdf`;
+    }
+
     if (hospital && hospital.logo) {
       const hospitalLogoBase64 = hospital.logo;
       const hospitalLogo = new Image();
@@ -110,15 +149,14 @@ const DownloadDoctorReferalEarningsReport = ({
         addDoctorEarningsInfo(filteredPatients);
         addPatientTable(filteredPatients);
         addPageNumbers(doc);
-        doc.save(`Doctor_Referral_Earnings_Report_${doctor.id}.pdf`);
+        doc.save(fileName);
       };
     } else {
-      // Generate without logo if not available
       addHospitalInfo(hospital);
       addDoctorEarningsInfo(filteredPatients);
       addPatientTable(filteredPatients);
       addPageNumbers(doc);
-      doc.save(`Doctor_Referral_Earnings_Report_${doctor.id}.pdf`);
+      doc.save(fileName);
     }
 
     function addHospitalInfo(hospitalData) {
@@ -144,7 +182,6 @@ const DownloadDoctorReferalEarningsReport = ({
     }
 
     function addDoctorEarningsInfo(filteredPatients) {
-      // Add title
       doc.setFillColor("#48bcdf");
       const titleHeight = 10;
       doc.rect(0, 53, doc.internal.pageSize.getWidth(), titleHeight, "F");
@@ -157,7 +194,6 @@ const DownloadDoctorReferalEarningsReport = ({
         { align: "center" }
       );
 
-      // Add date range info if filtered
       if (dateRange.startDate || dateRange.endDate) {
         doc.setTextColor("#000000");
         doc.setFontSize(10);
@@ -170,7 +206,6 @@ const DownloadDoctorReferalEarningsReport = ({
       doc.setTextColor("#000000");
       doc.setFontSize(12);
 
-      // Add doctor information
       doc.text("Doctor Information:", 20, 75);
       doc.setFontSize(9);
       doc.text(
@@ -187,22 +222,20 @@ const DownloadDoctorReferalEarningsReport = ({
         105
       );
 
-      // Add enter code information
       if (enterCodes && enterCodes.length > 0) {
-        doc.text("Commission Rates:", 20, 115);
-        enterCodes.forEach((code, index) => {
-          doc.text(`${code.codeType}: ${code.value}`, 20, 120 + index * 5);
-        });
+        // take first code’s value
+        const firstValue = enterCodes[0].value;
+
+        // print in one line
+        doc.text(`Commission Rates: ${firstValue}`, 20, 115);
       }
 
       doc.line(0, 130, doc.internal.pageSize.getWidth(), 130);
 
-      // Calculate total earnings
       const totalEarnings = filteredPatients.reduce((sum, patient) => {
         return sum + calculateReferralFee(patient);
       }, 0);
 
-      // Count referrals by type
       const consultationCount = filteredPatients.filter(
         (p) => p.type === "Consultation"
       ).length;
@@ -213,20 +246,20 @@ const DownloadDoctorReferalEarningsReport = ({
         (p) => p.type === "Pathology"
       ).length;
 
-      doc.setFontSize(12);
-      doc.text("Earnings Summary:", 20, 145);
-      doc.setFontSize(9);
-      doc.text(`Total Referrals: ${filteredPatients.length}`, 20, 155);
-      doc.text(`- Consultations: ${consultationCount}`, 25, 160);
-      doc.text(`- Diagnostics: ${diagnosticsCount}`, 25, 165);
-      doc.text(`- Pathology: ${pathologyCount}`, 25, 170);
-      doc.text(
-        `Total Earnings: ${totalEarnings.toFixed(2)} ${
-          doctor.consultationCurrency
-        }`,
-        20,
-        175
-      );
+      // doc.setFontSize(12);
+      // doc.text("Earnings Summary:", 20, 145);
+      // doc.setFontSize(9);
+      // doc.text(`Total Referrals: ${filteredPatients.length}`, 20, 155);
+      // doc.text(`- Consultations: ${consultationCount}`, 25, 160);
+      // doc.text(`- Diagnostics: ${diagnosticsCount}`, 25, 165);
+      // doc.text(`- Pathology: ${pathologyCount}`, 25, 170);
+      // doc.text(
+      //   `Total Earnings: ${totalEarnings.toFixed(2)} ${
+      //     doctor.consultationCurrency
+      //   }`,
+      //   20,
+      //   175
+      // );
     }
 
     function addPatientTable(filteredPatients) {
@@ -251,6 +284,8 @@ const DownloadDoctorReferalEarningsReport = ({
           currency = patient.Currency || "INR";
         }
 
+        const paymentRecord = getPaymentRecord(patient);
+
         return [
           index + 1,
           patient.type,
@@ -262,7 +297,10 @@ const DownloadDoctorReferalEarningsReport = ({
           `${amountPaid.toFixed(2)} ${currency}`,
           `${referralFee.toFixed(2)} ${doctor.consultationCurrency}`,
           date,
-          patient.paymentStatus || patient.PaymentStatus,
+          paymentRecord ? paymentRecord.status : "Unpaid",
+          paymentRecord
+            ? new Date(paymentRecord.paymentDateTime).toLocaleDateString()
+            : "-",
         ];
       });
 
@@ -278,10 +316,11 @@ const DownloadDoctorReferalEarningsReport = ({
             "Doctor's Referral Fee",
             "Date",
             "Payment Status",
+            "Payment Date",
           ],
         ],
         body: tableData,
-        startY: 185,
+        startY: 140,
         styles: {
           fontSize: 8,
           cellPadding: 2,
@@ -294,6 +333,9 @@ const DownloadDoctorReferalEarningsReport = ({
         alternateRowStyles: {
           fillColor: [240, 240, 240],
         },
+        rowPageBreak: "avoid",
+        // ✅ reserve space at bottom so footer never overlaps
+        margin: { bottom: 25 },
       });
     }
 
@@ -302,30 +344,30 @@ const DownloadDoctorReferalEarningsReport = ({
 
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
+
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // ✅ page number above footer
         doc.setFontSize(10);
         doc.setTextColor("#000000");
         doc.text(
-          `Page ${i} of ${totalPages}`,
-          doc.internal.pageSize.getWidth() / 2 - 10,
-          doc.internal.pageSize.getHeight() - 10
+          `${i}/${totalPages}`,
+          pageWidth / 2,
+          pageHeight - 20, // safe space above footer
+          { align: "center" }
         );
 
-        // Add footer
+        // footer background bar
         doc.setFillColor("#48bcdf");
-        doc.rect(
-          0,
-          doc.internal.pageSize.getHeight() - 15,
-          doc.internal.pageSize.getWidth(),
-          15,
-          "F"
-        );
+        doc.rect(0, pageHeight - 15, pageWidth, 15, "F");
+
+        // footer text
         doc.setTextColor("#ffffff");
         doc.setFontSize(12);
-        doc.text(
-          "Powered by mediAI",
-          doc.internal.pageSize.getWidth() / 2 - 20,
-          doc.internal.pageSize.getHeight() - 5
-        );
+        doc.text("Powered by mediAI", pageWidth / 2, pageHeight - 5, {
+          align: "center",
+        });
       }
     }
   };
@@ -333,9 +375,7 @@ const DownloadDoctorReferalEarningsReport = ({
   return (
     <button
       title="Download Referral Earnings Report"
-      style={{
-        marginTop: "22px",
-      }}
+      style={{ marginTop: "22px" }}
       className="btn btn-secondary"
       onClick={downloadDoctorEarningsReport}
     >

@@ -7,24 +7,19 @@ const { Sequelize, DataTypes } = require("sequelize");
 
 const checkUser = (req, res, next) => {
   const authorizationHeader = req.headers.authorization;
-  let token = authorizationHeader?.split(" ")[1];
+  let token = authorizationHeader?.split(" ")[1] || authorizationHeader;
 
   if (!token) {
-    token = authorizationHeader;
+    return res.status(401).send({ message: "No token provided!" });
   }
-  let HospitalName;
-  jwt.verify(token, config.secret, (err, decoded) => {
-    if (err) {
-      return res.status(401).send({
-        message: "Unauthorized!",
-      });
-    }
 
-    console.log("ClientName: " + decoded?.userDatabase);
-    HospitalName = decoded?.userDatabase;
-    console.log("--------HospitalName------" + JSON.stringify(decoded));
-  });
-  return HospitalName;
+  try {
+    const decoded = jwt.verify(token, config.secret);
+    req.HospitalName = decoded.userDatabase; // attach to request
+    next(); // call next middleware/controller
+  } catch (err) {
+    return res.status(401).send({ message: "Unauthorized!" });
+  }
 };
 
 module.exports = { checkUser };

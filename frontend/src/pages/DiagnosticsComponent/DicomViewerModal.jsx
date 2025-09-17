@@ -25,7 +25,7 @@ const DicomViewerModal = ({
   const currentUser = AuthService.getCurrentUser();
 
   // Convert dicomFiles to the format expected by DicomViewer
-  const convertedFiles = dicomFiles.map(file => ({
+  const convertedFiles = dicomFiles.map((file) => ({
     id: file.id,
     original_name: `DICOM-${file.orthancInstanceId || file.id}`,
     file_name: `DICOM-${file.orthancInstanceId || file.id}`,
@@ -102,8 +102,21 @@ const DicomViewerModal = ({
   return (
     <>
       {/* Main Modal */}
-      <Modal show={show} onHide={handleCloseModal} size="lg" className="mt-5 ">
-        <Modal.Header className=" text-white" style={{backgroundColor:'#19498f'}} closeButton>
+      <Modal
+        centered
+        show={show}
+        onHide={handleCloseModal}
+        size="lg"
+        className="mt-5 "
+      >
+        <Modal.Header
+          style={{
+            backgroundColor: "#f8f9fa",
+            borderBottom: "1px solid #dee2e6",
+            color: "black",
+          }}
+          closeButton
+        >
           <Modal.Title>
             Files for Patient : {patientData?.PatientName}
           </Modal.Title>
@@ -279,14 +292,19 @@ const DicomViewerModal = ({
           margin: "1.75rem auto 1.75rem 50px",
         }}
       >
-        <Modal.Header closeButton style={{ padding: "10px 15px" }}>
+        <Modal.Header
+          closeButton
+          style={{
+            backgroundColor: "#f8f9fa",
+            borderBottom: "1px solid #dee2e6",
+            color: "black",
+            padding: "10px 15px",
+          }}
+        >
           <Modal.Title style={{ fontSize: "1.2rem" }}>
-            <FaEye className="me-2" />
-            DICOM Viewer - File #{selectedDicomId}
+            DICOM Viewer - File #{selectedDicomId}{" "}
             {selectedFile && (
-              <small className="text-white ms-2">
-                Patient: {patientData?.PatientName}
-              </small>
+              <small>Patient : {patientData?.PatientName}</small>
             )}
           </Modal.Title>
         </Modal.Header>

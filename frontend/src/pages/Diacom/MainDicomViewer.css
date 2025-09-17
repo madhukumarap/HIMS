@@ -462,3 +462,24 @@
     padding: 6px;
   }
 }
+
+/* Modal Styling */
+.modal-header {
+  background: #f8f9fa;
+  color: black;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modal-title {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+
+.modal-body {
+  background: var(--color-surface);
+}
+
+.modal-footer {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}

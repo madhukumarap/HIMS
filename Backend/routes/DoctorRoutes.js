@@ -24,6 +24,7 @@ const router = require("express").Router();
 
 router.post(
   "/saveDoctor",
+  checkUser,
   uploadimage.single("signatureImage"),
   DoctorController.SaveDoctor
 );

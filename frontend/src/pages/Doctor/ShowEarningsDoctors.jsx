@@ -40,6 +40,8 @@ const ShowEarningsDoctors = () => {
     endDate: "",
   });
 
+  const [paymentStatus, setPaymentStatus] = useState({});
+
   const user_Email = currentUser && currentUser.email;
 
   useEffect(() => {
@@ -259,6 +261,8 @@ const ShowEarningsDoctors = () => {
   const handleViewConsultationEarnings = () => {
     if (!current_user) return;
 
+    fetchPaymentStatus(current_user.id);
+
     const consultationPatients = patients.filter(
       (patient) => patient.doctorId === current_user.id
     );
@@ -271,6 +275,8 @@ const ShowEarningsDoctors = () => {
 
   const handleViewReferralEarnings = () => {
     if (!current_user) return;
+
+    fetchPaymentStatus(current_user.id);
 
     // Filter patients by referralDoctorId (consultations)
     const filteredPatients = patients.filter(
@@ -357,6 +363,41 @@ const ShowEarningsDoctors = () => {
       }
     }
     return 0;
+  };
+
+  const fetchPaymentStatus = async (doctorId) => {
+    try {
+      const response = await axios.get(
+        `${
+          import.meta.env.VITE_API_URL
+        }/api/doctorPayments/payment-status/${doctorId}`,
+        {
+          headers: {
+            Authorization: `${currentUser?.Token}`,
+            userDatabase: currentUser?.database,
+          },
+        }
+      );
+
+      setPaymentStatus((prev) => ({
+        ...prev,
+        [doctorId]: response.data,
+      }));
+    } catch (error) {
+      console.error("Error fetching payment status:", error);
+      // Set default status if error occurs
+      setPaymentStatus((prev) => ({
+        ...prev,
+        [doctorId]: {
+          status: "Unknown",
+          lastPaymentDate: null,
+          totalPaid: 0,
+          consultationPayments: 0,
+          pathologyPayments: 0,
+          diagnosisPayments: 0,
+        },
+      }));
+    }
   };
 
   if (!current_user) {
@@ -513,7 +554,7 @@ const ShowEarningsDoctors = () => {
                               backgroundColor: "#1111",
                               color: "black",
                             }}
-                            className="btn btn-info mr-1"
+                            className="btn btn-secondary mr-1"
                             onClick={handleViewReferralEarnings}
                           >
                             <FaRegEye /> Referrals
@@ -543,9 +584,13 @@ const ShowEarningsDoctors = () => {
           style={{
             backgroundColor: "#f8f9fa",
             borderBottom: "1px solid #dee2e6",
+            color: "black",
+            display: "flex",
+            justifyContent: "space-between", // pushes title left & button right
+            alignItems: "center",
           }}
         >
-          <Modal.Title style={{ fontSize: "18px", fontWeight: "bold" }}>
+          <Modal.Title style={{ fontSize: "18px", fontWeight: "500" }}>
             Consultation Earnings for Dr. {selectedDoctor?.FirstName}{" "}
             {selectedDoctor?.LastName}
           </Modal.Title>
@@ -558,63 +603,70 @@ const ShowEarningsDoctors = () => {
           </Button>
         </Modal.Header>
         <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
-          <h6>Filter by Date Range</h6>
-          <div className="mb-3 p-3 border rounded d-flex align-items-center gap-2 flex-wrap">
-            <div className="col-md-3">
-              <Form.Label>Start Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={dateRange.startDate}
-                onChange={(e) =>
-                  setDateRange({ ...dateRange, startDate: e.target.value })
-                }
-              />
-            </div>
-            <div className="col-md-3">
-              <Form.Label>End Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={dateRange.endDate}
-                onChange={(e) =>
-                  setDateRange({ ...dateRange, endDate: e.target.value })
-                }
-              />
-            </div>
+          <div className="mb-3 p-3 border rounded">
+            <h6>Filter by Date Range</h6>
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              {/* Start Date */}
+              <div className="col-md-3">
+                <Form.Label>Start Date</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={dateRange.startDate}
+                  onChange={(e) =>
+                    setDateRange({ ...dateRange, startDate: e.target.value })
+                  }
+                />
+              </div>
 
-            <div className="col-md-3 mt-3 d-flex align-items-end">
-              <Button
-                variant="primary"
-                className="me-2"
-                onClick={() => {
-                  const consultationPatients = patients.filter(
-                    (patient) => patient.doctorId === current_user.id
-                  );
-                  setFilteredConsultationPatients(
-                    filterPatientsByDateRange(consultationPatients)
-                  );
-                }}
-              >
-                Select
-              </Button>
+              {/* End Date */}
+              <div className="col-md-3">
+                <Form.Label>End Date</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={dateRange.endDate}
+                  onChange={(e) =>
+                    setDateRange({ ...dateRange, endDate: e.target.value })
+                  }
+                />
+              </div>
 
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setDateRange({ startDate: "", endDate: "" });
-                  const consultationPatients = patients.filter(
-                    (patient) => patient.doctorId === current_user.id
-                  );
-                  setFilteredConsultationPatients(consultationPatients);
-                }}
-              >
-                Clear
-              </Button>
-              <DownloadDoctorEarningsReport
-                doctor={selectedDoctor}
-                patients={filteredConsultationPatients}
-                doctorFees={doctorFees}
-                dateRange={dateRange}
-              />
+              {/* Action Buttons */}
+              <div className="d-flex gap-2 align-items-end flex-wrap">
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    const consultationPatients = patients.filter(
+                      (patient) => patient.doctorId === current_user.id
+                    );
+                    setFilteredConsultationPatients(
+                      filterPatientsByDateRange(consultationPatients)
+                    );
+                  }}
+                >
+                  Select
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setDateRange({ startDate: "", endDate: "" });
+                    const consultationPatients = patients.filter(
+                      (patient) => patient.doctorId === current_user.id
+                    );
+                    setFilteredConsultationPatients(consultationPatients);
+                  }}
+                >
+                  Clear
+                </Button>
+
+                <DownloadDoctorEarningsReport
+                  doctor={selectedDoctor}
+                  patients={filteredConsultationPatients}
+                  doctorFees={doctorFees}
+                  dateRange={dateRange}
+                  paymentStatus={paymentStatus}
+                />
+              </div>
             </div>
           </div>
 
@@ -637,7 +689,8 @@ const ShowEarningsDoctors = () => {
                     <th>Reason</th>
                     <th>Amount Paid</th>
                     <th>Applicable Doctor Fee</th>
-                    <th>Consultation Date</th>
+                    <th>Doctor Payment Status</th>
+                    <th>Payment Date</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -655,6 +708,21 @@ const ShowEarningsDoctors = () => {
                           new Date(fee.feeUpdatedAt)
                       );
 
+                    // Get the payment array for the selected doctor
+                    const doctorPayments = Array.isArray(
+                      paymentStatus[current_user.id]
+                    )
+                      ? paymentStatus[current_user.id]
+                      : [];
+
+                    // Match payment history for this patient/consultation
+                    const paymentRecord = doctorPayments.find(
+                      (payment) =>
+                        payment.consultationId === patient.id || // match consultation
+                        payment.pathologyId === patient.pathologyId || // match pathology
+                        payment.diagnosisId === patient.diagnosisId // match diagnosis
+                    );
+
                     return (
                       <tr key={patient.id}>
                         <td>{index + 1}</td>
@@ -669,7 +737,26 @@ const ShowEarningsDoctors = () => {
                           {applicableFee}{" "}
                           {applicableFeeRecord?.consultationCurrency || "INR"}
                         </td>
-                        <td>{formatDate(patient.bookingStartDate)}</td>
+                        <td>
+                          {paymentRecord ? (
+                            <span
+                              className={`badge ${
+                                paymentRecord.status === "Paid"
+                                  ? "bg-success"
+                                  : "bg-danger"
+                              }`}
+                            >
+                              {paymentRecord.status}
+                            </span>
+                          ) : (
+                            <span className="badge bg-warning">Unpaid</span>
+                          )}
+                        </td>
+                        <td>
+                          {paymentRecord
+                            ? formatDate(paymentRecord.paymentDateTime)
+                            : "-"}
+                        </td>
                       </tr>
                     );
                   })}
@@ -722,9 +809,13 @@ const ShowEarningsDoctors = () => {
           style={{
             backgroundColor: "#f8f9fa",
             borderBottom: "1px solid #dee2e6",
+            color: "black",
+            display: "flex",
+            justifyContent: "space-between", // pushes title left & button right
+            alignItems: "center",
           }}
         >
-          <Modal.Title style={{ fontSize: "18px", fontWeight: "bold" }}>
+          <Modal.Title style={{ fontSize: "18px", fontWeight: "500" }}>
             Referral Earnings for Dr. {selectedDoctor?.FirstName}{" "}
             {selectedDoctor?.LastName}
           </Modal.Title>
@@ -737,33 +828,33 @@ const ShowEarningsDoctors = () => {
           </Button>
         </Modal.Header>
         <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
-          <h6>Filter by Date Range</h6>
-          <div className="mb-3 p-3 border rounded d-flex align-items-center gap-2 flex-wrap">
-            <div className="col-md-3">
-              <Form.Label>Start Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={dateRange.startDate}
-                onChange={(e) =>
-                  setDateRange({ ...dateRange, startDate: e.target.value })
-                }
-              />
-            </div>
-            <div className="col-md-3">
-              <Form.Label>End Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={dateRange.endDate}
-                onChange={(e) =>
-                  setDateRange({ ...dateRange, endDate: e.target.value })
-                }
-              />
-            </div>
+          <div className="mb-3 p-3 border rounded">
+            <h6>Filter by Date Range</h6>
+            <div className="d-flex flex-wrap gap-3 align-items-end">
+              <div>
+                <Form.Label>Start Date</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={dateRange.startDate}
+                  onChange={(e) =>
+                    setDateRange({ ...dateRange, startDate: e.target.value })
+                  }
+                />
+              </div>
 
-            <div className="col-md-3 mt-3 d-flex align-items-end">
+              <div>
+                <Form.Label>End Date</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={dateRange.endDate}
+                  onChange={(e) =>
+                    setDateRange({ ...dateRange, endDate: e.target.value })
+                  }
+                />
+              </div>
+
               <Button
                 variant="primary"
-                className="me-2"
                 onClick={() => {
                   // Filter patients by referralDoctorId (consultations)
                   const filteredPatients = patients.filter(
@@ -808,22 +899,15 @@ const ShowEarningsDoctors = () => {
                 variant="secondary"
                 onClick={() => {
                   setDateRange({ startDate: "", endDate: "" });
-                  // Filter patients by referralDoctorId (consultations)
                   const filteredPatients = patients.filter(
                     (patient) => patient.referralDoctorId === current_user.id
                   );
-
-                  // Filter diagnostics bookings by doctorId (not referralDoctorId)
                   const filteredDiagnostics = diagnosticsBookings.filter(
                     (booking) => booking.doctorId === current_user.id
                   );
-
-                  // Filter pathology bookings by doctorId (not referralDoctorId)
                   const filteredPathology = pathologyBookings.filter(
                     (booking) => booking.doctorId === current_user.id
                   );
-
-                  // Combine all referral data
                   const allReferrals = [
                     ...filteredPatients.map((item) => ({
                       ...item,
@@ -838,12 +922,12 @@ const ShowEarningsDoctors = () => {
                       type: "Pathology",
                     })),
                   ];
-
                   setFilteredReferralPatients(allReferrals);
                 }}
               >
                 Clear
               </Button>
+
               <DownloadDoctorReferalEarningsReport
                 doctor={{
                   ...selectedDoctor,
@@ -854,7 +938,7 @@ const ShowEarningsDoctors = () => {
                 patients={filteredReferralPatients}
                 dateRange={dateRange}
                 enterCodes={enterCodes}
-                className="ms-4"
+                paymentStatus={paymentStatus}
               />
             </div>
           </div>
@@ -878,7 +962,8 @@ const ShowEarningsDoctors = () => {
                     <th>Procedure/Visit Type</th>
                     <th>Amount Paid</th>
                     <th>Referral Fee</th>
-                    <th>Date</th>
+                    <th>Doctor Payment Status</th>
+                    <th>Payment Date</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -916,6 +1001,25 @@ const ShowEarningsDoctors = () => {
                       currency = referral.Currency || "INR";
                     }
 
+                    // Get payment history same as consultation
+                    const doctorPayments = Array.isArray(
+                      paymentStatus[current_user.id]
+                    )
+                      ? paymentStatus[current_user.id]
+                      : [];
+
+                    const paymentRecord = doctorPayments.find((payment) => {
+                      if (referral.type === "Consultation") {
+                        // Match by referralId for consultation referrals
+                        return payment.referralId === referral.id;
+                      } else if (referral.type === "Diagnostics") {
+                        return payment.diagnosisId === referral.id;
+                      } else if (referral.type === "Pathology") {
+                        return payment.pathologyId === referral.id;
+                      }
+                      return false;
+                    });
+
                     return (
                       <tr key={`${referral.type}-${referral.id}`}>
                         <td>{index + 1}</td>
@@ -930,7 +1034,26 @@ const ShowEarningsDoctors = () => {
                           {referralFee.toFixed(2)}{" "}
                           {latestFee?.consultationCurrency || "INR"}
                         </td>
-                        <td>{date}</td>
+                        <td>
+                          {paymentRecord ? (
+                            <span
+                              className={`badge ${
+                                paymentRecord.status === "Paid"
+                                  ? "bg-success"
+                                  : "bg-danger"
+                              }`}
+                            >
+                              {paymentRecord.status}
+                            </span>
+                          ) : (
+                            <span className="badge bg-warning">Unpaid</span>
+                          )}
+                        </td>
+                        <td>
+                          {paymentRecord
+                            ? formatDate(paymentRecord.paymentDateTime)
+                            : "-"}
+                        </td>
                       </tr>
                     );
                   })}
@@ -985,5 +1108,3 @@ const ShowEarningsDoctors = () => {
 };
 
 export default ShowEarningsDoctors;
-
-//pushing again

@@ -18,6 +18,7 @@ module.exports = function (app) {
     ],
     controller.signup
   );
+  
   app.post(
     "/api/:ClientID/auth/signupUI",
     [

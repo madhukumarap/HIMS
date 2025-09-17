@@ -62,7 +62,17 @@ function Pathologytest() {
   const locales = { enIN, fr };
   const [PaidAmount, setPaidAmount] = useState(0);
   const [EditPaidAmount, setEditPaidAmount] = useState(0);
-  
+
+
+  // New Doctor States
+  const [showNewDoctorModal, setShowNewDoctorModal] = useState(false);
+  const [newDoctorData, setNewDoctorData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNo: "",
+    registrationNo: "",
+  });
 
   useEffect(() => {
     const initializei18n = () => {
@@ -184,7 +194,6 @@ function Pathologytest() {
 
       const totalFeesInSelectedCurrency = baseFees * selectedRate;
       const formattedTotalFees = totalFeesInSelectedCurrency.toFixed(2);
-      console.log(formattedTotalFees,"formattedTotalFees")
       setTotalFees(Number(formattedTotalFees));
     } else {
       setTotalFees(null);
@@ -823,32 +832,40 @@ function Pathologytest() {
     setIsEditMode(true);
   };
   useEffect(() => {
-  const calculatedFees = isEditMode
-    ? parseFloat(formData.TotalFees || formData.testFees || 0)
-    : selectedPackageObject?.finalPrice
-    ? parseInt(selectedPackageObject.finalPrice) + parseInt(formData.testFees || 0)
-    : formData.testFees || 0;
+    const calculatedFees = isEditMode
+      ? parseFloat(formData.TotalFees || formData.testFees || 0)
+      : selectedPackageObject?.finalPrice
+      ? parseInt(selectedPackageObject.finalPrice) +
+        parseInt(formData.testFees || 0)
+      : formData.testFees || 0;
 
-  const convertedFees = convertCurrency(
-    calculatedFees,
-    isEditMode
-      ? formData.Currency || currency || Hospitals[0]?.baseCurrency
-      : selectedPackageObject?.Currency || currency || Hospitals[0]?.baseCurrency,
-    selectedGlobalCurrency
+    const convertedFees = convertCurrency(
+      calculatedFees,
+      isEditMode
+        ? formData.Currency || currency || Hospitals[0]?.baseCurrency
+        : selectedPackageObject?.Currency ||
+            currency ||
+            Hospitals[0]?.baseCurrency,
+      selectedGlobalCurrency
+    );
+
+    setTotalFeesFinal(convertedFees);
+  }, [
+    formData.TotalFees,
+    formData.testFees,
+    formData.Currency,
+    selectedPackageObject,
+    isEditMode,
+    currency,
+    Hospitals,
+    selectedGlobalCurrency,
+  ]);
+  console.log(
+    formData.TotalFees || formData.testFees,
+    selectedPackageObject,
+    totalFeesFinal,
+    "totalFeesFinal,formData.TotalFees || formData.testFees"
   );
-
-  setTotalFeesFinal(convertedFees);
-}, [
-  formData.TotalFees,
-  formData.testFees,
-  formData.Currency,
-  selectedPackageObject,
-  isEditMode,
-  currency,
-  Hospitals,
-  selectedGlobalCurrency,
-]);
-  console.log(formData.TotalFees || formData.testFees,selectedPackageObject,totalFeesFinal,"totalFeesFinal,formData.TotalFees || formData.testFees")
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -950,8 +967,8 @@ function Pathologytest() {
         formData.Currency = currency;
         formData.PaidAmount = PaidAmount;
         const sanitizedTotalFees = totalFeesFinal
-  ? totalFeesFinal.toString().replace(/,/g, "")
-  : 0;
+          ? totalFeesFinal.toString().replace(/,/g, "")
+          : 0;
 
         response = await axios.post(
           `${import.meta.env.VITE_API_URL}/api/testBooking`,
@@ -1287,7 +1304,7 @@ function Pathologytest() {
                   >
                     {t("ReferralDoctor")}
                   </label>
-                  <div>
+                  <div className="d-flex">
                     <select
                       id="selectDoctor"
                       className="form-control"
@@ -1302,11 +1319,18 @@ function Pathologytest() {
                         </option>
                       ))}
                     </select>
+                    <Button
+                      variant="link"
+                      style={{ fontSize: "12px", marginLeft: "5px" }}
+                      onClick={() => setShowNewDoctorModal(true)}
+                    >
+                      + New Doctor
+                    </Button>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             <div className="row">
               <div className="col-md-6">
                 <div className="form-group">
@@ -2403,6 +2427,164 @@ function Pathologytest() {
           handleClose={() => setSelectedViewPackageID(null)}
         />
       )}
+
+      {/* Doctor Registration model */}
+      <Modal
+        show={showNewDoctorModal}
+        onHide={() => setShowNewDoctorModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Doctor</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-2">
+              <Form.Label>First Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={newDoctorData.firstName}
+                onChange={(e) =>
+                  setNewDoctorData({
+                    ...newDoctorData,
+                    firstName: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Last Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={newDoctorData.lastName}
+                onChange={(e) =>
+                  setNewDoctorData({
+                    ...newDoctorData,
+                    lastName: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                value={newDoctorData.email}
+                onChange={(e) =>
+                  setNewDoctorData({ ...newDoctorData, email: e.target.value })
+                }
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Phone Number</Form.Label>
+              <Form.Control
+                type="text"
+                value={newDoctorData.phoneNo}
+                onChange={(e) =>
+                  setNewDoctorData({
+                    ...newDoctorData,
+                    phoneNo: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Registration No</Form.Label>
+              <Form.Control
+                type="text"
+                value={newDoctorData.registrationNo}
+                onChange={(e) =>
+                  setNewDoctorData({
+                    ...newDoctorData,
+                    registrationNo: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowNewDoctorModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={async () => {
+              try {
+                const formData = new FormData();
+                formData.append("firstName", newDoctorData.firstName);
+                formData.append("lastName", newDoctorData.lastName);
+                formData.append("registrationNo", newDoctorData.registrationNo);
+                formData.append("phoneNo", newDoctorData.phoneNo);
+                formData.append("email", newDoctorData.email);
+
+                // ✅ Username = firstName+lastName, lowercase
+                const username =
+                  `${newDoctorData.firstName}${newDoctorData.lastName}`.toLowerCase();
+                formData.append("username", username);
+
+                // defaults
+                formData.append("password", "Admin@123");
+                formData.append("consultationFee", 50);
+                formData.append("referralFee", 50);
+                formData.append("doctorsType", "external"); // or "internal" if needed
+                formData.append("countryCode", "+91");
+                formData.append("address", "NA");
+
+                const response = await axios.post(
+                  `${import.meta.env.VITE_API_URL}/api/saveDoctor`,
+                  {
+                    firstName: newDoctorData.firstName,
+                    lastName: newDoctorData.lastName,
+                    registrationNo: newDoctorData.registrationNo,
+                    phoneNo: newDoctorData.phoneNo,
+                    countryCode: "+91",
+                    email: newDoctorData.email,
+                    username: `${newDoctorData.firstName}${newDoctorData.lastName}`,
+                    password: "Admin@123",
+                    address: "NA",
+                    doctorsType: "external",
+                    consultationFee: 50,
+                    referralFee: 50,
+                    consultationCurrency: "INR",
+                  },
+                  {
+                    headers: { Authorization: `${currentUser?.Token}` },
+                  }
+                );
+
+                toast.success("Doctor Added Successfully!");
+
+                // ✅ Refresh doctors list
+                await fetchDoctors();
+
+                // ✅ Auto-select new doctor using backend response
+                if (response.data?.doctor?.id) {
+                  setSelectedDoctor(response.data.doctor.id);
+                }
+
+                // reset form + close modal
+                setShowNewDoctorModal(false);
+                setNewDoctorData({
+                  firstName: "",
+                  lastName: "",
+                  email: "",
+                  phoneNo: "",
+                  registrationNo: "",
+                });
+              } catch (err) {
+                toast.error("Failed to save doctor");
+                console.error(err);
+              }
+            }}
+          >
+            Save Doctor
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

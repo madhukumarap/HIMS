@@ -80,6 +80,9 @@ function DiagnosticsBooking() {
 
   //diacom
 
+  console.log(selectedPackageObject,'selectedPackageObject');
+  
+
   const [showDicomModal, setShowDicomModal] = useState(false);
   const [selectedBookingForDicom, setSelectedBookingForDicom] = useState(null);
 
@@ -89,13 +92,18 @@ function DiagnosticsBooking() {
   const [selectedPatientForDicom, setSelectedPatientForDicom] = useState(null);
   const [loadingDicom, setLoadingDicom] = useState(false);
 
-  // Add this function to handle the Dicom button click:
-  // const handleDicomUpload = (booking) => {
-  //   console.log(booking, "booking");
+  const { selectedGlobalCurrency, convertCurrency, rates } =
+    useContext(CurrencyContext);
 
-  //   setSelectedBookingForDicom(booking);
-  //   setShowDicomModal(true);
-  // };
+  // New Doctor States
+  const [showNewDoctorModal, setShowNewDoctorModal] = useState(false);
+  const [newDoctorData, setNewDoctorData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNo: "",
+    registrationNo: "",
+  });
 
   const handleViewDicom = async (booking) => {
     try {
@@ -148,9 +156,6 @@ function DiagnosticsBooking() {
     }
   };
 
-  const { selectedGlobalCurrency, convertCurrency, rates } =
-    useContext(CurrencyContext);
-
   const [exchangeRates, setExchangeRates] = useState(() => {
     if (rates) {
       if (Array.isArray(rates)) {
@@ -184,38 +189,32 @@ function DiagnosticsBooking() {
     if (
       (formData.paymentStatus === "Paid" ||
         formData.paymentStatus === "Partial-Paid") &&
-      currency &&
-      Array.isArray(exchangeRates)
+      currency
     ) {
-      const selectedCurrencyObject = exchangeRates.find(
-        (rate) => rate.currency === currency
-      );
-
-      if (!selectedCurrencyObject || !selectedCurrencyObject.rates[currency]) {
-        console.warn("No matching currency rate found!");
-        setTotalFees(null);
-        return;
-      }
-
-      const selectedRate = selectedCurrencyObject.rates[currency];
-
-      // Calculate base fees including both package and individual test fees
+      // ✅ Base fees
       const packagePrice = selectedPackageObject?.finalPrice
         ? parseFloat(selectedPackageObject.finalPrice)
         : 0;
-
       const individualTestFees = parseFloat(formData.testFees || "0");
 
-      // For edit mode, testFees already includes everything
-      // For new registration, we need to add package + individual test fees
       const baseFees = isEditMode
         ? individualTestFees
         : packagePrice + individualTestFees;
 
-      const totalFeesInSelectedCurrency = baseFees * selectedRate;
-      const formattedTotalFees = totalFeesInSelectedCurrency.toFixed(2);
+      // ✅ Use convertCurrency just like "View Fees"
+      console.log(baseFees, "baseFees");
 
-      setTotalFees(Number(formattedTotalFees));
+      const converted = convertCurrency(
+        baseFees,
+        selectedPackageObject?.Currency || Hospitals[0]?.baseCurrency,
+        currency
+      );
+
+      setTotalFees(
+        typeof converted === "number"
+          ? Number(converted.toFixed(2))
+          : parseFloat(converted) || 0
+      );
     } else {
       setTotalFees(null);
     }
@@ -224,8 +223,9 @@ function DiagnosticsBooking() {
     formData.testFees,
     formData.paymentStatus,
     selectedPackageObject,
-    exchangeRates,
-    isEditMode, // Add isEditMode as dependency
+    isEditMode,
+    Hospitals,
+    convertCurrency,
   ]);
 
   const [testNames, setTestNames] = useState([]);
@@ -243,46 +243,6 @@ function DiagnosticsBooking() {
   useEffect(() => {
     console.log("totalFees: ", totalFees);
   }, [totalFees]);
-
-  const { t } = useTranslation();
-  const locales = { enIN, fr };
-
-  useEffect(() => {
-    const initializei18n = () => {
-      const resources = {
-        en: {
-          translation: Translation["en"],
-        },
-        fr: {
-          translation: Translation["fr"],
-        },
-      };
-
-      const storedLanguage = localStorage.getItem("SelectedLanguage");
-      const defaultLanguage = storedLanguage || "en";
-
-      i18n.use(initReactI18next).init({
-        resources,
-        lng: defaultLanguage,
-        fallbackLng: "en",
-        interpolation: {
-          escapeValue: false,
-          format: (value, format, lng) => {
-            if (isDate(value)) {
-              const locale = locales[lng];
-              return formatDate(value, format, { locale });
-            }
-          },
-        },
-      });
-    };
-
-    // Initialize only once when component mounts
-    initializei18n();
-
-    // Remove the setInterval completely
-    // No need to keep re-initializing i18n
-  }, []); // Empty dependency array ensures this runs only once
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -363,11 +323,11 @@ function DiagnosticsBooking() {
   };
   const handleUpdateAuthorization = () => {
     if (!authorizationStatus) {
-      toast.error(t("PleaseSelectStatus"));
+      toast.error("Please Select Status");
       return;
     }
     if (!feedback) {
-      toast.error(t("PleaseAddFeedback"));
+      toast.error("Please Add Feedback");
       return;
     }
     const data = {
@@ -390,7 +350,7 @@ function DiagnosticsBooking() {
       )
       .then((response) => {
         if (response.status == 200) {
-          toast.success(t("Authorizationstatusupdatedsuccessfully"));
+          toast.success("Authorization status updated successfully");
           fetchBookings();
         } else {
           // There was an error updating the authorization status
@@ -443,7 +403,7 @@ function DiagnosticsBooking() {
           console.error(error);
         });
     }
-  }, [PackageSelectedTests, currentUser?.Token, selectedPackageID]);
+  }, [currentUser?.Token, selectedPackageID]);
 
   const [selectedViewPackageID, setSelectedViewPackageID] = useState(null);
 
@@ -463,35 +423,6 @@ function DiagnosticsBooking() {
   }, []);
 
   const [selectedPackage, setSelectedPackage] = useState(null);
-  // const handlePackageSelection = (e) => {
-  //   const selectedPackageID = e.target.value;
-
-  //   setSelectedPackage(selectedPackageID);
-  //   setSelectedPackageID(selectedPackageID);
-  //   // alert(JSON.stringify(transformedOptions));
-  // };
-
-  const handlePackageSelection2 = (e) => {
-    const selectedPackageID = e.target.value;
-    // filteredTestNames();
-    const selectedPackageObject = packages?.find(
-      (packages) => packages.id === parseInt(selectedPackageID)
-    );
-
-    setFormData({
-      ...formData,
-      selectedTests: [],
-      testFees: selectedPackageObject ? selectedPackageObject.finalPrice : 0,
-    });
-    if (!selectedPackageID) {
-      setPackageSelectedTests([]);
-    }
-    setSelectedPackageObject(selectedPackageObject);
-
-    setSelectedPackage(selectedPackageID);
-    setSelectedPackageID(selectedPackageID);
-    // alert(JSON.stringify(transformedOptions));
-  };
 
   const handlePackageSelection = (e) => {
     const selectedPackageID = e.target.value;
@@ -503,6 +434,8 @@ function DiagnosticsBooking() {
     const packageFees = selectedPackageObject?.finalPrice
       ? parseFloat(selectedPackageObject.finalPrice)
       : 0;
+
+    console.log(selectedPackageObject, "packageFees447");
 
     setFormData({
       ...formData,
@@ -518,9 +451,6 @@ function DiagnosticsBooking() {
     setSelectedPackageID(selectedPackageID);
   };
 
-  useEffect(() => {
-    console.log("selectedPackageID ", PackageSelectedTests);
-  }, [selectedPackageID]);
   const handleSelectChange = async (selectedOptions) => {
     const selectedTests = selectedOptions.map((option) => option.value);
 
@@ -580,7 +510,7 @@ function DiagnosticsBooking() {
 
   const handleGenerateReportNew = (testBookingID) => {
     if (testBookingID.status !== "Completed") {
-      toast.error(t("ResultNotFound"));
+      toast.error("Result Not Found");
       return;
     }
     setTestBookingID(testBookingID.id);
@@ -755,18 +685,19 @@ function DiagnosticsBooking() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "selectedTest") {
-      // Find the selected test by its name
-      const selectedTest = testNames.find((test) => test.testName === value);
+    if (name === "selectedPatient") {
+      // ← This should match the select name
+      // Find the selected patient by its ID
+      const selectedPatient = patients.find(
+        (patient) => patient.id === parseInt(value)
+      );
 
-      if (selectedTest) {
-        // If the test is found, set both the test name and its ID
+      if (selectedPatient) {
         setFormData((prevData) => ({
           ...prevData,
-          selectedTests: value, // Set the test name
-          TestManagementID: selectedTest.id, // Set the test ID
+          selectedPatient: value, // Set the patient ID
+          PatientID: selectedPatient.PatientID || selectedPatient.id, // Set the actual patient ID
         }));
-        setSelectedTests(formData.selectedTests);
       }
     } else if (name === "testFees") {
       if (value === "" || /^\d+$/.test(value)) {
@@ -997,7 +928,7 @@ function DiagnosticsBooking() {
             },
           }
         );
-        toast.success(t("UpdatedSuccessfully"));
+        toast.success("Updated Successfully");
         fetchBookings();
         setPaidAmount(0);
         setEditPaidAmount(0);
@@ -1041,16 +972,18 @@ function DiagnosticsBooking() {
         //alert(JSON.stringify(updatedSelectedTests));
         // return;
         if (!convertedTestData) {
-          toast.error(t("Pleaseselecttestorpackage"));
+          toast.error("Please select test or package");
           return;
         }
+        console.log(formData, "formData");
+
         if (
           !formData.selectedPatient ||
           !selectedDoctor ||
           !formData.status ||
           !formData.paymentStatus
         ) {
-          toast.error(t("Pleasefillrequiredfields"));
+          toast.error("Please fill required fields");
           return;
         }
 
@@ -1089,7 +1022,7 @@ function DiagnosticsBooking() {
             },
           }
         );
-        toast.success(t("SavedSuccessfully"));
+        toast.success("Saved Successfully");
       }
 
       fetchBookings(); // Refetch bookings after saving/editing
@@ -1110,7 +1043,7 @@ function DiagnosticsBooking() {
         testFees: "",
       });
     } catch (error) {
-      toast.error(t("Failed") + error);
+      toast.error("Failed" + error);
 
       console.error(error);
     }
@@ -1128,10 +1061,10 @@ function DiagnosticsBooking() {
           },
         }
       );
-      toast.success(t("BookingDeletedSuccessfully"));
+      toast.success("Booking Deleted Successfully");
       fetchBookings(); // Refetch bookings after deletion
     } catch (error) {
-      toast.error(t("FailedtoDeleteBooking"));
+      toast.error("Failed to Delete Booking");
       console.error(error);
     }
   };
@@ -1204,7 +1137,7 @@ function DiagnosticsBooking() {
               style={{ fontSize: "12px", marginTop: "10px" }}
               type="text"
               className="form-control"
-              placeholder={t("SearchpatientbyNameorPhone")}
+              placeholder={"Search patient by Name or Phone"}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -1241,9 +1174,16 @@ function DiagnosticsBooking() {
           });
         }}
       >
-        <Modal.Header closeButton>
+        <Modal.Header
+          style={{
+            backgroundColor: "#f8f9fa",
+            borderBottom: "1px solid #dee2e6",
+            color: "black",
+          }}
+          closeButton
+        >
           <Modal.Title style={{ fontSize: "16px" }}>
-            {formData.id ? "Edit Data" : "Register for Test"}
+            {formData.id ? "Edit Data" : "Test Registration"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -1289,13 +1229,12 @@ function DiagnosticsBooking() {
                       marginBottom: "10px",
                     }}
                   >
-                    {t("SelectaPatient")}{" "}
-                    <span style={{ color: "red" }}>*</span>
+                    {"Select a Patient"} <span style={{ color: "red" }}>*</span>
                   </label>
                   <select
                     style={{ fontSize: "12px" }}
                     className="form-control"
-                    name="selectedPatient"
+                    name="selected Patient"
                     disabled={isEditMode}
                     // value={formData.selectedPatient}
                     onChange={
@@ -1305,7 +1244,7 @@ function DiagnosticsBooking() {
                     }
                     required
                   >
-                    <option value="">{t("SelectaPatient")}</option>
+                    <option value="">{"Select a Patient"}</option>
                     {inOutPatient == "OutPatient"
                       ? patients.map((patient) => (
                           <option key={patient.PatientID} value={patient.id}>
@@ -1345,7 +1284,7 @@ function DiagnosticsBooking() {
                   >
                     Referral Doctor
                   </label>
-                  <div>
+                  <div className="d-flex">
                     <select
                       id="selectDoctor"
                       className="form-control"
@@ -1353,13 +1292,20 @@ function DiagnosticsBooking() {
                       value={selectedDoctor}
                       onChange={(e) => setSelectedDoctor(e.target.value)}
                     >
-                      <option value="">Select Doctor</option>
+                      <option value="">{"Select Doctor"}</option>
                       {doctors.map((doctor) => (
                         <option key={doctor.id} value={doctor.id}>
-                          {t("Dr")}. {doctor.FirstName} {doctor.LastName}
+                          Dr. {doctor.FirstName} {doctor.LastName}
                         </option>
                       ))}
                     </select>
+                    <Button
+                      variant="link"
+                      style={{ fontSize: "12px", marginLeft: "5px" }}
+                      onClick={() => setShowNewDoctorModal(true)}
+                    >
+                      + New Doctor
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -1494,7 +1440,7 @@ function DiagnosticsBooking() {
                     <span style={{ color: "red" }}>*</span>
                   </label>
                   <Select
-                    placeholder={t("Select")}
+                    placeholder={"Select"}
                     isMulti
                     className="custom-Select-picker"
                     options={filteredTestNames?.map((test) => ({
@@ -1576,7 +1522,7 @@ function DiagnosticsBooking() {
                     }
                     onChange={handleChange}
                     required
-                    placeholder={t("EnterFees")}
+                    placeholder={"Enter Fees"}
                   />
                 </div>
               </div>
@@ -1664,20 +1610,22 @@ function DiagnosticsBooking() {
                       <option value="EUR">EUR</option>
                       <option value="INR">INR</option>
                       <option value="CDF">CDF</option>
-                      <option value="">Select</option>
+                      {/* <option value="">Select</option>
                       <option value={Hospitals[0]?.baseCurrency}>
                         {Hospitals[0]?.baseCurrency}
-                      </option>
-                      {optionalCurrencies?.map((curr) => {
+                      </option> */}
+                      {/* {optionalCurrencies?.map((curr) => {
                         if (curr !== Hospitals[0]?.baseCurrency) {
                           return <option value={curr}>{curr}</option>;
                         }
                         return null;
-                      })}
+                      })} */}
                     </select>
                   </div>
                 )}
               </div>
+
+              {console.log(totalFees, "totalFees1624")}
 
               <div style={{ marginTop: "35px" }} className="col-md-3">
                 {(formData.paymentStatus === "Paid" ||
@@ -2174,7 +2122,14 @@ function DiagnosticsBooking() {
         show={showTestNamesModal}
         onHide={() => setShowTestNamesModal(false)}
       >
-        <Modal.Header closeButton>
+        <Modal.Header
+          style={{
+            backgroundColor: "#f8f9fa",
+            borderBottom: "1px solid #dee2e6",
+            color: "black",
+          }}
+          closeButton
+        >
           <Modal.Title style={{ fontSize: "16px" }}>
             Patient Name : {selectedTestBooking?.PatientName}
           </Modal.Title>
@@ -2315,6 +2270,163 @@ function DiagnosticsBooking() {
             onClick={handleUpdateAuthorization}
           >
             Submit
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      {/* Doctor Registration model */}
+      <Modal
+        show={showNewDoctorModal}
+        onHide={() => setShowNewDoctorModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Doctor</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-2">
+              <Form.Label>First Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={newDoctorData.firstName}
+                onChange={(e) =>
+                  setNewDoctorData({
+                    ...newDoctorData,
+                    firstName: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Last Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={newDoctorData.lastName}
+                onChange={(e) =>
+                  setNewDoctorData({
+                    ...newDoctorData,
+                    lastName: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                value={newDoctorData.email}
+                onChange={(e) =>
+                  setNewDoctorData({ ...newDoctorData, email: e.target.value })
+                }
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Phone Number</Form.Label>
+              <Form.Control
+                type="text"
+                value={newDoctorData.phoneNo}
+                onChange={(e) =>
+                  setNewDoctorData({
+                    ...newDoctorData,
+                    phoneNo: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Registration No</Form.Label>
+              <Form.Control
+                type="text"
+                value={newDoctorData.registrationNo}
+                onChange={(e) =>
+                  setNewDoctorData({
+                    ...newDoctorData,
+                    registrationNo: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowNewDoctorModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={async () => {
+              try {
+                const formData = new FormData();
+                formData.append("firstName", newDoctorData.firstName);
+                formData.append("lastName", newDoctorData.lastName);
+                formData.append("registrationNo", newDoctorData.registrationNo);
+                formData.append("phoneNo", newDoctorData.phoneNo);
+                formData.append("email", newDoctorData.email);
+
+                // ✅ Username = firstName+lastName, lowercase
+                const username =
+                  `${newDoctorData.firstName}${newDoctorData.lastName}`.toLowerCase();
+                formData.append("username", username);
+
+                // defaults
+                formData.append("password", "Admin@123");
+                formData.append("consultationFee", 50);
+                formData.append("referralFee", 50);
+                formData.append("doctorsType", "external"); // or "internal" if needed
+                formData.append("countryCode", "+91");
+                formData.append("address", "NA");
+
+                const response = await axios.post(
+                  `${import.meta.env.VITE_API_URL}/api/saveDoctor`,
+                  {
+                    firstName: newDoctorData.firstName,
+                    lastName: newDoctorData.lastName,
+                    registrationNo: newDoctorData.registrationNo,
+                    phoneNo: newDoctorData.phoneNo,
+                    countryCode: "+91",
+                    email: newDoctorData.email,
+                    username: `${newDoctorData.firstName}${newDoctorData.lastName}`,
+                    password: "Admin@123",
+                    address: "NA",
+                    doctorsType: "external",
+                    consultationFee: 50,
+                    referralFee: 50,
+                    consultationCurrency: "INR",
+                  },
+                  {
+                    headers: { Authorization: `${currentUser?.Token}` },
+                  }
+                );
+
+                toast.success("Doctor Added Successfully!");
+
+                // ✅ Refresh doctors list
+                await fetchDoctors();
+
+                // ✅ Auto-select new doctor using backend response
+                if (response.data?.doctor?.id) {
+                  setSelectedDoctor(response.data.doctor.id);
+                }
+
+                // reset form + close modal
+                setShowNewDoctorModal(false);
+                setNewDoctorData({
+                  firstName: "",
+                  lastName: "",
+                  email: "",
+                  phoneNo: "",
+                  registrationNo: "",
+                });
+              } catch (err) {
+                toast.error("Failed to save doctor");
+                console.error(err);
+              }
+            }}
+          >
+            Save Doctor
           </Button>
         </Modal.Footer>
       </Modal>

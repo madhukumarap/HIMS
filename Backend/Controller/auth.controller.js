@@ -140,15 +140,15 @@ exports.signupUI = async (req, res) => {
       }
     });
 };
+
 exports.signup = async (req, res) => {
-  console.log("signup----------: " + req.params.ClientID);
+  console.log("signup----------:" + req.params.ClientID);
   //  return;
-  console.log(req.body);
   let mainDatabase = "healthcare";
   let RequestDatabase;
   let hospitals;
 
-  console.log("req.params.ClientID: ", req.params.ClientID);
+  console.log("req.params.ClientID:", req.params.ClientID);
   // return;
   if (req.params.ClientID === "healthcare") {
     RequestDatabase = mainDatabase;
@@ -163,7 +163,7 @@ exports.signup = async (req, res) => {
   // return;
 
   const connectionList = await getConnectionList(RequestDatabase);
-  console.log("connection: " + connectionList[RequestDatabase]);
+  console.log("connection:" + connectionList[RequestDatabase]);
   const con = connectionList[RequestDatabase];
 
   const User = con.user;
@@ -171,10 +171,18 @@ exports.signup = async (req, res) => {
   const Role = con.role;
 
   // Save User to Database
-  console.log(req.body);
-  console.log(req.body.hospitalId);
+  console.log(req.body, "body2");
+  console.log(req.body.hospitalId, "hosp2");
   const hospitalID = req.body.hospitalId;
   const roles = req.body.roles;
+
+  console.log("Before User.create()");
+  // console.log("RequestDatabase:", RequestDatabase);
+  // console.log("Connection object:", con)
+  // console.log("User model:", User);
+  // console.log("Roles model:", Role);
+  // console.log("Hospital ID:", hospitalID);
+  // console.log("User data:", req.body);
   //return;
   User.create({
     name: req.body.name,
@@ -190,7 +198,9 @@ exports.signup = async (req, res) => {
     password: bcrypt.hashSync(req.body.password, 8),
     hospitalId: hospitalID,
   })
+
     .then((user) => {
+      console.log("User created successfully:", user.username);
       if (req.body.roles && req.body.roles.length > 0) {
         Role.findAll({
           where: {
@@ -257,12 +267,18 @@ exports.signup = async (req, res) => {
       }
     })
     .catch((err) => {
-      console.error("Error Signup: " + err);
       if (err.name === "SequelizeUniqueConstraintError") {
-        res.status(400).send({ message: "Duplicate record found" });
-      } else {
-        res.status(500).send({ message: "Internal Server Error" });
+        console.error(
+          "Duplicate field:",
+          err.errors.map((e) => e.path)
+        );
+        return res.status(400).json({
+          message: "Duplicate record found",
+          fields: err.errors.map((e) => e.path),
+        });
       }
+      console.error("Error Signup:", err);
+      return res.status(500).json({ message: "Internal Server Error" });
     });
 };
 
@@ -294,9 +310,10 @@ exports.signin = async (req, res) => {
   const hospitalName = await hospital.findAll();
 
   console.log("Number of database connections: " + numberOfConnections);
-  console.log(con.user,"connectionList[RequestDatabase]");
+  console.log(con.user, "connectionList[RequestDatabase]");
   console.log("Selected database:", RequestDatabase);
-  con.user.findOne({
+  con.user
+    .findOne({
       where: {
         username: req.body.username,
       },
@@ -313,9 +330,8 @@ exports.signin = async (req, res) => {
 
       console.log("✅ User found:", user.username);
       console.log("🔐 Hashed password in DB:", user.password);
-      
-      try {
 
+      try {
         const passwordIsValid = bcrypt.compareSync(
           req.body.password,
           user.password

@@ -271,7 +271,7 @@ const SaveDoctor = async (req, res) => {
       consultationCurrency
     );
 
-    res.status(200).json({ message: "Doctor saved successfully" });
+    res.status(200).json({ message: "Doctor saved successfully", doctor });
   } catch (error) {
     console.error("Error saving doctor:", error);
     return res.status(500).json({

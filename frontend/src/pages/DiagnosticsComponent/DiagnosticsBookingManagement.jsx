@@ -80,8 +80,7 @@ function DiagnosticsBooking() {
 
   //diacom
 
-  console.log(selectedPackageObject,'selectedPackageObject');
-  
+  console.log(selectedPackageObject, "selectedPackageObject");
 
   const [showDicomModal, setShowDicomModal] = useState(false);
   const [selectedBookingForDicom, setSelectedBookingForDicom] = useState(null);
@@ -1270,7 +1269,6 @@ function DiagnosticsBooking() {
               </div>
 
               <div className="col-md-6">
-                {" "}
                 <div className="form-group">
                   <label
                     style={{
@@ -1282,33 +1280,37 @@ function DiagnosticsBooking() {
                     htmlFor="selectDoctor"
                     className="control-label"
                   >
-                    Referral Doctor
+                    {"Referral Doctor"}
                   </label>
-                  <div className="d-flex">
-                    <select
-                      id="selectDoctor"
-                      className="form-control"
-                      style={{ fontSize: "12px" }}
-                      value={selectedDoctor}
-                      onChange={(e) => setSelectedDoctor(e.target.value)}
+                  <select
+                    id="selectDoctor"
+                    className="form-control"
+                    style={{ fontSize: "12px" }}
+                    value={selectedDoctor}
+                    onChange={(e) => {
+                      if (e.target.value === "new") {
+                        setShowNewDoctorModal(true); // open modal
+                      } else {
+                        setSelectedDoctor(e.target.value); // normal selection
+                      }
+                    }}
+                  >
+                    <option value="">{"Select Doctor"}</option>
+                    {doctors.map((doctor) => (
+                      <option key={doctor.id} value={doctor.id}>
+                        Dr. {doctor.FirstName} {doctor.LastName}
+                      </option>
+                    ))}
+                    <option
+                      value="new"
+                      style={{ fontWeight: "bold", color: "blue" }}
                     >
-                      <option value="">{"Select Doctor"}</option>
-                      {doctors.map((doctor) => (
-                        <option key={doctor.id} value={doctor.id}>
-                          Dr. {doctor.FirstName} {doctor.LastName}
-                        </option>
-                      ))}
-                    </select>
-                    <Button
-                      variant="link"
-                      style={{ fontSize: "12px", marginLeft: "5px" }}
-                      onClick={() => setShowNewDoctorModal(true)}
-                    >
-                      + New Doctor
-                    </Button>
-                  </div>
+                      + Add New Doctor
+                    </option>
+                  </select>
                 </div>
               </div>
+
             </div>
             <div className="row">
               <div className="col-md-6">

@@ -63,7 +63,6 @@ function Pathologytest() {
   const [PaidAmount, setPaidAmount] = useState(0);
   const [EditPaidAmount, setEditPaidAmount] = useState(0);
 
-
   // New Doctor States
   const [showNewDoctorModal, setShowNewDoctorModal] = useState(false);
   const [newDoctorData, setNewDoctorData] = useState({
@@ -484,6 +483,8 @@ function Pathologytest() {
     setEndDate("");
   };
 
+  console.log(selectedDoctor, "selectedDoctor");
+
   const filteredBookings = bookings.filter((booking) => {
     const isNameMatch =
       booking.PatientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -866,6 +867,7 @@ function Pathologytest() {
     totalFeesFinal,
     "totalFeesFinal,formData.TotalFees || formData.testFees"
   );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -1290,7 +1292,6 @@ function Pathologytest() {
               </div>
 
               <div className="col-md-6">
-                {" "}
                 <div className="form-group">
                   <label
                     style={{
@@ -1304,29 +1305,32 @@ function Pathologytest() {
                   >
                     {t("ReferralDoctor")}
                   </label>
-                  <div className="d-flex">
-                    <select
-                      id="selectDoctor"
-                      className="form-control"
-                      style={{ fontSize: "12px" }}
-                      value={selectedDoctor}
-                      onChange={(e) => setSelectedDoctor(e.target.value)}
+                  <select
+                    id="selectDoctor"
+                    className="form-control"
+                    style={{ fontSize: "12px" }}
+                    value={selectedDoctor}
+                    onChange={(e) => {
+                      if (e.target.value === "new") {
+                        setShowNewDoctorModal(true); // open modal
+                      } else {
+                        setSelectedDoctor(e.target.value); // normal selection
+                      }
+                    }}
+                  >
+                    <option value="">{t("SelectDoctor")}</option>
+                    {doctors.map((doctor) => (
+                      <option key={doctor.id} value={doctor.id}>
+                        Dr. {doctor.FirstName} {doctor.LastName}
+                      </option>
+                    ))}
+                    <option
+                      value="new"
+                      style={{ fontWeight: "bold", color: "blue" }}
                     >
-                      <option value="">{t("SelectDoctor")}</option>
-                      {doctors.map((doctor) => (
-                        <option key={doctor.id} value={doctor.id}>
-                          Dr. {doctor.FirstName} {doctor.LastName}
-                        </option>
-                      ))}
-                    </select>
-                    <Button
-                      variant="link"
-                      style={{ fontSize: "12px", marginLeft: "5px" }}
-                      onClick={() => setShowNewDoctorModal(true)}
-                    >
-                      + New Doctor
-                    </Button>
-                  </div>
+                      + Add New Doctor
+                    </option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -2427,7 +2431,6 @@ function Pathologytest() {
           handleClose={() => setSelectedViewPackageID(null)}
         />
       )}
-
       {/* Doctor Registration model */}
       <Modal
         show={showNewDoctorModal}

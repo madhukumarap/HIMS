@@ -271,7 +271,7 @@ const SaveDoctor = async (req, res) => {
       consultationCurrency
     );
 
-    res.status(200).json({ message: "Doctor saved successfully" });
+    res.status(200).json({ message: "Doctor saved successfully", doctor });
   } catch (error) {
     console.error("Error saving doctor:", error);
     return res.status(500).json({
@@ -497,6 +497,360 @@ const updateDoctorSign = async (req, res) => {
   }
 };
 
+const chrono = require("chrono-node");
+const moment = require("moment");
+const { Op } = require("sequelize");
+
+async function findNextAvailableDateByEmail(db, doctorEmail) {
+  let checkDate = moment().add(1, "days");
+
+  while (true) {
+    // 1️⃣ Check vacations (date-only)
+    const vacation = await db.doctorVacation.findOne({
+      where: {
+        doctorEmail,
+        startDate: { [Op.lte]: checkDate.clone().endOf("day").toDate() },
+        endDate: { [Op.gte]: checkDate.clone().startOf("day").toDate() },
+      },
+    });
+
+    if (vacation) {
+      // Skip to the next day after vacation ends
+      checkDate = moment(vacation.endDate).add(1, "days");
+      continue;
+    }
+
+    // 2️⃣ Check appointments
+    const existing = await db.DoctorsAppointment.findOne({
+      where: {
+        DoctorEmail: doctorEmail,
+        bookingStartDate: checkDate.format("MM/DD/YYYY, hh:mm A"),
+      },
+    });
+
+    if (!existing) {
+      return checkDate.toDate();
+    }
+
+    // 3️⃣ Try next day
+    checkDate.add(1, "days");
+  }
+}
+
+const rescheduleAppointmentsByText = async (req, res) => {
+  const database = req.headers.userDatabase;
+  const connectionList = await getConnectionList(database);
+  const db = connectionList[database];
+  const DoctorsAppointment = db.DoctorsAppointment;
+
+  try {
+    const { command, doctorEmail, patients } = req.body;
+
+    let targetDate;
+    let sourceDate = null;
+
+    if (command.toLowerCase().includes("next available day")) {
+      targetDate = await findNextAvailableDateByEmail(db, doctorEmail);
+    } else {
+      // Use chrono.parse() to get all dates from the command - CALL ONLY ONCE
+      const parsedDates = chrono.parse(command);
+
+      if (parsedDates.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "No date found in your command.",
+        });
+      }
+
+      // Improved logic for determining source and target dates
+      const lowerCommand = command.toLowerCase();
+
+      if (parsedDates.length === 1) {
+        // Only one date found - use it as target
+        targetDate = parsedDates[0].start.date();
+      } else {
+        // For commands like "Reschedule all the 10th October appointments to 11th October"
+        if (lowerCommand.includes("to") && parsedDates.length >= 2) {
+          // Find the position of "to" in the command
+          const toIndex = lowerCommand.indexOf("to");
+
+          // Find which dates come before and after "to"
+          const datesBeforeTo = parsedDates.filter(
+            (date) => date.index < toIndex
+          );
+          const datesAfterTo = parsedDates.filter(
+            (date) => date.index >= toIndex
+          );
+
+          if (datesBeforeTo.length > 0 && datesAfterTo.length > 0) {
+            // Last date before "to" is source, first date after "to" is target
+            sourceDate = datesBeforeTo[datesBeforeTo.length - 1].start.date();
+            targetDate = datesAfterTo[0].start.date();
+          } else {
+            // Fallback: use first as source, last as target
+            sourceDate = parsedDates[0].start.date();
+            targetDate = parsedDates[parsedDates.length - 1].start.date();
+          }
+        } else if (
+          lowerCommand.includes("from") &&
+          lowerCommand.includes("to")
+        ) {
+          // Format: "from X to Y"
+          const fromIndex = lowerCommand.indexOf("from");
+          const toIndex = lowerCommand.indexOf("to");
+
+          if (fromIndex < toIndex) {
+            sourceDate = parsedDates[0].start.date();
+            targetDate = parsedDates[1].start.date();
+          }
+        } else {
+          // Default: use last date as target
+          targetDate = parsedDates[parsedDates.length - 1].start.date();
+          sourceDate = parsedDates[0].start.date();
+        }
+      }
+    }
+
+    console.log("Source Date:", sourceDate);
+    console.log("Target Date:", targetDate, "targetDate////");
+
+    if (!targetDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Could not determine target date.",
+      });
+    }
+
+    // 🚨 CHECK VACATION for the target date
+    const vacation = await db.doctorVacation.findOne({
+      where: {
+        doctorEmail,
+        startDate: { [Op.lte]: moment(targetDate).endOf("day").toDate() },
+        endDate: { [Op.gte]: moment(targetDate).startOf("day").toDate() },
+      },
+    });
+
+    if (vacation) {
+      return res.status(400).json({
+        success: false,
+        message: `Doctor is on vacation from ${moment(
+          vacation.startDate
+        ).format("MM/DD/YYYY")} to ${moment(vacation.endDate).format(
+          "MM/DD/YYYY"
+        )}. Please choose another date.`,
+      });
+    }
+
+    // 🚨 Build where clause for appointments
+    let whereClause = {
+      DoctorEmail: doctorEmail,
+    };
+
+    // 🚨 CRITICAL CHANGE: If source date is specified, reschedule ALL appointments from that date
+    // IGNORE the patients filter when source date is specified
+    if (sourceDate) {
+      whereClause.bookingStartDate = {
+        [Op.like]: `%${moment(sourceDate).format("MM/DD/YYYY")}%`,
+      };
+      console.log(
+        `Rescheduling ALL appointments from: ${moment(sourceDate).format(
+          "MM/DD/YYYY"
+        )} to target: ${moment(targetDate).format("MM/DD/YYYY")}`
+      );
+    } else {
+      // Only use patient filtering when NO source date is specified
+      // Extract unique identifiers from the patients array
+      const patientIds = patients.map(
+        (patient) => patient.patientId || patient.id
+      );
+      const admissionIds = patients
+        .map((patient) => patient.admissionID)
+        .filter((id) => id);
+      const patientPhones = patients
+        .map((patient) => patient.PatientPhone)
+        .filter((phone) => phone);
+      const patientNames = patients
+        .map((patient) => patient.PatientName)
+        .filter((name) => name);
+
+      whereClause[Op.or] = [
+        { patientId: { [Op.in]: patientIds } },
+        { admissionID: { [Op.in]: admissionIds } },
+        { PatientPhone: { [Op.in]: patientPhones } },
+        { PatientName: { [Op.in]: patientNames } },
+      ].filter((condition) => {
+        const values = Object.values(condition)[0][Op.in];
+        return values && values.length > 0;
+      });
+
+      console.log(`Filtering by specific patients only`);
+    }
+
+    // 🚨 Fetch appointments based on the where clause
+    const appointments = await DoctorsAppointment.findAll({
+      where: whereClause,
+    });
+
+    if (!appointments.length) {
+      const message = sourceDate
+        ? `No appointments found for ${moment(sourceDate).format(
+            "MM/DD/YYYY"
+          )} to reschedule.`
+        : "No appointments found to reschedule for the selected patients.";
+
+      return res.status(200).json({
+        success: true,
+        message: message,
+      });
+    }
+
+    console.log(
+      `Found ${appointments.length} appointments to reschedule from ${
+        sourceDate
+          ? moment(sourceDate).format("MM/DD/YYYY")
+          : "selected patients"
+      } to ${moment(targetDate).format("MM/DD/YYYY")}`
+    );
+
+    // Get IDs of appointments we're rescheduling
+    const reschedulingAppointmentIds = appointments.map((appt) => appt.id);
+
+    // Check for time conflicts on the target date (EXCLUDE appointments we're rescheduling)
+    const existingAppointmentsOnTargetDate = await DoctorsAppointment.findAll({
+      where: {
+        DoctorEmail: doctorEmail,
+        bookingStartDate: {
+          [Op.like]: `%${moment(targetDate).format("MM/DD/YYYY")}%`,
+        },
+        id: { [Op.notIn]: reschedulingAppointmentIds }, // Exclude the appointments we're moving
+      },
+    });
+
+    console.log("Rescheduling appointments:", reschedulingAppointmentIds);
+    console.log(
+      "Existing appointments on target date:",
+      existingAppointmentsOnTargetDate.map((a) => ({
+        id: a.id,
+        name: a.PatientName,
+        time: a.bookingStartDate,
+      }))
+    );
+
+    // Create a set of occupied time slots from appointments NOT being rescheduled
+    const occupiedSlots = new Set();
+    existingAppointmentsOnTargetDate.forEach((appt) => {
+      try {
+        const time = moment(
+          appt.bookingStartDate,
+          "MM/DD/YYYY, hh:mm A"
+        ).format("HH:mm");
+        occupiedSlots.add(time);
+        console.log(`Occupied slot: ${time} for ${appt.PatientName}`);
+      } catch (error) {
+        console.error("Error parsing appointment time:", error);
+      }
+    });
+
+    // Reschedule each appointment with 30-minute intervals
+    const rescheduledAppointments = [];
+    const timeSlots = []; // Track all time slots we're using in this reschedule operation
+
+    // Sort appointments by original time to maintain order
+    appointments.sort((a, b) => {
+      const timeA = moment(a.bookingStartDate, "MM/DD/YYYY, hh:mm A");
+      const timeB = moment(b.bookingStartDate, "MM/DD/YYYY, hh:mm A");
+      return timeA.diff(timeB);
+    });
+
+    for (const appt of appointments) {
+      const apptMoment = moment(appt.bookingStartDate, "MM/DD/YYYY, hh:mm A");
+      const originalTime = apptMoment.format("HH:mm");
+
+      // Try to keep the original time first
+      let newStart = moment(targetDate)
+        .hour(apptMoment.hour())
+        .minute(apptMoment.minute());
+
+      let newTime = newStart.format("HH:mm");
+      let attempts = 0;
+      const maxAttempts = 48; // Try all 30-minute slots in a day (24 hours * 2)
+
+      // Find an available time slot
+      while (attempts < maxAttempts) {
+        // Check if this time slot is available (not occupied and not used in current batch)
+        if (!occupiedSlots.has(newTime) && !timeSlots.includes(newTime)) {
+          break;
+        }
+
+        // Try next 30-minute slot
+        newStart.add(30, "minutes");
+        newTime = newStart.format("HH:mm");
+        attempts++;
+      }
+
+      if (attempts >= maxAttempts) {
+        return res.status(400).json({
+          success: false,
+          message: `No available time slots found on ${moment(
+            targetDate
+          ).format("MM/DD/YYYY")} for ${
+            appt.PatientName
+          }. The day is fully booked.`,
+        });
+      }
+
+      // Reserve this time slot
+      timeSlots.push(newTime);
+      occupiedSlots.add(newTime); // Also add to occupied slots to prevent conflicts in this batch
+
+      const duration = moment(appt.bookingEndDate, "MM/DD/YYYY, hh:mm A").diff(
+        apptMoment,
+        "minutes"
+      );
+      const newEnd = moment(newStart).add(duration, "minutes");
+
+      // Store old date for logging
+      const oldDate = appt.bookingStartDate;
+
+      appt.bookingStartDate = newStart.format("MM/DD/YYYY, hh:mm A");
+      appt.bookingEndDate = newEnd.format("MM/DD/YYYY, hh:mm A");
+
+      await appt.save();
+
+      rescheduledAppointments.push({
+        patientName: appt.PatientName,
+        oldDate: oldDate,
+        newDate: appt.bookingStartDate,
+        oldTime: moment(oldDate, "MM/DD/YYYY, hh:mm A").format("hh:mm A"),
+        newTime: newStart.format("hh:mm A"),
+      });
+
+      console.log(
+        `Rescheduled ${appt.PatientName} from ${originalTime} to ${newTime}`
+      );
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Rescheduled ${appointments.length} appointments from ${
+        sourceDate
+          ? moment(sourceDate).format("MM/DD/YYYY")
+          : "selected patients"
+      } to ${moment(targetDate).format("MM/DD/YYYY")}.`,
+      rescheduledAppointments: rescheduledAppointments,
+      details: rescheduledAppointments.map(
+        (appt) => `${appt.patientName}: ${appt.oldTime} → ${appt.newTime}`
+      ),
+    });
+  } catch (error) {
+    console.error("Error rescheduling appointments:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to reschedule appointments.",
+    });
+  }
+};
+
 module.exports = {
   SaveDoctor,
   getDoctorData,
@@ -507,4 +861,6 @@ module.exports = {
   UpdateDoctorFees,
   GetAllDoctorFees,
   GetDoctorsWithAllFees,
+  rescheduleAppointmentsByText,
+  findNextAvailableDateByEmail,
 };

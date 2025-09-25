@@ -7,12 +7,13 @@ import axios from "axios";
 import Table from "react-bootstrap/Table";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import { Container, Row, Col, Card } from "react-bootstrap";
+import { Container, Row, Col, Card, Modal } from "react-bootstrap"; // Added Modal import
 import { Link } from "react-router-dom";
 import AuthService from "../services/auth.service";
 import Datepickrange from "./DateRangeCalender";
 import { useTranslation } from "react-i18next";
 import i18n from "../translations/PatientListScreen/PatientListScreen";
+import { toast } from "react-toastify";
 
 const PatientsLists = () => {
   const currentUser = AuthService.getCurrentUser();
@@ -45,6 +46,11 @@ const PatientsLists = () => {
 
   const [patients, setPatients] = useState([]);
   const [searchValue, setSearchValue] = useState("");
+
+  // State for modal and reschedule text
+  const [showModal, setShowModal] = useState(false);
+  const [rescheduleText, setRescheduleText] = useState("");
+  const [isRescheduling, setIsRescheduling] = useState(false);
 
   const today = new Date();
   const firstDayOfMonth = new Date(
@@ -88,6 +94,11 @@ const PatientsLists = () => {
     setIsMobile(window.innerWidth <= 200);
   };
 
+  // Update the useEffect to use the new function
+  useEffect(() => {
+    fetchPatientData();
+  }, []);
+
   useEffect(() => {
     // Add event listener on component mount
     window.addEventListener("resize", checkIsMobile);
@@ -96,6 +107,7 @@ const PatientsLists = () => {
       window.removeEventListener("resize", checkIsMobile);
     };
   }, []);
+
   useEffect(() => {
     const reloadCount = localStorage.getItem("reloadCounts");
     if (!reloadCount) {
@@ -104,11 +116,14 @@ const PatientsLists = () => {
       localStorage.setItem("reloadCounts", "1");
     }
   }, []);
+
   useEffect(() => {
     if (currentUser) {
       axios
         .get(
-          `${import.meta.env.VITE_API_URL}/api/getlistOfPatientByDoctorEmail/${currentUser.email}`,
+          `${import.meta.env.VITE_API_URL}/api/getlistOfPatientByDoctorEmail/${
+            currentUser.email
+          }`,
           {
             headers: {
               Authorization: `${token}`,
@@ -123,6 +138,84 @@ const PatientsLists = () => {
         });
     }
   }, []);
+
+  // Function to handle reschedule API call
+  const handleRescheduleAppointments = async () => {
+    if (!rescheduleText.trim()) {
+      alert("Please enter a reschedule message");
+      return;
+    }
+
+    // Get the current patients (only paid ones that are visible in the current page)
+    const patientsToReschedule = currentPatients.filter(
+      (patient) => patient.paymentStatus === "paid"
+    );
+
+    if (patientsToReschedule.length === 0) {
+      alert("No patients to reschedule in the current page");
+      return;
+    }
+
+    setIsRescheduling(true);
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/appointments/reschedule`,
+        {
+          command: rescheduleText,
+          doctorEmail: currentUser.email,
+          patients: patientsToReschedule, // Send the currentPatients data
+        },
+        {
+          headers: {
+            Authorization: `${token}`,
+          },
+        }
+      );
+      // Handle success
+      toast.success(response.data.message);
+
+      // Refetch the patient data after successful reschedule
+      await fetchPatientData();
+      setShowModal(false);
+      setRescheduleText("");
+    } catch (error) {
+      // Show the error message from the backend response
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        toast.error(error.response.data.message);
+      } else if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to reschedule appointments");
+      }
+    } finally {
+      setIsRescheduling(false);
+    }
+  };
+
+  // Extract the data fetching logic into a separate function
+  const fetchPatientData = async () => {
+    if (currentUser) {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/getlistOfPatientByDoctorEmail/${
+            currentUser.email
+          }`,
+          {
+            headers: {
+              Authorization: `${token}`,
+            },
+          }
+        );
+        setPatients(response.data);
+      } catch (error) {
+        console.error("Error fetching patient data:", error);
+      }
+    }
+  };
 
   const filteredPatients = patients.filter((patient) => {
     const fullName = `${patient.PatientName}`.toLowerCase();
@@ -191,6 +284,8 @@ const PatientsLists = () => {
     setCurrentPage(currentPage + 1);
   };
 
+  console.log(currentPatients, "currentPatients");
+
   return (
     <Container style={style} className="mt-4 text-center">
       <header
@@ -231,6 +326,48 @@ const PatientsLists = () => {
         </Row>
       </Form>
       <br />
+      <Row className="justify-content-end mb-3">
+        <Col xs="auto">
+          <Button
+            className="d-flex justify-content-end"
+            onClick={() => setShowModal(true)}
+          >
+            Reschedule Appointments
+          </Button>
+        </Col>
+      </Row>
+
+      {/* Reschedule Modal */}
+      <Modal centered show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Reschedule Appointments</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group>
+            <Form.Label>Reschedule Message</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={4}
+              value={rescheduleText}
+              onChange={(e) => setRescheduleText(e.target.value)}
+              placeholder="Enter your reschedule message here..."
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleRescheduleAppointments}
+            disabled={isRescheduling}
+          >
+            {isRescheduling ? "Processing..." : "Okay"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       {isMobile ? (
         <div>
           {currentPatients
@@ -333,12 +470,6 @@ const PatientsLists = () => {
                   <td style={{ verticalAlign: "middle", textAlign: "center" }}>
                     {patient.PatientPhone}
                   </td>
-                  {/* <td style={{ verticalAlign: "middle", textAlign: "center" }}>
-                  Dr {patient.DoctorName}
-                </td>
-                <td style={{ verticalAlign: "middle", textAlign: "center" }}>
-                  {patient.DoctorEmail}
-                </td> */}
                   <td style={{ verticalAlign: "middle", textAlign: "center" }}>
                     {patient.bookingStartDate}-{" "}
                     {new Date(patient.bookingEndDate).toLocaleTimeString([], {

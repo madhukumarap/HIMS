@@ -29,6 +29,12 @@ router.post(
   DoctorController.SaveDoctor
 );
 
+// Doctor Reshedule
+router.post(
+  "/appointments/reschedule",
+  DoctorController.rescheduleAppointmentsByText
+);
+
 router.post("/updateDoctorFees/:id", DoctorController.UpdateDoctorFees);
 
 router.get("/getDoctorFees/:id", DoctorController.GetAllDoctorFees);

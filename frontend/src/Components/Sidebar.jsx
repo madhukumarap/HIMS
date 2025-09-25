@@ -111,7 +111,8 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }) => {
         item.title === "Laboratory" ||
         item.title === "OutPatient" ||
         item.title === "InPatient" ||
-        item.title === "Dicom"
+        item.title === "Dicom" ||
+        item.title === "DoctorVacation"
       );
     } else if (userReceptionist) {
       return (
@@ -139,7 +140,8 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }) => {
         item.title === "Packages" ||
         item.title === "OutPatient" ||
         item.title === "Doctors Managment" ||
-        item.title === "Diacom"
+        item.title === "Diacom" ||
+        item.title === "DoctorVacation"
       );
     } else if (userOTTechnician) {
       return (

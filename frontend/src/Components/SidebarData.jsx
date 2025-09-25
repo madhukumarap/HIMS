@@ -355,6 +355,11 @@ const SidebarData = [
         path: "/showAllEarningDoctor",
         icon: <IoIcons.IoIosPaper />,
       },
+      {
+        title: "DoctorVacation",
+        path: "/DoctorVacation",
+        icon: <IoIcons.IoIosPaper />,
+      },
     ],
   },
 

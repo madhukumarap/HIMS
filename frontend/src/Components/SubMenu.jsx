@@ -207,6 +207,7 @@ const SubMenu = ({ item, isActive, toggleSidebar, toggleSubMenu }) => {
       );
     } else if (userRoleADMIN) {
       return (
+        subItem.title === "DoctorVacation" ||
         subItem.title === "Dicom" ||
         subItem.title === "ReferalDoctorsList" ||
         subItem.title === "All Patinent List" ||
@@ -330,7 +331,8 @@ const SubMenu = ({ item, isActive, toggleSidebar, toggleSubMenu }) => {
         subItem.title === "PatientRegistration" ||
         subItem.title === "DoctorsAppointment" ||
         subItem.title === "Doctors Managment" ||
-        subItem.title === "YourEarnings"
+        subItem.title === "YourEarnings" ||
+        subItem.title === "DoctorVacation"
       );
     } else if (userOTTechnician) {
       return true;

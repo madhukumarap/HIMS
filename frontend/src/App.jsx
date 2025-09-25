@@ -171,6 +171,7 @@ import HospitalAnalytics from "./pages/Reports/HospitalAnalytics";
 import ShowEarningsDoctors from "./pages/Doctor/ShowEarningsDoctors";
 import AllPatientList from "./pages/AllPatientList";
 import DicomList from "./pages/Diacom/DicomList";
+import DoctorVacations from "./pages/Doctor/DoctorVacations";
 const Container = styled.div``;
 
 const Content = styled.div`
@@ -1803,6 +1804,10 @@ function App() {
                   <Route
                     path={`/${hospitals[0]?.name}/Dicom`}
                     element={<DicomList />}
+                  />
+                  <Route
+                    path={`/${hospitals[0]?.name}/DoctorVacation`}
+                    element={<DoctorVacations />}
                   />
                 </>
               )}

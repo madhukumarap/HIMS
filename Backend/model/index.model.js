@@ -29,6 +29,7 @@ const db = {};
 
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
+db.doctorVacation = require("././DoctorVacation.js")(sequelize, Sequelize);
 db.userRole = require("./userRole.model")(sequelize, Sequelize);
 db.Payments = require("./paymentsModel.js")(sequelize, DataTypes);
 db.Hospital = require("./Hospital.js")(sequelize, DataTypes);

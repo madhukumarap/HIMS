@@ -74,8 +74,6 @@ function PrescriptionForm() {
         // Handle the case when the user is not logged in
         return;
       }
-
-      console.log("currentUser ", currentUser);
       const token = currentUser.Token;
 
       const base64Payload = token.split(".")[1];

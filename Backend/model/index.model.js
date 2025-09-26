@@ -376,5 +376,7 @@ async function initial() {
 }
 
 console.log();
-
+// sequelize.sync({
+//   alter: true
+// })
 module.exports = db;

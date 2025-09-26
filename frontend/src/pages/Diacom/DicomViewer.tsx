@@ -8,6 +8,7 @@ import * as cornerstoneMath from "cornerstone-math";
 import * as dicomParser from "dicom-parser";
 import * as Hammer from "hammerjs";
 import TagsTable from "./TagsTable";
+import { toast } from "react-toastify";
 import {
   Tabs,
   Tab,
@@ -223,9 +224,13 @@ const MainDicomViewer: React.FC<Props> = ({
     left?: SeriesImage;
     right?: SeriesImage;
   }>({});
-
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportComment, setReportComment] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [dicomData, setDicomData] = useState("")
+  
   const dicomFiles = consultationFiles.filter((file) => file.is_dicom);
-const currentUser = AuthService.getCurrentUser();
+  const currentUser = AuthService.getCurrentUser();
 
   // Compare mode functions
   const toggleCompareMode = () => {
@@ -538,6 +543,31 @@ const currentUser = AuthService.getCurrentUser();
       setLoadingProgress(100);
     }
   };
+  useEffect(() => {
+  const fetchDicomData = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/${dicomId}`,{
+        headers: { Authorization: `${currentUser?.Token}` 
+      }});
+      console.log(response.data, "DICOM data fetched successfully");
+      // You'll probably want to set the data to state here
+      setDicomData(response.data.record);
+      if (response.data.record?.comments) {
+          setReportComment(response.data.record.comments);
+      }
+      if (response.data.record?.comments) {
+      setReportComment(response.data.record.comments);
+    }
+    } catch (error) {
+      console.error("Error fetching DICOM data:", error);
+    }
+  };
+
+  if (dicomId) {
+    fetchDicomData();
+  }
+}, [dicomId]);
+
 
   const displayCurrentImage = () => {
     if (seriesImages.length === 0) return;
@@ -1162,6 +1192,56 @@ const currentUser = AuthService.getCurrentUser();
       setTextAnnotation("");
     }
   };
+  const handleShowReportModal = () => {
+    setShowReportModal(true);
+  };
+    const handleCloseReportModal = () => {
+    setShowReportModal(false);
+    setReportComment("");
+  };
+
+const handleReportSubmit = async () => {
+    if (!reportComment.trim()) return;
+    
+    setReportSubmitting(true);
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/dicom/${dicomId}/report`,
+        {
+          comment: reportComment,
+          dicom_id: dicomId
+        },
+        {
+          headers: { 
+            Authorization: `${currentUser?.Token}` 
+          }
+        }
+      );
+      
+      console.log('Report submitted successfully:', response.data);
+      
+      // Refresh DICOM data to get updated comments
+      const refreshResponse = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/dicom/${dicomId}`,
+        {
+          headers: { 
+            Authorization: `${currentUser?.Token}` 
+          }
+        }
+      );
+      
+      setDicomData(refreshResponse.data.record);
+      handleCloseReportModal();
+      
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      setError('Failed to submit report');
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
+
 
   if (!initialized) {
     return (
@@ -1230,6 +1310,18 @@ const currentUser = AuthService.getCurrentUser();
             {compareMode ? "Exit Compare" : "🔍 Compare"}
           </Button>
         )}
+        {/* Report Button - Added here */}
+        <Button
+          size="sm"
+          onClick={handleShowReportModal}
+          style={{
+            backgroundColor: "#0D6EFD",
+            borderColor: "#0D6EFD",
+            color: "white",
+          }}
+        >
+          📋 Report
+        </Button>
 
         {compareMode && (
           <Button size="sm" onClick={clearCompare}>
@@ -1266,6 +1358,74 @@ const currentUser = AuthService.getCurrentUser();
           </ProgressBar>
         </div>
       )}
+  
+
+<Modal show={showReportModal} onHide={handleCloseReportModal} size="lg" centered>
+  <Modal.Header 
+    closeButton
+    style={{ backgroundColor: "#0D6EFD", color: "white" }}
+  >
+    <Modal.Title>
+      📋 {dicomData?.comments ? 'View Report' : 'Create Report'}
+      {dicomData?.comments && (
+        <Badge bg="success" className="ms-2">Completed</Badge>
+      )}
+    </Modal.Title>
+  </Modal.Header>
+  
+  <Modal.Body>
+    <Form>
+      <Form.Group className="mb-3">
+  <Form.Label>
+    Comments/Findings 
+    {!dicomData?.comments && <span className="text-danger">*</span>}
+    {dicomData?.comments && (
+      <Badge bg="secondary" className="ms-2">Read Only</Badge>
+    )}
+  </Form.Label>
+  
+  {/* Show actual textarea with value for existing comments */}
+  <Form.Control
+    as="textarea"
+    rows={5}
+    value={reportComment}
+    disabled={!!dicomData?.comments}
+    onChange={(e) => !dicomData?.comments && setReportComment(e.target.value)}
+    placeholder={
+      dicomData?.comments 
+        ? "" // Empty placeholder when comment exists
+        : "Enter your observations, findings, or comments..."
+    }
+    maxLength={1000}
+    className={dicomData?.comments ? 'bg-light' : ''}
+  />
+  
+  <Form.Text className="text-muted">
+    {dicomData?.comments 
+      ? `Report submitted on ${new Date(dicomData.updatedAt).toLocaleDateString()}`
+      : `${reportComment.length}/1000 characters`}
+  </Form.Text>
+</Form.Group>
+    </Form>
+  </Modal.Body>
+  
+  <Modal.Footer>
+    <Button variant="secondary" onClick={handleCloseReportModal}>
+      {dicomData?.comments ? 'Close' : 'Cancel'}
+    </Button>
+    
+    {/* Only show Submit button if no comments exist */}
+    {!dicomData?.comments && (
+      <Button
+        style={{backgroundColor: '#0D6EFD'}}
+        onClick={handleReportSubmit}
+        disabled={reportSubmitting || !reportComment.trim()}
+      >
+        {reportSubmitting ? "Submitting..." : "Submit Report"}
+      </Button>
+    )}
+  </Modal.Footer>
+</Modal>
 
       <div className="dicom-toolbar">
         <Row className="mb-2">

@@ -138,14 +138,14 @@ function DiagnosticsBooking() {
       if (imageFiles.length > 0) {
         setImages(imageFiles);
       } else {
-        toast.info("No Images found for this booking");
+        // toast.info("No Images found for this booking");
       }
 
       // --- Show viewer if any files exist ---
       if (dicomResponse.data?.rows?.length > 0 || imageFiles.length > 0) {
         setShowDicomViewerModal(true);
       } else {
-        toast.error("No files found for this booking");
+        // toast.error("No files found for this booking");
       }
     } catch (error) {
       console.error("Error fetching files:", error);

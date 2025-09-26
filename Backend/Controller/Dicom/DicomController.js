@@ -57,7 +57,8 @@ async function listDicomFiles(req, res) {
 
   try {
     const { patientId, testBookingID } = req.query;
-
+    console.log(patientId, testBookingID, "patientId, testBookingID")
+    console.log(req.user, "req.user in listDicomFiles");
     // Admin can see all if no specific filters
     const isAll =
       req.user && req.user.role === "Admin" && req.query.all === "1";
@@ -80,7 +81,7 @@ async function listDicomFiles(req, res) {
         return res.json({ count: 0, rows: [] });
       }
     }
-
+    console.log(where, "where clause for listing DICOM files");
     const rows = await DicomFile.findAll({
       where,
       order: [["createdAt", "DESC"]],
@@ -333,7 +334,74 @@ async function uploadDicomFileHandler(req, res) {
       .json({ message: "Upload error", error: err.message });
   }
 }
-
+async function reportCommentOnDicom(req, res) {
+  const { comment, dicom_id,user_id } = req.body;
+  
+  console.log(comment, dicom_id, "comment,dicom_id comment,dicom_id");
+  
+  // Validate required fields
+  if (!comment || !dicom_id) {
+    return res.status(400).json({
+      success: false,
+      message: 'Comment and DICOM ID are required'
+    });
+  }
+  
+  // Validate comment length
+  if (comment.length > 1000) {
+    return res.status(400).json({
+      success: false,
+      message: 'Comment exceeds maximum length of 1000 characters'
+    });
+  }
+  const database = req.headers.userDatabase;
+  const connectionList = await getConnectionList(database);
+  const db = connectionList[database];
+  
+  const DicomFile = db.DicomFile;
+  
+  try {
+    // Find and update the DICOM file
+    const [updatedRows] = await DicomFile.update(
+      { 
+        comments: comment.trim(),
+        reported_by: user_id, // Assuming user info is in req.user
+      },
+      { 
+        where: { id: dicom_id },
+        returning: true // For PostgreSQL, use this to get the updated record
+      }
+    );
+    
+    if (updatedRows === 0) {
+      return res.json({
+        success: false,
+        message: 'DICOM file not found'
+      });
+    }
+    
+    // Fetch the updated record
+    const updatedDicomFile = await DicomFile.findOne({
+      where: { id: dicom_id }
+    });
+    console.log(updatedDicomFile,"updatedDicomFileupdatedDicomFile")
+    console.log('Comment saved successfully for DICOM file:', dicom_id);
+    return res.json({
+      message: 'Comment saved successfully',
+      
+    });
+    
+    
+  } catch (error) {
+    console.error('Error saving comment:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to save comment',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+}
 // Export all functions
 module.exports = {
   listDicomFiles,
@@ -345,4 +413,5 @@ module.exports = {
   uploadDicomFileHandler,
   upload: upload.single("file"),
   handleMulterError,
+  reportCommentOnDicom
 };

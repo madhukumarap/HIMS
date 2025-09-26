@@ -51,6 +51,14 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
+    comments: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    reported_by: {
+      type:DataTypes.INTEGER,
+      allowNull: true
+    }
   }, {
     tableName: 'dicom_files', // Change table name if needed
     timestamps: true, // Automatically manages createdAt & updatedAt

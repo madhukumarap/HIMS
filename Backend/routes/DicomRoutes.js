@@ -22,7 +22,10 @@ router.post(
   dicomController.handleMulterError, // Add error handling middleware
   dicomController.uploadDicomFileHandler
 );
-
+// comment of report
+router.post(
+  "/commentonreport", [authJwt.verifyToken], dicomController.reportCommentOnDicom
+)
 // 📌 List DICOM files
 router.get("/getDicom", [authJwt.verifyToken], dicomController.listDicomFiles);
 

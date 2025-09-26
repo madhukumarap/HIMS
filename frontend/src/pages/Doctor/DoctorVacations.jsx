@@ -172,6 +172,11 @@ const DoctorVacations = () => {
         <h2 style={{ fontSize: "16px" }}>Doctor's Availability Management</h2>
       </header>
 
+      <div className="alert alert-info mt-2 p-2 text-center" style={{ fontSize: "13px" }}>
+        The dates mentioned below represent the periods when doctors are{" "}
+        <b>not available</b>.
+      </div>
+
       {/* ✅ Admin Filters */}
       {isAdmin && (
         <div className="mb-4 row g-2">

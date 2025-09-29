@@ -172,6 +172,7 @@ import ShowEarningsDoctors from "./pages/Doctor/ShowEarningsDoctors";
 import AllPatientList from "./pages/AllPatientList";
 import DicomList from "./pages/Diacom/DicomList";
 import DoctorVacations from "./pages/Doctor/DoctorVacations";
+import DoctorEarnings from "./pages/Doctor/DoctorEarnings";
 const Container = styled.div``;
 
 const Content = styled.div`
@@ -1808,6 +1809,10 @@ function App() {
                   <Route
                     path={`/${hospitals[0]?.name}/DoctorVacation`}
                     element={<DoctorVacations />}
+                  />
+                  <Route
+                    path={`/${hospitals[0]?.name}/DoctorEarnings`}
+                    element={<DoctorEarnings />}
                   />
                 </>
               )}

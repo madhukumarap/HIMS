@@ -104,7 +104,8 @@
     "YourEarnings": "Your Earnings",
     "All Patinent List": "All Patinent List",
     "Dicom": "Dicom",
-    "DoctorVacation": "Doctor's Availability"
+    "DoctorVacation": "Doctor's Availability",
+    "DoctorEarnings" : "Doctor Earnings"
   },
   "fr": {
     "Hospital-Rooms": "Chambres d'hôpital",
@@ -209,6 +210,7 @@
     "ReferalDoctorsList": "Referal Doctors List",
     "YourEarnings": "Your Earnings",
     "Dicom": "Dicom",
-    "DoctorVacation": "Doctor's Availability"
+    "DoctorVacation": "Doctor's Availability",
+    "DoctorEarnings" : "Doctor Earnings"
   }
 }

@@ -261,6 +261,11 @@ const SidebarData = [
         path: "/LostInFollow",
         icon: <IoIcons.IoIosPaper />,
       },
+      {
+        title: "DoctorEarnings",
+        path: "/DoctorEarnings",
+        icon: <IoIcons.IoIosPaper />,
+      },
       // {
       //   title: "Pathology Analysis",
       //   path: "/PathologyAnalytics",

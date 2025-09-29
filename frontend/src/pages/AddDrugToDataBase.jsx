@@ -292,7 +292,6 @@ const FormComponent = () => {
                     style={{
                       fontSize: "12px",
                       marginTop: "8px",
-                      marginTop: "8px",
                     }}
                     className="form-control"
                     placeholder={t("enterManufacturer")}

@@ -58,6 +58,14 @@ module.exports = (sequelize) => {
     reported_by: {
       type:DataTypes.INTEGER,
       allowNull: true
+    },
+    report_forward_from: {
+      type:DataTypes.BIGINT,
+      allowNull: true
+    },
+    report_forward_to: {
+      type:DataTypes.BIGINT,
+      allowNull: true
     }
   }, {
     tableName: 'dicom_files', // Change table name if needed

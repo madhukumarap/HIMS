@@ -1206,7 +1206,7 @@ const handleReportSubmit = async () => {
     setReportSubmitting(true);
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/dicom/${dicomId}/report`,
+        `${import.meta.env.VITE_API_URL}/api/commentonreport`,
         {
           comment: reportComment,
           dicom_id: dicomId
@@ -1222,7 +1222,7 @@ const handleReportSubmit = async () => {
       
       // Refresh DICOM data to get updated comments
       const refreshResponse = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/dicom/${dicomId}`,
+        `${import.meta.env.VITE_API_URL}/api/${dicomId}`,
         {
           headers: { 
             Authorization: `${currentUser?.Token}` 

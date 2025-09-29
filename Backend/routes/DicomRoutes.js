@@ -28,7 +28,8 @@ router.post(
 )
 // 📌 List DICOM files
 router.get("/getDicom", [authJwt.verifyToken], dicomController.listDicomFiles);
-
+// forward report
+router.post("/report-forward", [authJwt.verifyToken], dicomController.reportForward)
 // 📌 Get DICOM record
 router.get("/:id", [authJwt.verifyToken], dicomController.getDicomRecord);
 

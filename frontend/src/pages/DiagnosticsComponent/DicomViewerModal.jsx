@@ -1,14 +1,16 @@
 import React, { useState } from "react";
-import { Modal, Button, ListGroup, Badge, Alert, Form } from "react-bootstrap";
+import { Modal, Button, ListGroup, Badge, Alert, Form, Dropdown } from "react-bootstrap";
 import {
   FaEye,
   FaDownload,
   FaCalendarAlt,
   FaTimes,
   FaArrowLeft,
+  FaShare,
 } from "react-icons/fa";
 import DicomViewer from "../Diacom/DicomViewer";
 import AuthService from "../../services/auth.service";
+import { toast } from "react-toastify";
 
 const DicomViewerModal = ({
   show,
@@ -21,6 +23,10 @@ const DicomViewerModal = ({
   const [showDicomViewer, setShowDicomViewer] = useState(false);
   const [selectedDicomId, setSelectedDicomId] = useState(null);
   const [viewType, setViewType] = useState("dicom"); // "dicom" | "image"
+  const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [doctors, setDoctors] = useState([]); // You'll need to populate this from your API
+  const [isForwarding, setIsForwarding] = useState(false);
 
   const currentUser = AuthService.getCurrentUser();
 
@@ -40,8 +46,42 @@ const DicomViewerModal = ({
     tenant_id: 0, // You might need to get this from your API
   }));
 
+  // Fetch doctors list - you'll need to implement this based on your API
+  const fetchDoctors = async () => {
+    try {
+      // Replace this with your actual API call to get doctors list
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/getDoctorData`, {
+        headers: {
+          Authorization: `${currentUser?.Token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const doctorsData = await response.json();
+        console.log(doctorsData, "doctorsData");
+        setDoctors(doctorsData);
+      }
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+    }
+  };
+
+  // Filter doctors to exclude the current doctor associated with the selected file
+  const getFilteredDoctors = () => {
+    console.log(selectedFile,"selectedFile")
+    if (!selectedFile) return doctors;
+    
+    // Filter out the doctor who is already associated with this DICOM file
+    return doctors.filter(doctor => 
+      doctor.id !== selectedFile.userId
+    );
+  };
+
   const handleFileSelect = (file) => {
     setSelectedFile(file);
+    // Reset doctor dropdown when selecting a new file
+    setShowDoctorDropdown(false);
+    setSelectedDoctor(null);
   };
 
   const handleDownload = async (file) => {
@@ -78,6 +118,63 @@ const DicomViewerModal = ({
     setShowDicomViewer(true);
   };
 
+  const handleForwardReport = () => {
+    setShowDoctorDropdown(true);
+    fetchDoctors(); // Fetch doctors when the button is clicked
+  };
+
+  const handleDoctorSelect = (doctor) => {
+    setSelectedDoctor(doctor);
+  };
+
+  const handleConfirmForward = async () => {
+    if (!selectedDoctor || !selectedFile) {
+      alert("Please select a doctor to forward the report.");
+      return;
+    }
+
+    setIsForwarding(true);
+    try {
+      // API call to forward the report
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/report-forward`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${currentUser?.Token}`,
+          },
+          body: JSON.stringify({
+            dicomId: selectedFile.id, // Send DICOM file ID
+            doctorId: selectedDoctor.id, // Send selected doctor ID
+            fromDoctor: selectedFile.userId // from doctor ID
+            // Add any other necessary data
+          }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success('Report forwarded successfully!')
+        // alert("Report forwarded successfully!");
+        setShowDoctorDropdown(false);
+        setSelectedDoctor(null);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to forward report: ${errorData.message || "Please try again."}`);
+      }
+    } catch (error) {
+      console.error("Error forwarding report:", error);
+      alert("Error forwarding report. Please try again.");
+    } finally {
+      setIsForwarding(false);
+    }
+  };
+
+  const handleCancelForward = () => {
+    setShowDoctorDropdown(false);
+    setSelectedDoctor(null);
+  };
+
   const handleCloseDicomViewer = () => {
     setShowDicomViewer(false);
     setSelectedDicomId(null);
@@ -87,6 +184,8 @@ const DicomViewerModal = ({
     setSelectedFile(null);
     setShowDicomViewer(false);
     setSelectedDicomId(null);
+    setShowDoctorDropdown(false);
+    setSelectedDoctor(null);
     handleClose();
   };
 
@@ -98,6 +197,8 @@ const DicomViewerModal = ({
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
+  const filteredDoctors = getFilteredDoctors();
 
   return (
     <>
@@ -193,7 +294,7 @@ const DicomViewerModal = ({
                             {selectedFile.patientId || "N/A"}
                           </p>
                           <p>
-                            <strong>Doctor ID:</strong>{" "}
+                            <strong>Current Doctor ID:</strong>{" "}
                             {selectedFile.doctorId || "N/A"}
                           </p>
                           <p>
@@ -203,22 +304,85 @@ const DicomViewerModal = ({
 
                           {selectedFile.orthancInstanceId && (
                             <div className="mt-3">
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleDownload(selectedFile)}
-                                className="me-2"
-                              >
-                                <FaDownload /> Download DICOM
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => handleViewInViewer(selectedFile)}
-                                style={{ marginTop: "1rem" }}
-                              >
-                                <FaEye /> View in Viewer
-                              </Button>
+                              <div className="">
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={() => handleDownload(selectedFile)}
+                                  className="me-2 mt-0 btn btn-primary btn-sm"
+                                >
+                                  <FaDownload /> Download DICOM
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleViewInViewer(selectedFile)}
+                                  className="me-2  btn btn-secondary btn-sm "
+                                >
+                                  <FaEye /> View in Viewer
+                                </Button>
+                                <Button
+                                  variant="info"
+                                  size="sm"
+                                  onClick={handleForwardReport}
+                                  className="flex-fill"
+                                >
+                                  <FaShare /> Forward Report
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Doctor Selection Dropdown */}
+                          {showDoctorDropdown && (
+                            <div className="mt-3 p-3 border rounded">
+                              <h6>Select Doctor to Forward Report</h6>
+                              <Form.Group className="mb-3">
+                                <Form.Label>Choose Doctor</Form.Label>
+                                <Form.Select
+                                  value={selectedDoctor?.id || ""}
+                                  onChange={(e) => {
+                                    const doctorId = e.target.value;
+                                    const doctor = filteredDoctors.find(d => d.id === parseInt(doctorId));
+                                    handleDoctorSelect(doctor);
+                                  }}
+                                >
+                                  <option value="">Select a doctor</option>
+                                  {filteredDoctors.length > 0 ? (
+                                    filteredDoctors.map((doctor) => (
+                                      <option key={doctor.id} value={doctor.id}>
+                                        {doctor.Dr} - {doctor.FirstName} {doctor.LastName}
+                                      </option>
+                                    ))
+                                  ) : (
+                                    <option value="" disabled>
+                                      No other doctors available
+                                    </option>
+                                  )}
+                                </Form.Select>
+                              </Form.Group>
+                              {selectedFile.doctorId && (
+                                <Alert variant="info" className="small">
+                                  <strong>Note:</strong> The current doctor (ID: {selectedFile.doctorId}) is excluded from this list.
+                                </Alert>
+                              )}
+                              <div className="d-flex gap-2">
+                                <Button
+                                  variant="success"
+                                  size="sm"
+                                  onClick={handleConfirmForward}
+                                  disabled={!selectedDoctor || isForwarding || filteredDoctors.length === 0}
+                                >
+                                  {isForwarding ? "Forwarding..." : "Confirm Forward"}
+                                </Button>
+                                <Button
+                                  variant="outline-secondary"
+                                  size="sm"
+                                  onClick={handleCancelForward}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
                             </div>
                           )}
                         </div>

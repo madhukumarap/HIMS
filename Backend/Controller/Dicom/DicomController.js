@@ -335,10 +335,7 @@ async function uploadDicomFileHandler(req, res) {
   }
 }
 async function reportCommentOnDicom(req, res) {
-  const { comment, dicom_id,user_id } = req.body;
-  
-  console.log(comment, dicom_id, "comment,dicom_id comment,dicom_id");
-  
+  const { comment, dicom_id,user_id } = req.body;  
   // Validate required fields
   if (!comment || !dicom_id) {
     return res.status(400).json({
@@ -402,6 +399,62 @@ async function reportCommentOnDicom(req, res) {
     });
   }
 }
+async function reportForward(req, res) {
+  // { dicomId: 7, doctorId: 3, fromDoctor: 1 } reportForwardreportForwardreportForward
+  const {dicomId, doctorId,fromDoctor } = req.body;
+  if (!doctorId || !dicomId || !fromDoctor) {
+    return res.json({
+      success: false,
+      message: 'toDoctorID,fromDoctorID and DICOM ID are required'
+    });
+  }
+  const database = req.headers.userDatabase;
+  const connectionList = await getConnectionList(database);
+  const db = connectionList[database];
+  
+  const DicomFile = db.DicomFile;
+  try {
+    // Find and update the DICOM file
+    const [updatedRows] = await DicomFile.update(
+      { 
+        report_forward_from: fromDoctor,
+        report_forward_to: doctorId, // Assuming user info is in req.user
+      },
+      { 
+        where: { id: dicomId },
+        returning: true // For PostgreSQL, use this to get the updated record
+      }
+    );
+    
+    if (updatedRows === 0) {
+      return res.json({
+        success: false,
+        message: 'DICOM file not found'
+      });
+    }
+    
+    // Fetch the updated record
+    const updatedDicomFile = await DicomFile.findOne({
+      where: { id: dicomId }
+    });
+    console.log(updatedDicomFile,"updatedDicomFileupdatedDicomFile")
+    console.log('Report forwarded successfully for DICOM file:', dicomId);
+    return res.json({
+      message: 'Report forwarded successfully for DICOM file:', dicomId,
+    });
+    
+    
+  } catch (error) {
+    console.error('Error saving Report forwarding:', error);
+    
+    return res.json({
+      success: false,
+      message: 'Failed to save Report forwarding',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+
+}
 // Export all functions
 module.exports = {
   listDicomFiles,
@@ -413,5 +466,6 @@ module.exports = {
   uploadDicomFileHandler,
   upload: upload.single("file"),
   handleMulterError,
-  reportCommentOnDicom
+  reportCommentOnDicom,
+  reportForward
 };

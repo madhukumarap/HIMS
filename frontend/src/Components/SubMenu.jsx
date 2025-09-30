@@ -333,7 +333,8 @@ const SubMenu = ({ item, isActive, toggleSidebar, toggleSubMenu }) => {
         subItem.title === "DoctorsAppointment" ||
         subItem.title === "Doctors Managment" ||
         subItem.title === "YourEarnings" ||
-        subItem.title === "DoctorVacation"
+        subItem.title === "DoctorVacation" ||
+        subItem.title === "ForwardedCase" 
       );
     } else if (userOTTechnician) {
       return true;

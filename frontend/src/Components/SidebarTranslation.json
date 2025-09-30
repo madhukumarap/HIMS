@@ -105,7 +105,8 @@
     "All Patinent List": "All Patinent List",
     "Dicom": "Dicom",
     "DoctorVacation": "Doctor's Availability",
-    "DoctorEarnings" : "Doctor Earnings"
+    "DoctorEarnings" : "Doctor Earnings",
+    "ForwardedCase" : "Forwarded Case"
   },
   "fr": {
     "Hospital-Rooms": "Chambres d'hôpital",

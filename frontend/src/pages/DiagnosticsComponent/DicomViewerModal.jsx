@@ -19,6 +19,15 @@ const DicomViewerModal = ({
   imageFiles,
   patientData,
 }) => {
+  console.log(show,
+handleClose,
+dicomFiles,
+imageFiles,
+patientData,`show,
+handleClose,
+dicomFiles,
+imageFiles,
+patientData,`)
   const [selectedFile, setSelectedFile] = useState(null);
   const [showDicomViewer, setShowDicomViewer] = useState(false);
   const [selectedDicomId, setSelectedDicomId] = useState(null);
@@ -296,6 +305,10 @@ const DicomViewerModal = ({
                           <p>
                             <strong>Current Doctor ID:</strong>{" "}
                             {selectedFile.doctorId || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Current Forwarded Doctor ID:</strong>{" "}
+                            {selectedFile.report_forward_to || "N/A"}
                           </p>
                           <p>
                             <strong>Created:</strong>{" "}

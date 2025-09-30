@@ -32,6 +32,7 @@ import { currencySymbols } from "../../utils.js";
 
 const HospitalAnalytics = () => {
   const currentUser = AuthService.getCurrentUser();
+  console.log(currentUser,"currentUsercurrentUser")
   const currentPath = window.location.pathname;
   const matchResult = currentPath.match(/mediai\/([^\/]+)/);
   let extractedPart;
@@ -42,11 +43,8 @@ const HospitalAnalytics = () => {
   const [bookings, setBookings] = useState([]);
   const [diagnosticBookings, setDiagnosticBookings] = useState([]);
   const [appointmentBookings, setAppointmentBookings] = useState([]);
-  // const [selectedPatientID, setSelectedPatientID] = useState(null);
-  // const [selectedCorporateType, setSelectedCorporateType] = useState("All");
-  // const navigate = useNavigate();
+
   const [companies, setCompanies] = useState([]);
-  const [selectedCompany, setSelectedCompany] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedPatientBookings, setSelectedPatientBookings] = useState([]);
   const [showTestNamesModal, setShowTestNamesModal] = useState(false);
@@ -54,6 +52,7 @@ const HospitalAnalytics = () => {
   const [selectedTestBooking, setSelectedTestBooking] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [timeFrame, setTimeFrame] = useState("monthly");
+  const [selectedRange, setSelectedRange] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
 
@@ -170,13 +169,6 @@ const HospitalAnalytics = () => {
     }
   };
 
-  const handleViewTestNames = (testBooking) => {
-    setSelectedTestBooking(testBooking);
-    const bookingId = testBooking.id;
-    fetchTestStatuses(bookingId);
-    setShowTestNamesModal(true);
-  };
-
   const [isMobile, setIsMobile] = useState(false);
 
   const checkIsMobile = () => {
@@ -199,31 +191,43 @@ const HospitalAnalytics = () => {
     new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
   );
 
+  // Function to handle predefined date ranges
+  const handlePredefinedRange = (range) => {
+    const today = new Date();
+    let start, end;
+
+    switch (range) {
+      case "last3months":
+        start = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        break;
+      case "currentQuarter":
+        const currentQuarter = Math.floor(today.getMonth() / 3);
+        start = new Date(today.getFullYear(), currentQuarter * 3, 1);
+        end = new Date(today.getFullYear(), (currentQuarter + 1) * 3, 0);
+        break;
+      case "fy25":
+        start = new Date(2024, 3, 1); // April 1, 2024 for FY25
+        end = new Date(2025, 2, 31); // March 31, 2025 for FY25
+        break;
+      default:
+        return;
+    }
+    setStartDate(start);
+    setEndDate(end);
+    setSelectedRange(range);
+  };
+
   const handleSetDate = (start, end) => {
     setStartDate(start);
     setEndDate(end);
+    setSelectedRange("custom");
   };
 
   const handleClearDate = () => {
     setStartDate("");
     setEndDate("");
-  };
-
-  const handleOpenModal = (patientID) => {
-    const parsedPatientID = parseInt(patientID, 10);
-    const allBookings = [...bookings, ...diagnosticBookings, ...appointmentBookings];
-    
-    const selectedBookings = allBookings.filter((booking) => {
-      const bookingDate = new Date(booking.createdAt || booking.paymentDateTime);
-      return (
-        booking.PatientID === parsedPatientID &&
-        bookingDate >= startDate &&
-        bookingDate <= endDate
-      );
-    });
-
-    setSelectedPatientBookings(selectedBookings);
-    setShowModal(true);
+    setSelectedRange("");
   };
 
   const handleCloseModal = () => {
@@ -231,87 +235,245 @@ const HospitalAnalytics = () => {
   };
 
   const filteredBookings = bookings.filter((booking) => {
+    if (!startDate || !endDate) return true;
     const bookingDate = new Date(booking.createdAt);
     return bookingDate >= startDate && bookingDate <= endDate;
   });
 
   const filteredDiagnosticBookings = diagnosticBookings.filter((booking) => {
+    if (!startDate || !endDate) return true;
     const bookingDate = new Date(booking.createdAt);
     return bookingDate >= startDate && bookingDate <= endDate;
   });
 
   const filteredAppointmentBookings = appointmentBookings.filter((booking) => {
+    if (!startDate || !endDate) return true;
     const bookingDate = new Date(booking.paymentDateTime || booking.createdAt);
     return bookingDate >= startDate && bookingDate <= endDate;
   });
 
+  // Calculate earnings for a specific date range
+  const calculateEarningsForDateRange = (bookingsArray, dateKey = 'createdAt') => {
+    return bookingsArray.filter(booking => {
+      if (!startDate || !endDate) return true;
+      const bookingDate = new Date(booking[dateKey] || booking.createdAt);
+      return bookingDate >= startDate && bookingDate <= endDate;
+    }).reduce((total, booking) => {
+      let amount = 0;
+      if (booking.PaidAmount || booking.testFees) {
+        amount = parseFloat(booking.PaidAmount || booking.testFees || 0);
+      } else if (booking.amount) {
+        amount = parseFloat(booking.amount || 0);
+      }
+      return total + amount;
+    }, 0);
+  };
+
   const calculateTotalEarnings = () => {
-    let total = 0;
+    const pathologyEarnings = calculateEarningsForDateRange(bookings);
+    const diagnosticEarnings = calculateEarningsForDateRange(diagnosticBookings);
+    const consultationEarnings = calculateEarningsForDateRange(appointmentBookings, 'paymentDateTime');
     
-    // Pathology earnings
-    filteredBookings.forEach(booking => {
-      total += parseFloat(booking.PaidAmount || booking.testFees || 0);
-    });
-    
-    // Diagnostic earnings
-    filteredDiagnosticBookings.forEach(booking => {
-      total += parseFloat(booking.PaidAmount || booking.testFees || 0);
-    });
-    
-    // Appointment earnings
-    filteredAppointmentBookings.forEach(booking => {
-      total += parseFloat(booking.amount || 0);
-    });
-    
-    return total;
+    return pathologyEarnings + diagnosticEarnings + consultationEarnings;
   };
 
   const calculateDepartmentEarnings = () => {
     const departments = {
-      pathology: 0,
-      diagnostic: 0,
-      consultation: 0
+      pathology: calculateEarningsForDateRange(bookings),
+      diagnostic: calculateEarningsForDateRange(diagnosticBookings),
+      consultation: calculateEarningsForDateRange(appointmentBookings, 'paymentDateTime'),
+      total: 0
     };
     
-    // Pathology earnings
-    filteredBookings.forEach(booking => {
-      departments.pathology += parseFloat(booking.PaidAmount || booking.testFees || 0);
-    });
-    
-    // Diagnostic earnings
-    filteredDiagnosticBookings.forEach(booking => {
-      departments.diagnostic += parseFloat(booking.PaidAmount || booking.testFees || 0);
-    });
-    
-    // Consultation earnings
-    filteredAppointmentBookings.forEach(booking => {
-      departments.consultation += parseFloat(booking.amount || 0);
-    });
-    
+    departments.total = departments.pathology + departments.diagnostic + departments.consultation;
     return departments;
   };
 
-  const generateMonthlyData = () => {
-    const months = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
-    
-    return months.map(month => {
-      const monthEarnings = {
-        month,
-        pathology: Math.floor(Math.random() * 10000),
-        diagnostic: Math.floor(Math.random() * 8000),
-        consultation: Math.floor(Math.random() * 12000),
-        total: 0
-      };
-      
-      monthEarnings.total = monthEarnings.pathology + monthEarnings.diagnostic + monthEarnings.consultation;
-      return monthEarnings;
-    });
+  // Safe convert currency function that ensures number output
+  const safeConvertCurrency = (amount, fromCurrency, toCurrency) => {
+    const converted = convertCurrency(amount, fromCurrency, toCurrency);
+    // Ensure we return a number
+    if (typeof converted === 'string') {
+      return parseFloat(converted.replace(/[^\d.-]/g, '')) || 0;
+    }
+    return parseFloat(converted) || 0;
   };
 
-  const monthlyData = generateMonthlyData();
+  // Generate actual chart data based on filtered bookings
+  const generateChartData = () => {
+    if (!startDate || !endDate) return [];
+
+    const getEarningsByPeriod = (periodStart, periodEnd, department) => {
+      let earnings = 0;
+      let bookingsArray = [];
+      
+      switch (department) {
+        case 'pathology':
+          bookingsArray = bookings;
+          break;
+        case 'diagnostic':
+          bookingsArray = diagnosticBookings;
+          break;
+        case 'consultation':
+          bookingsArray = appointmentBookings;
+          break;
+        default:
+          return 0;
+      }
+
+      bookingsArray.forEach(booking => {
+        const bookingDate = new Date(booking.createdAt || booking.paymentDateTime);
+        if (bookingDate >= periodStart && bookingDate <= periodEnd) {
+          let amount = 0;
+          if (booking.PaidAmount || booking.testFees) {
+            amount = parseFloat(booking.PaidAmount || booking.testFees || 0);
+          } else if (booking.amount) {
+            amount = parseFloat(booking.amount || 0);
+          }
+          earnings += amount;
+        }
+      });
+
+      return earnings;
+    };
+
+    switch (timeFrame) {
+      case "daily":
+        // Generate last 7 days data
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+          const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59);
+          
+          const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+          days.push({
+            period: dayName,
+            pathology: getEarningsByPeriod(dayStart, dayEnd, 'pathology'),
+            diagnostic: getEarningsByPeriod(dayStart, dayEnd, 'diagnostic'),
+            consultation: getEarningsByPeriod(dayStart, dayEnd, 'consultation'),
+            total: 0
+          });
+        }
+        
+        // Calculate totals
+        days.forEach(day => {
+          day.total = day.pathology + day.diagnostic + day.consultation;
+        });
+        
+        return days;
+        
+      case "weekly":
+        // Generate last 4 weeks data
+        const weeks = [];
+        for (let i = 3; i >= 0; i--) {
+          const weekStart = new Date();
+          weekStart.setDate(weekStart.getDate() - (i * 7));
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          
+          weeks.push({
+            period: `Week ${4-i}`,
+            pathology: getEarningsByPeriod(weekStart, weekEnd, 'pathology'),
+            diagnostic: getEarningsByPeriod(weekStart, weekEnd, 'diagnostic'),
+            consultation: getEarningsByPeriod(weekStart, weekEnd, 'consultation'),
+            total: 0
+          });
+        }
+        
+        // Calculate totals
+        weeks.forEach(week => {
+          week.total = week.pathology + week.diagnostic + week.consultation;
+        });
+        
+        return weeks;
+        
+      case "monthly":
+        const months = [];
+        const currentYearForMonthly = new Date().getFullYear();
+        
+        for (let i = 0; i < 12; i++) {
+          const monthStart = new Date(currentYearForMonthly, i, 1);
+          const monthEnd = new Date(currentYearForMonthly, i + 1, 0);
+          
+          const monthName = monthStart.toLocaleDateString('en-US', { month: 'short' });
+          months.push({
+            period: monthName,
+            pathology: getEarningsByPeriod(monthStart, monthEnd, 'pathology'),
+            diagnostic: getEarningsByPeriod(monthStart, monthEnd, 'diagnostic'),
+            consultation: getEarningsByPeriod(monthStart, monthEnd, 'consultation'),
+            total: 0
+          });
+        }
+        
+        // Calculate totals
+        months.forEach(month => {
+          month.total = month.pathology + month.diagnostic + month.consultation;
+        });
+        
+        return months;
+        
+      case "yearly":
+        // Generate last 5 years data
+        const currentYearForYearly = new Date().getFullYear();
+        const years = [];
+        for (let i = 4; i >= 0; i--) {
+          const yearVal = currentYearForYearly - i;
+          const yearStart = new Date(yearVal, 0, 1);
+          const yearEnd = new Date(yearVal, 11, 31);
+          
+          years.push({
+            period: yearVal.toString(),
+            pathology: getEarningsByPeriod(yearStart, yearEnd, 'pathology'),
+            diagnostic: getEarningsByPeriod(yearStart, yearEnd, 'diagnostic'),
+            consultation: getEarningsByPeriod(yearStart, yearEnd, 'consultation'),
+            total: 0
+          });
+        }
+        
+        // Calculate totals
+        years.forEach(year => {
+          year.total = year.pathology + year.diagnostic + year.consultation;
+        });
+        
+        return years;
+        
+      default:
+        return [];
+    }
+  };
+
+  const chartData = generateChartData();
+
+  const getChartTitle = () => {
+    if (!selectedRange) {
+      return `Earnings Over Time - ${getXAxisLabel()}`;
+    }
+    
+    switch (selectedRange) {
+      case "last3months":
+        return "Earnings Over Time - Last 3 Months";
+      case "currentQuarter":
+        return "Earnings Over Time - Current Quarter";
+      case "fy25":
+        return "Earnings Over Time - FY25";
+      case "custom":
+        return `Earnings Over Time - Custom Range`;
+      default:
+        return `Earnings Over Time - ${getXAxisLabel()}`;
+    }
+  };
+
+  const getXAxisLabel = () => {
+    switch (timeFrame) {
+      case "daily": return "Days";
+      case "weekly": return "Weeks";
+      case "monthly": return "Months";
+      case "yearly": return "Years";
+      default: return "Period";
+    }
+  };
 
   const departmentData = [
     { name: "Pathology", value: calculateDepartmentEarnings().pathology },
@@ -325,7 +487,8 @@ const HospitalAnalytics = () => {
     const options = { year: "numeric", month: "long", day: "numeric" };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-const downloadTotalAmount = () => {
+
+  const downloadTotalAmount = () => {
     // Helper function to safely parse and convert amounts
     const getNumericAmount = (amount, fallback = 0) => {
         try {
@@ -341,41 +504,41 @@ const downloadTotalAmount = () => {
 
     // Pathology data and total
     const pathologyData = filteredBookings.map(booking => {
-        const amount = convertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency);
+        const amount = safeConvertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency);
         return {
-            "Amount": `${currencySymbols[selectedGlobalCurrency]}${getNumericAmount(amount).toFixed(2)}`
+            "Amount": `${currencySymbols[selectedGlobalCurrency]}${amount.toFixed(2)}`
         };
     });
     
     const pathologyTotal = filteredBookings.reduce((total, booking) => {
-        const amount = convertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency);
-        return total + getNumericAmount(amount);
+        const amount = safeConvertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency);
+        return total + amount;
     }, 0);
 
     // Diagnostic data and total
     const diagnosticData = filteredDiagnosticBookings.map(booking => {
-        const amount = convertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency);
+        const amount = safeConvertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency);
         return {
-            "Amount": `${currencySymbols[selectedGlobalCurrency]}${getNumericAmount(amount).toFixed(2)}`
+            "Amount": `${currencySymbols[selectedGlobalCurrency]}${amount.toFixed(2)}`
         };
     });
     
     const diagnosticTotal = filteredDiagnosticBookings.reduce((total, booking) => {
-        const amount = convertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency);
-        return total + getNumericAmount(amount);
+        const amount = safeConvertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency);
+        return total + amount;
     }, 0);
 
     // Consultation data and total
     const consultationData = filteredAppointmentBookings.map(booking => {
-        const amount = convertCurrency(booking.amount, hospitalData.baseCurrency, selectedGlobalCurrency);
+        const amount = safeConvertCurrency(booking.amount, hospitalData.baseCurrency, selectedGlobalCurrency);
         return {
-            "Amount": `${currencySymbols[selectedGlobalCurrency]}${getNumericAmount(amount).toFixed(2)}`
+            "Amount": `${currencySymbols[selectedGlobalCurrency]}${amount.toFixed(2)}`
         };
     });
     
     const consultationTotal = filteredAppointmentBookings.reduce((total, booking) => {
-        const amount = convertCurrency(booking.amount, hospitalData.baseCurrency, selectedGlobalCurrency);
-        return total + getNumericAmount(amount);
+        const amount = safeConvertCurrency(booking.amount, hospitalData.baseCurrency, selectedGlobalCurrency);
+        return total + amount;
     }, 0);
     const grandTotal = pathologyTotal + diagnosticTotal + consultationTotal;
 
@@ -397,12 +560,12 @@ const downloadTotalAmount = () => {
           {"Grand_total" :grandTotal}
         ]
     ];
-};
+  };
+
   const { generateHospitalEarningsReport } = HospitalEarningReport();
 
-    const downloadTotalReport = () => {
-      const hospitalOverAllAmount = downloadTotalAmount()
-      console.log("hello donwloada repor",hospitalOverAllAmount)
+  const downloadTotalReport = () => {
+    const hospitalOverAllAmount = downloadTotalAmount()
     generateHospitalEarningsReport(
       bookings,
       diagnosticBookings,
@@ -416,13 +579,118 @@ const downloadTotalAmount = () => {
     );
   };
 
+  // Filter data for detailed table based on active tab
+  const getDetailedTableData = () => {
+    const deptEarnings = calculateDepartmentEarnings();
+    
+    switch (activeTab) {
+      case "pathology":
+        return filteredBookings.map(booking => ({
+          department: "Pathology",
+          patientName: booking.PatientName,
+          date: formatDate(booking.createdAt),
+          service: booking.selectedTests || "NA",
+          amount: safeConvertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency),
+          status: booking.status === "paid" ? "Pending" : booking.status
+        }));
+        
+      case "diagnostic":
+        return filteredDiagnosticBookings.map(booking => ({
+          department: "Diagnostic",
+          patientName: booking.PatientName,
+          date: formatDate(booking.createdAt),
+          service: booking.selectedTests || "NA",
+          amount: safeConvertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency),
+          status: booking.status
+        }));
+        
+      case "consultation":
+        return filteredAppointmentBookings.map(booking => ({
+          department: "Consultation",
+          patientName: booking.PatientName,
+          date: formatDate(booking.paymentDateTime || booking.createdAt),
+          service: booking.reason || "NA",
+          amount: safeConvertCurrency(booking.amount, hospitalData.baseCurrency, selectedGlobalCurrency),
+          status: booking.paymentStatus === "paid" ? "Pending" : booking.paymentStatus
+        }));
+        
+      case "total":
+        // Combine all departments and add total row
+        const allData = [
+          ...filteredBookings.map(booking => ({
+            department: "Pathology",
+            patientName: booking.PatientName,
+            date: formatDate(booking.createdAt),
+            service: booking.selectedTests || "NA",
+            amount: safeConvertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency),
+            status: booking.status === "paid" ? "Pending" : booking.status
+          })),
+          ...filteredDiagnosticBookings.map(booking => ({
+            department: "Diagnostic",
+            patientName: booking.PatientName,
+            date: formatDate(booking.createdAt),
+            service: booking.selectedTests || "NA",
+            amount: safeConvertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency),
+            status: booking.status
+          })),
+          ...filteredAppointmentBookings.map(booking => ({
+            department: "Consultation",
+            patientName: booking.PatientName,
+            date: formatDate(booking.paymentDateTime || booking.createdAt),
+            service: booking.reason || "NA",
+            amount: safeConvertCurrency(booking.amount, hospitalData.baseCurrency, selectedGlobalCurrency),
+            status: booking.paymentStatus === "paid" ? "Pending" : booking.paymentStatus
+          }))
+        ];
+        
+        // Add total row
+        allData.push({
+          department: "TOTAL",
+          patientName: "-",
+          date: "-",
+          service: "-",
+          amount: safeConvertCurrency(deptEarnings.total, hospitalData.baseCurrency, selectedGlobalCurrency),
+          status: "-"
+        });
+        
+        return allData;
+        
+      default: // overview - show all without total
+        return [
+          ...filteredBookings.map(booking => ({
+            department: "Pathology",
+            patientName: booking.PatientName,
+            date: formatDate(booking.createdAt),
+            service: booking.selectedTests || "NA",
+            amount: safeConvertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency),
+            status: booking.status === "paid" ? "Pending" : booking.status
+          })),
+          ...filteredDiagnosticBookings.map(booking => ({
+            department: "Diagnostic",
+            patientName: booking.PatientName,
+            date: formatDate(booking.createdAt),
+            service: booking.selectedTests || "NA",
+            amount: safeConvertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency),
+            status: booking.status
+          })),
+          ...filteredAppointmentBookings.map(booking => ({
+            department: "Consultation",
+            patientName: booking.PatientName,
+            date: formatDate(booking.paymentDateTime || booking.createdAt),
+            service: booking.reason || "NA",
+            amount: safeConvertCurrency(booking.amount, hospitalData.baseCurrency, selectedGlobalCurrency),
+            status: booking.paymentStatus === "paid" ? "Pending" : booking.paymentStatus
+          }))
+        ];
+    }
+  };
+
+  const detailedTableData = getDetailedTableData();
+
   return (
     <div style={{ fontSize: "14px" }} className="container">
-      
-
       <header className="header" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <h2 style={{ fontSize: "18px" }}>{`${t("Hospital Earnings")} `}</h2>
-        {/* (${t("HospitalAnalytics")}) */}
+        <h2 style={{ fontSize: "18px" }}>{`${t(`${currentUser?.username.charAt(0).toUpperCase() + currentUser?.username.slice(1).toLowerCase()}  Hospital Earnings`)} `}</h2>
       </header>
       
       <br />
@@ -432,7 +700,16 @@ const downloadTotalAmount = () => {
           <label className="form-label">{t("SelectDateRange")}:</label>
           <Datepickrange onSetDate={handleSetDate} onClearDate={handleClearDate} />
         </div>
-        <div className="col-md-3">
+        <div className="col-md-2">
+          <label className="form-label">Predefined Ranges:</label>
+          <Form.Select value={selectedRange} onChange={(e) => handlePredefinedRange(e.target.value)}>
+            <option value="">Select Range</option>
+            <option value="last3months">Last 3 Months</option>
+            <option value="currentQuarter">Current Quarter</option>
+            <option value="fy25">FY25</option>
+          </Form.Select>
+        </div>
+        <div className="col-md-2">
           <label className="form-label">View By:</label>
           <Form.Select value={timeFrame} onChange={(e) => setTimeFrame(e.target.value)}>
             <option value="daily">Daily</option>
@@ -441,13 +718,14 @@ const downloadTotalAmount = () => {
             <option value="yearly">Yearly</option>
           </Form.Select>
         </div>
-        <div className="col-md-3">
+        <div className="col-md-2">
           <label className="form-label">Department:</label>
           <Form.Select value={activeTab} onChange={(e) => setActiveTab(e.target.value)}>
             <option value="overview">Overview</option>
             <option value="pathology">Pathology</option>
             <option value="diagnostic">Diagnostic</option>
             <option value="consultation">Consultation</option>
+            <option value="total">Total Earnings</option>
           </Form.Select>
         </div>
         <div className="col-md-3">
@@ -457,142 +735,62 @@ const downloadTotalAmount = () => {
               variant="outline-primary" 
               size="sm" 
               onClick={downloadTotalReport}
-              
-               style={{
-                    fontSize: "12px",
-                    padding: "4px 5px",
-                    marginTop: "0px",
-                    backgroundColor: "#1111",
-                    color: "black",
-                    marginLeft: "5px",
-                 }}
-               className="btn btn-secondary"
-            //   style={}}
+              style={{
+                fontSize: "12px",
+                padding: "4px 5px",
+                marginTop: "0px",
+                backgroundColor: "#1111",
+                color: "black",
+                marginLeft: "5px",
+              }}
+              className="btn btn-secondary"
             >
               <FaDownload /> All Data
             </Button>
           </div>
         </div>
-
       </div>
       
       <hr />
       
       {/* Summary Cards */}
       <div className="row mb-4">
-        <div className="col-md-4">
+        <div className="col-md-3">
           <Card className="text-center">
             <Card.Body>
-              <Card.Title>
-                Total Earnings
-                {/* <Button 
-                  variant="link" 
-                  size="sm" 
-                  onClick={downloadTotalReport}
-                  title="Download Total Report"
-                  style={{
-                       fontSize: "12px",
-                       padding: "4px 5px",
-                       marginTop: "0px",
-                       backgroundColor: "#1111",
-                       color: "black",
-                       marginLeft: "5px",
-                    }}
-                  className="btn btn-secondary"
-                >
-                  <FaDownload />
-                </Button> */}
-              </Card.Title>
+              <Card.Title>Total Earnings</Card.Title>
               <Card.Text>
-                <h3>{currencySymbols[selectedGlobalCurrency]}{convertCurrency(calculateTotalEarnings(), hospitalData.baseCurrency, selectedGlobalCurrency)}</h3>
+                <h3>{currencySymbols[selectedGlobalCurrency]}{safeConvertCurrency(calculateTotalEarnings(), hospitalData.baseCurrency, selectedGlobalCurrency).toFixed(2)}</h3>
               </Card.Text>
             </Card.Body>
           </Card>
         </div>
-        <div className="col-md-4">
+        <div className="col-md-3">
           <Card className="text-center">
             <Card.Body>
-              <Card.Title>
-                Pathology Earnings
-                {/* <Button 
-                  variant="link" 
-                  size="sm" 
-                  onClick={downloadPathologyReport}
-                  title="Download Pathology Report"
-                  style={{
-                       fontSize: "12px",
-                       padding: "4px 5px",
-                       marginTop: "0px",
-                       backgroundColor: "#1111",
-                       color: "black",
-                       marginLeft: "5px",
-                    }}
-                  className="btn btn-secondary"
-                >
-                  <FaDownload />
-                </Button> */}
-              </Card.Title>
+              <Card.Title>Pathology Earnings</Card.Title>
               <Card.Text>
-                <h3>{currencySymbols[selectedGlobalCurrency]}{convertCurrency(calculateDepartmentEarnings().pathology, hospitalData.baseCurrency, selectedGlobalCurrency)}</h3>
+                <h3>{currencySymbols[selectedGlobalCurrency]}{safeConvertCurrency(calculateDepartmentEarnings().pathology, hospitalData.baseCurrency, selectedGlobalCurrency).toFixed(2)}</h3>
               </Card.Text>
             </Card.Body>
           </Card>
         </div>
-        <div className="col-md-4">
-         <Card className="text-center">
+        <div className="col-md-3">
+          <Card className="text-center">
             <Card.Body>
-              <Card.Title>
-                Consultation Earnings
-                {/* <Button 
-                  variant="link" 
-                  size="sm" 
-                  onClick={downloadConsultationReport}
-                  title="Download Consultation Report"
-                  style={{
-                       fontSize: "12px",
-                       padding: "4px 5px",
-                       marginTop: "0px",
-                       backgroundColor: "#1111",
-                       color: "black",
-                       marginLeft: "5px",
-                    }}
-                  className="btn btn-secondary"
-                >
-                  <FaDownload />
-                </Button> */}
-              </Card.Title>
+              <Card.Title>Consultation Earnings</Card.Title>
               <Card.Text>
-                <h3>{currencySymbols[selectedGlobalCurrency]}{convertCurrency(calculateDepartmentEarnings().consultation, hospitalData.baseCurrency, selectedGlobalCurrency)}</h3>
+                <h3>{currencySymbols[selectedGlobalCurrency]}{safeConvertCurrency(calculateDepartmentEarnings().consultation, hospitalData.baseCurrency, selectedGlobalCurrency).toFixed(2)}</h3>
               </Card.Text>
             </Card.Body>
           </Card>
-
         </div>
-        <div className="col-md-4">
+        <div className="col-md-3">
           <Card className="text-center">
             <Card.Body>
-              <Card.Title>
-                Diagnostic Earnings
-                {/* <Button 
-                  variant="link" 
-                  size="sm" 
-                  onClick={downloadDiagnosticReport}
-                  title="Download Diagnostic Report"
-                  style={{
-                       fontSize: "12px",
-                       padding: "4px 5px",
-                       marginTop: "0px",
-                       backgroundColor: "#1111",
-                       color: "black",
-                       marginLeft: "5px",
-                    }}
-                  className="btn btn-secondary"
-                >
-                  <FaDownload />
-                </Button> */}
-              </Card.Title>
+              <Card.Title>Diagnostic Earnings</Card.Title>
               <Card.Text>
-                <h3>{currencySymbols[selectedGlobalCurrency]}{convertCurrency(calculateDepartmentEarnings().diagnostic, hospitalData.baseCurrency, selectedGlobalCurrency)}</h3>
+                <h3>{currencySymbols[selectedGlobalCurrency]}{safeConvertCurrency(calculateDepartmentEarnings().diagnostic, hospitalData.baseCurrency, selectedGlobalCurrency).toFixed(2)}</h3>
               </Card.Text>
             </Card.Body>
           </Card>
@@ -604,19 +802,20 @@ const downloadTotalAmount = () => {
         <div className="col-md-8">
           <Card>
             <Card.Header>
-              <h5>Earnings Over Time</h5>
+              <h5>{getChartTitle()}</h5>
             </Card.Header>
             <Card.Body>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyData}>
+                <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
+                  <XAxis dataKey="period" label={{ value: getXAxisLabel(), position: 'insideBottom', offset: -5 }} />
                   <YAxis />
-                  <Tooltip formatter={(value) => `${currencySymbols[selectedGlobalCurrency]}${convertCurrency(value, hospitalData.baseCurrency, selectedGlobalCurrency)}`} />
+                  <Tooltip formatter={(value) => `${currencySymbols[selectedGlobalCurrency]}${safeConvertCurrency(value, hospitalData.baseCurrency, selectedGlobalCurrency).toFixed(2)}`} />
                   <Legend />
                   <Bar dataKey="pathology" fill="#0088FE" name="Pathology" />
                   <Bar dataKey="diagnostic" fill="#00C49F" name="Diagnostic" />
                   <Bar dataKey="consultation" fill="#FFBB28" name="Consultation" />
+                  <Bar dataKey="total" fill="#FF8042" name="Total" />
                 </BarChart>
               </ResponsiveContainer>
             </Card.Body>
@@ -644,7 +843,7 @@ const downloadTotalAmount = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `${currencySymbols[selectedGlobalCurrency]}${convertCurrency(value, hospitalData.baseCurrency, selectedGlobalCurrency)}`} />
+                  <Tooltip formatter={(value) => `${currencySymbols[selectedGlobalCurrency]}${safeConvertCurrency(value, hospitalData.baseCurrency, selectedGlobalCurrency).toFixed(2)}`} />
                 </PieChart>
               </ResponsiveContainer>
             </Card.Body>
@@ -655,7 +854,7 @@ const downloadTotalAmount = () => {
       {/* Detailed Data Section */}
       <Card>
         <Card.Header>
-          <h5>Detailed Earnings Data</h5>
+          <h5>Detailed Earnings Data - {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h5>
         </Card.Header>
         <Card.Body>
           <Table responsive striped bordered hover>
@@ -666,40 +865,18 @@ const downloadTotalAmount = () => {
                 <th>Date</th>
                 <th>Service</th>
                 <th>Amount</th>
-                <th>Status</th>
+                {/* <th>Status</th> */}
               </tr>
             </thead>
             <tbody>
-              {filteredBookings.map(booking => (
-                <tr key={`path-${booking.id}`}>
-                  <td>Pathology</td>
-                  <td>{booking.PatientName}</td>
-                  <td>{formatDate(booking.createdAt)}</td>
-                  <td>{booking.selectedTests ?booking.selectedTests :"NA"}</td>
-                  <td>{currencySymbols[selectedGlobalCurrency]}{convertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency)}</td>
-                  <td>{booking.status ==="paid" ? "Pending" : booking.status}</td>
-                </tr>
-              ))}
-              
-              {filteredDiagnosticBookings.map(booking => (
-                <tr key={`diag-${booking.id}`}>
-                  <td>Diagnostic</td>
-                  <td>{booking.PatientName}</td>
-                  <td>{formatDate(booking.createdAt)}</td>
-                  <td>{booking.selectedTests ?booking.selectedTests :"NA" }</td>
-                  <td>{currencySymbols[selectedGlobalCurrency]}{convertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency)}</td>
-                  <td>{booking.status}</td>
-                </tr>
-              ))}
-              
-              {filteredAppointmentBookings.map(booking => (
-                <tr key={`appt-${booking.id}`}>
-                  <td>Consultation</td>
-                  <td>{booking.PatientName}</td>
-                  <td>{formatDate(booking.paymentDateTime || booking.createdAt)}</td>
-                  <td>{booking.reason ? booking.reason : "NA"}</td>
-                  <td>{currencySymbols[selectedGlobalCurrency]}{convertCurrency(booking.amount, hospitalData.baseCurrency, selectedGlobalCurrency)}</td>
-                  <td>{booking.paymentStatus ==="paid" ? "Pending" : booking.paymentStatus}</td>
+              {detailedTableData.map((row, index) => (
+                <tr key={index} className={row.department === "TOTAL" ? "table-warning fw-bold" : ""}>
+                  <td>{row.department}</td>
+                  <td>{row.patientName}</td>
+                  <td>{row.date}</td>
+                  <td>{row.service}</td>
+                  <td>{currencySymbols[selectedGlobalCurrency]}{typeof row.amount === 'number' ? row.amount.toFixed(2) : row.amount}</td>
+                  {/* <td>{row.status}</td> */}
                 </tr>
               ))}
             </tbody>
@@ -732,45 +909,3 @@ const downloadTotalAmount = () => {
 };
 
 export default HospitalAnalytics;
-
-
-
-
-  // const downloadPathologyReport = () => {
-  //   const reportData = filteredBookings.map(booking => ({
-  //     "Patient Name": booking.PatientName,
-  //     "Date": formatDate(booking.createdAt),
-  //     "Service": booking.selectedTests || "NA",
-  //     "Amount": `${currencySymbols[selectedGlobalCurrency]}${convertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency)}`,
-  //     "Status": booking.status,
-  //     "Department": "Pathology"
-  //   }));
-    
-  //   downloadCSV(reportData, "pathology_earnings_report");
-  // };
-
-  // const downloadDiagnosticReport = () => {
-  //   const reportData = filteredDiagnosticBookings.map(booking => ({
-  //     "Patient Name": booking.PatientName,
-  //     "Date": formatDate(booking.createdAt),
-  //     "Service": booking.selectedTests || "NA",
-  //     "Amount": `${currencySymbols[selectedGlobalCurrency]}${convertCurrency(booking.PaidAmount || booking.testFees, hospitalData.baseCurrency, selectedGlobalCurrency)}`,
-  //     "Status": booking.status,
-  //     "Department": "Diagnostic"
-  //   }));
-    
-  //   downloadCSV(reportData, "diagnostic_earnings_report");
-  // };
-
-  // const downloadConsultationReport = () => {
-  //   const reportData = filteredAppointmentBookings.map(booking => ({
-  //     "Patient Name": booking.PatientName,
-  //     "Date": formatDate(booking.paymentDateTime || booking.createdAt),
-  //     "Service": booking.reason || "NA",
-  //     "Amount": `${currencySymbols[selectedGlobalCurrency]}${convertCurrency(booking.amount, hospitalData.baseCurrency, selectedGlobalCurrency)}`,
-  //     "Status": booking.paymentStatus,
-  //     "Department": "Consultation"
-  //   }));
-    
-  //   downloadCSV(reportData, "consultation_earnings_report");
-  // };

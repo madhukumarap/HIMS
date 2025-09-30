@@ -241,6 +241,7 @@ const SubMenu = ({ item, isActive, toggleSidebar, toggleSubMenu }) => {
         subItem.title === "PackageRevenue" ||
         // subItem.title === "PerTestRevenue" ||
         subItem.title === "PatientSpends" ||
+        subItem.title === "PatientSpent" ||
         subItem.title === "PerVisitRevenue" ||
         //subItem.title === t("RevenueForDoctor") ||
         subItem.title === "LostInFollowUp" ||

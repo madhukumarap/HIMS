@@ -212,6 +212,11 @@ const SidebarData = [
         icon: <IoIcons.IoIosPaper />,
       },
       {
+        title: "PatientSpent",
+        path: "/PatientSpentAnalytics",
+        icon: <IoIcons.IoIosPaper />,
+      },
+      {
         title: "All Patinent List",
         path: "/OverAllPatientList",
         icon: <IoIcons.IoIosPaper />,

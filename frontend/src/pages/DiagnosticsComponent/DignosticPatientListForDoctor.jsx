@@ -23,6 +23,7 @@ import UploadDiagnosticImages from "../DiagnosticsComponent/UploadDiagnosticImag
 import "react-datepicker/dist/react-datepicker.css";
 import AuthService from "../../services/auth.service";
 import DiagnosticPackageView from "./DiagnosticViewPackage";
+import DicomViewerModal from "./DicomViewerModal";
 
 import Translation from "../../translations/DiagnosticsBookingManagement.json";
 import { useTranslation } from "react-i18next";
@@ -30,6 +31,7 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { format as formatDate, isDate } from "date-fns";
 import { fr, enIN } from "date-fns/locale";
+import { getDicomFiles } from "../Diacom/api/dicom";
 
 function DiagnosticsBooking() {
   const navigate = useNavigate();
@@ -70,6 +72,11 @@ function DiagnosticsBooking() {
   const [SelectedTests, setSelectedTests] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState(null); // To store the ID of the booking being deleted
+  const [loadingDicom, setLoadingDicom] = useState(false);
+  const [selectedPatientForDicom, setSelectedPatientForDicom] = useState(null);
+  const [dicomFiles, setDicomFiles] = useState([]);
+  const [images, setImages] = useState([]);
+  const [showDicomViewerModal, setShowDicomViewerModal] = useState(false);
 
   useEffect(() => {
     axios
@@ -509,6 +516,56 @@ function DiagnosticsBooking() {
       console.error("Error fetching Enter Code data:", error);
     }
   };
+  const handleViewDicom = async (booking) => {
+      try {
+        setLoadingDicom(true);
+        setSelectedPatientForDicom(booking);
+  
+        // --- 1. Fetch DICOM files by PatientID AND testBookingID ---
+        const dicomResponse = await getDicomFiles(booking.PatientID, booking.id); // Pass both patientId and testBookingID
+        if (
+          dicomResponse.data &&
+          dicomResponse.data.rows &&
+          dicomResponse.data.rows.length > 0
+        ) {
+          setDicomFiles(dicomResponse.data.rows);
+        } else {
+          toast.info("No DICOM files found for this patient and booking");
+        }
+  
+        // --- 2. Fetch Images by BookingID ---
+        const imageResponse = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/getImagesByBookingId?id=${
+            booking.id
+          }`,
+          {
+            headers: { Authorization: `${currentUser?.Token}` },
+          }
+        );
+  
+        console.log("Image API Response:", imageResponse.data);
+  
+        const imageFiles = imageResponse.data?.images || [];
+  
+        if (imageFiles.length > 0) {
+          setImages(imageFiles);
+        } else {
+          // toast.info("No Images found for this booking");
+        }
+  
+        // --- Show viewer if any files exist ---
+        if (dicomResponse.data?.rows?.length > 0 || imageFiles.length > 0) {
+          setShowDicomViewerModal(true);
+        } else {
+          // toast.error("No files found for this booking");
+        }
+      } catch (error) {
+        console.error("Error fetching files:", error);
+        toast.error("Failed to fetch files");
+      } finally {
+        setLoadingDicom(false);
+      }
+    };
 
   const today = new Date();
 
@@ -1535,6 +1592,7 @@ function DiagnosticsBooking() {
                     >
                       <FaPlusSquare />
                     </button>
+                    
                     <button
                       style={{ fontSize: "12px", padding: "4px 5px" }}
                       title={t("DownloadReport")}
@@ -1758,6 +1816,25 @@ function DiagnosticsBooking() {
                             <FaDownload />
                           </button>
                         )}
+                        <button
+                      title="View Uploaded Image"
+                      style={{
+                        fontSize: "12px",
+                        padding: "4px 5px",
+                        marginTop: "0px",
+                      }}
+                      className="btn btn-secondary mr-1"
+                      onClick={() => handleViewDicom(booking)}
+                      disabled={loadingDicom}
+                    >
+                      {loadingDicom ? (
+                        <FaRegEye />
+                      ) : (
+                        <>
+                          <FaRegEye />
+                        </>
+                      )}
+                    </button>
                       </td>
                     </tr>
                   );
@@ -1767,6 +1844,16 @@ function DiagnosticsBooking() {
           </tbody>
         </Table>
       )}
+      <DicomViewerModal
+              show={showDicomViewerModal}
+              handleClose={() => {
+                setShowDicomViewerModal(false);
+                setDicomFiles([]); // Only reset what's defined in parent
+              }}
+              dicomFiles={dicomFiles}
+              patientData={selectedPatientForDicom}
+              imageFiles={images}
+            />
       <Modal
         style={{ fontSize: "13px", marginTop: "20px" }}
         centered

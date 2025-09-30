@@ -334,11 +334,11 @@ const SidebarData = [
         path: "/DignosticPatientList",
         icon: <IoIcons.IoIosPaper />,
       },
-      // {
-      //   title: "Dicom",
-      //   path: "/Dicom",
-      //   icon: <IoIcons.IoIosPaper />,
-      // },
+      {
+        title: "ForwardedCase",
+        path: "/ForwardedCase",
+        icon: <IoIcons.IoIosPaper />,
+      },
     ],
   },
 

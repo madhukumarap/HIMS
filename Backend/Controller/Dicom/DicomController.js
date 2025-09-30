@@ -4,6 +4,8 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const { getConnectionList } = require("../../model/index.model3.js");
+const { QueryTypes } = require("sequelize");
+const { type } = require("os");
 
 // Configure multer with better error handling
 const upload = multer({
@@ -96,7 +98,65 @@ async function listDicomFiles(req, res) {
     });
   }
 }
-
+async function getReportedDicom(req, res){
+  const {email} = req.query;
+  const database = req.headers.userDatabase;
+  const connectionList = await getConnectionList(database);
+  const db = connectionList[database];
+  const DicomFile = db.DicomFile;
+  
+  try {
+    const doctorData = await db.sequelize.query(
+      `SELECT * FROM doctors WHERE email = ?`,
+      {
+        replacements: [email],
+        type: QueryTypes.SELECT
+      }
+    );
+    
+    const doctorID = doctorData.length > 0 ? doctorData[0].id : null;
+    
+    if (!doctorID) {
+      return res.json({
+        message: 'Doctor not found with the provided email',
+        success: false,
+        data: []
+      });
+    }
+    
+    const rows = await DicomFile.findAll({
+      where: {
+        report_forward_to: doctorID
+      },
+      order: [['createdAt', 'DESC']] // Optional: order by creation date descending
+    });
+    
+    if(rows.length === 0){
+      return res.json({
+        message: 'No Reported Cases Found',
+        success: false,
+        data: []
+      });
+    }
+    
+    // Return all rows, not just the first one
+    const allCases = rows.map(row => row.dataValues);
+    
+    return res.json({
+      message: `Found ${rows.length} reported case(s)`,
+      success: true,
+      data: allCases
+    });
+    
+  } catch (error) {
+    console.error('Error fetching reported DICOM files:', error);
+    return res.status(500).json({
+      message: 'Internal server error',
+      success: false,
+      error: error.message
+    });
+  }
+}
 async function getDicomRecord(req, res) {
   try {
     const database = req.headers.userDatabase;
@@ -112,10 +172,10 @@ async function getDicomRecord(req, res) {
     }
 
     // Check permissions - adjust based on your role setup
-    const isAdmin = req.role === "Admin" || req.userRole === "Admin";
-    if (!isAdmin && rec.userId !== req.userId) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+    const isAdmin = req.role === "Admin" || req.userRole === "Admin" || req.userRole === "doctor";
+    // if (!isAdmin && rec.userId !== req.userId) {
+    //   return res.status(403).json({ message: "Forbidden" });
+    // }
 
     const instanceId = rec.orthancInstanceId;
     let orthancData = null;
@@ -153,10 +213,11 @@ async function getDicomTags(req, res) {
     }
 
     // Check permissions
-    const isAdmin = req.role === "Admin" || req.userRole === "Admin";
-    if (!isAdmin && rec.userId !== req.userId) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+    console.log(req.role,req.userRole,rec.userId,req.userId, "req.rolereq.userRolerec.userIdreq.userId")
+    const isAdmin = req.role === "Admin" || req.userRole === "Admin" || req.userRole === "doctor";
+    // if (!isAdmin && rec.userId !== req.userId) {
+    //   return res.status(403).json({ message: "Forbidden" });
+    // }
 
     if (!rec.orthancInstanceId) {
       return res.status(400).json({ message: "No orthanc instance id stored" });
@@ -467,5 +528,6 @@ module.exports = {
   upload: upload.single("file"),
   handleMulterError,
   reportCommentOnDicom,
-  reportForward
+  reportForward,
+  getReportedDicom
 };

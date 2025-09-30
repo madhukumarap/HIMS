@@ -26,6 +26,20 @@ export const getDicomFiles = (patientId = null, testBookingID = null) => {
   });
 };
 
+export const getReportedDicomFiles = (email:string) => {
+  const currentUser = AuthService.getCurrentUser();
+  const params = {};
+  if(email){
+    params.email = email
+  }
+  return axios.get(`${import.meta.env.VITE_API_URL}/api/getReportedDicom`, {
+    params, // Add both patientId and testBookingID as query parameters
+    headers: { 
+      Authorization: `${currentUser?.Token}`,
+    },
+  });
+};
+
 export const uploadDicomFile = (formData) => {
 
   return axios.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData, {

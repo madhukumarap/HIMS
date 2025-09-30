@@ -81,7 +81,7 @@ const isAdmin = async (req, res, next) => {
     .then((user) => {
       user.getRoles().then((roles) => {
         for (let i = 0; i < roles.length; i++) {
-          if (roles[i].role === "admin") {
+          if (roles[i].role === "admin" || roles[i].role === "doctor") {
             next();
             return;
           }

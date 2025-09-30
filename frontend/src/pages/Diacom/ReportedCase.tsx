@@ -17,10 +17,10 @@ import { getReportedDicomFiles } from "../Diacom/api/dicom";
 const ReportedCase = () => {
   const currentUser = AuthService.getCurrentUser();
   const [loadingDicom, setLoadingDicom] = useState(false);
-  const [dicomCases, setDicomCases] = useState([]);
-  const [selectedCase, setSelectedCase] = useState(null);
+  const [dicomCases, setDicomCases] = useState<DicomCase[]>([]);
+  const [selectedCase, setSelectedCase] = useState<DicomCase | null>(null);
   const [showDicomViewer, setShowDicomViewer] = useState(false);
-  const [selectedDicomId, setSelectedDicomId] = useState(null);
+  const [selectedDicomId, setSelectedDicomId] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchFiles = async () => {
@@ -45,12 +45,13 @@ const ReportedCase = () => {
     fetchFiles();
   }, [currentUser?.email]);
 
-  const handleCaseSelect = (caseItem) => {
+  const handleCaseSelect = (caseItem: DicomCase) => {
     setSelectedCase(caseItem);
   };
 
-  const handleViewInViewer = (caseItem) => {
+  const handleViewInViewer = (caseItem: DicomCase) => {
     if (caseItem?.orthancInstanceId) {
+      setSelectedCase(caseItem); // Ensure selectedCase is updated
       setSelectedDicomId(caseItem.orthancInstanceId);
       setShowDicomViewer(true);
     } else {
@@ -63,7 +64,45 @@ const ReportedCase = () => {
     setSelectedDicomId(null);
   };
 
-  const formatDate = (dateString) => {
+  interface DicomCaseMetadata {
+    Status?: string;
+    ParentStudy?: string;
+    [key: string]: any;
+  }
+
+  interface DicomCase {
+    id: number;
+    patientId?: string;
+    testBookingID?: string;
+    consultationId?: number;
+    doctorId?: string;
+    reported_by?: string;
+    report_forward_from?: string;
+    report_forward_to?: string;
+    orthancInstanceId?: string;
+    orthancStudyId?: string;
+    metadata?: DicomCaseMetadata;
+    comments?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  }
+
+  interface ConvertedDicomFile {
+    id: number;
+    original_name: string;
+    file_name: string;
+    file_size: number;
+    file_type: string;
+    mime_type: string;
+    is_dicom: boolean;
+    orthanc_instance_id?: string;
+    orthanc_study_id?: string;
+    dicom_metadata: DicomCaseMetadata;
+    consultation_id: number;
+    tenant_id: number;
+  }
+
+  const formatDate = (dateString?: string): string => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB', {
@@ -76,21 +115,22 @@ const ReportedCase = () => {
   };
 
   // Convert to the format expected by DicomViewer
-  const getConvertedFiles = () => {
-    if (!selectedCase) return [];
-    
+// Convert to the format expected by DicomViewer
+  const getConvertedFiles = (caseItem: DicomCase) => {
+    if (!caseItem) return [];
+
     return [{
-      id: selectedCase.id,
-      original_name: `DICOM-${selectedCase.orthancInstanceId || selectedCase.id}`,
-      file_name: `DICOM-${selectedCase.orthancInstanceId || selectedCase.id}`,
+      id: caseItem.id,
+      original_name: `DICOM-${caseItem.orthancInstanceId || caseItem.id}`,
+      file_name: `DICOM-${caseItem.orthancInstanceId || caseItem.id}`,
       file_size: 0,
       file_type: "dicom",
       mime_type: "application/dicom",
       is_dicom: true,
-      orthanc_instance_id: selectedCase.orthancInstanceId,
-      orthanc_study_id: selectedCase.orthancStudyId,
-      dicom_metadata: selectedCase.metadata || {},
-      consultation_id: selectedCase.consultationId || 0,
+      orthanc_instance_id: caseItem.orthancInstanceId,
+      orthanc_study_id: caseItem.orthancStudyId,
+      dicom_metadata: caseItem.metadata || {},
+      consultation_id: caseItem.consultationId || 0,
       tenant_id: 0,
     }];
   };
@@ -356,35 +396,37 @@ const ReportedCase = () => {
       </div>
 
       {/* DICOM Viewer Modal */}
-      <Modal
-        show={showDicomViewer}
-        onHide={handleCloseDicomViewer}
-        size="xl"
-        fullscreen="lg-down"
-        centered
-      >
-        <Modal.Header closeButton className="bg-dark text-white">
-          <Modal.Title>
-            <FaEye className="me-2" />
-            DICOM Viewer - Case #{selectedCase?.id}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body style={{ minHeight: "70vh", padding: 0 }}>
-          {selectedDicomId && (
-            <DicomViewer
-              dicomId={selectedDicomId}
-              consultationFiles={getConvertedFiles()}
-              onBack={handleCloseDicomViewer}
-            />
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseDicomViewer}>
-            <FaArrowLeft className="me-1" />
-            Back to Cases
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {/* DICOM Viewer Modal */}
+<Modal
+  show={showDicomViewer}
+  onHide={handleCloseDicomViewer}
+  size="xl"
+  fullscreen="lg-down"
+  centered
+>
+  <Modal.Header closeButton className="bg-dark text-white">
+    <Modal.Title>
+      <FaEye className="me-2" />
+      DICOM Viewer - Case #{selectedCase?.id}
+    </Modal.Title>
+  </Modal.Header>
+  <Modal.Body style={{ minHeight: "70vh", padding: 0 }}>
+    {selectedDicomId && selectedCase && (
+      <DicomViewer
+        key={selectedDicomId} 
+        dicomId={selectedDicomId}
+        consultationFiles={getConvertedFiles(selectedCase)} // Pass the current selectedCase
+        onBack={handleCloseDicomViewer}
+      />
+    )}
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={handleCloseDicomViewer}>
+      <FaArrowLeft className="me-1" />
+      Back to Cases
+    </Button>
+  </Modal.Footer>
+</Modal>
     </div>
   );
 };

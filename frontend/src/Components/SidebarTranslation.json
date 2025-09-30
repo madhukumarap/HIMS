@@ -106,7 +106,8 @@
     "Dicom": "Dicom",
     "DoctorVacation": "Doctor's Availability",
     "DoctorEarnings" : "Doctor Earnings",
-    "ForwardedCase" : "Forwarded Case"
+    "ForwardedCase" : "Forwarded Case",
+    "PatientSpent" : "Patient Spent"
   },
   "fr": {
     "Hospital-Rooms": "Chambres d'hôpital",

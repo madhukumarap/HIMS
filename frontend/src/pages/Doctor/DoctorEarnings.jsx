@@ -326,10 +326,10 @@ const DoctorEarnings = () => {
           )}
 
           {/* ✅ Pie Chart (AFTER tables) */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          <div className="bg-white rounded-lg shadow-md p-6 mb-3">
+            <h5 className="mb-3">
               Earnings Distribution by Category
-            </h2>
+            </h5>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={400}>
                 <PieChart>

@@ -32,6 +32,7 @@ const getConnection = async (database) => {
     db.Sequelize = Sequelize;
     db.sequelize = sequelize;
     db.doctorVacation = require("./DoctorVacation.js")(sequelize, Sequelize);
+    db.doctor = require("./Doctor.js")(sequelize, DataTypes);
     db.DoctorFee = require("./Doctors_Fees.js")(sequelize, DataTypes);
     db.doctorPaymentHistory = require("./doctorPaymentHistory.model.js")(
       sequelize,
@@ -228,7 +229,7 @@ const getConnection = async (database) => {
       sequelize,
       DataTypes
     );
-    db.doctor = require("./Doctor.js")(sequelize, DataTypes);
+
     db.HospitalAdminRegistration = require("./HospitalAdminRegistration")(
       sequelize,
       DataTypes

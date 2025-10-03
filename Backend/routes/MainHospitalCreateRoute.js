@@ -7,7 +7,6 @@ const { Sequelize } = require('sequelize');
 const dbConfig = require("../config/db.config");
 
 router.post("/save-hospital-Main", async (req, res) => {
-  console.log("Reg.Body: ", req.body);
 
   const { hospitalName, currentUrl, allowed_users, allowedUsers, contactPersonName, hospitalEmailId, contactNumber  } = req.body;
 
@@ -138,6 +137,7 @@ async function waitTwoSeconds() {
     setTimeout(resolve, 5000);
   });
 }
+
 async function fetchDataFromAllHospitalDatabases(hospitals) {
   const allHospitalData = [];
   
@@ -238,6 +238,7 @@ router.get("/get-hospitals", async (req, res) => {
     });
   }
 });
+
 router.delete("/delete-hospital", async (req, res) =>{
   try{
     const { hospitalId, databaseName } = req.body;
@@ -256,6 +257,7 @@ router.delete("/delete-hospital", async (req, res) =>{
     });
   }
 })
+
 router.put("/hospitals/:id/allowed-users", async (req, res) => {
   try {
     const { id } = req.params;

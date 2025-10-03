@@ -36,6 +36,7 @@ const CreateDatabaseandTables = (database, hospitalNamewithdot) => {
   db.Sequelize = Sequelize;
   db.sequelize = sequelize;
   db.doctorVacation = require("././DoctorVacation.js")(sequelize, Sequelize);
+  db.doctor = require("./Doctor.js")(sequelize, DataTypes);
   db.DoctorFee = require("./Doctors_Fees.js")(sequelize, DataTypes);
   db.DicomFile = require("./Dicom_Files.js")(sequelize, DataTypes);
   db.userRole = require("./userRole.model")(sequelize, Sequelize);
@@ -211,7 +212,7 @@ const CreateDatabaseandTables = (database, hospitalNamewithdot) => {
     sequelize,
     DataTypes
   );
-  db.doctor = require("./Doctor.js")(sequelize, DataTypes);
+
   db.HospitalAdminRegistration = require("./HospitalAdminRegistration")(
     sequelize,
     DataTypes

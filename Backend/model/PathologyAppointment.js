@@ -26,6 +26,9 @@ module.exports = (sequelize, DataTypes) => {
       remarks: {
         type: DataTypes.TEXT,
       },
+    },
+    {
+      tablename: "pathologisttestbookingappointments",
     }
   );
 

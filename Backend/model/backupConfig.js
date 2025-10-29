@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const BackupConfig = sequelize.define("BackupConfig", {
+    const BackupConfig = sequelize.define("backupconfigs", {
       period: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -12,6 +12,8 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       }
+    },{
+      tablename :'backupconfigs'
     });
     return BackupConfig;
   };

@@ -209,16 +209,16 @@ async function fetchDataFromAllHospitalDatabases(hospitals) {
 router.get("/get-hospitals", async (req, res) => {
   try {
     const hospitals = await db.HospitalMain.findAll();
-    
+    console.log("Main Hospitals Data: ", hospitals);
     const subHospitals = await fetchDataFromAllHospitalDatabases(hospitals);
-    
+    console.log("Sub Hospitals Data: ", subHospitals);
     const enhancedHospitals = hospitals.map(hospital => {
       const subData = subHospitals.find(sh => sh.hospitalId === hospital.id);
       
       const subDataParsed = typeof subData?.data === 'string' 
         ? JSON.parse(subData.data)[0] 
         : subData?.data?.[0];
-      
+      console.log("Sub Data Parsed for Hospital ID", hospital.id, ": ", subDataParsed);
       return {
         ...hospital.get({ plain: true }), // Convert Sequelize instance to plain object
         phone: subDataParsed?.phone || "NA",

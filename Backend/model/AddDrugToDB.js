@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const AddDrugToDB = sequelize.define("drugDataBase", {
+  const AddDrugToDB = sequelize.define("drugdatabases", {
     medicineName: {
       type: DataTypes.TEXT("long"),
       allowNull: true,
@@ -77,6 +77,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT("long"),
       allowNull: true,
     },
+  },{
+    tablename:'drugdatabases'
   });
   return AddDrugToDB;
 };

@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const BedsHospitalRoom = sequelize.define("BedsHospitalRoom", {
+  const BedsHospitalRoom = sequelize.define("bedshospitalrooms", {
     BedNumber: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -43,6 +43,8 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: null,
     },
+  },{
+    tableName: "bedshospitalrooms",
   });
   return BedsHospitalRoom;
 };

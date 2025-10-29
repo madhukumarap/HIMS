@@ -21,6 +21,8 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: "not-restored",
     },
+  },{
+    tablename:'backupdata'
   });
   return BackupData;
 };

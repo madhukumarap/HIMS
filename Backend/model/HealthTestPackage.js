@@ -22,7 +22,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-  });
+  },    {
+      tableName: "healthtestpackagemodels", // 👈 exact table name
+      timestamps: false, // if your table doesn’t have updatedAt
+    });
 
   return HealthTestPackageModel;
 };

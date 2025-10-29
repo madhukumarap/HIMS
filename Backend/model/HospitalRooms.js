@@ -39,6 +39,8 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: true
         }
+    },{
+        tablename :'hospitalrooms'
     })
     return HospitalRooms;
 

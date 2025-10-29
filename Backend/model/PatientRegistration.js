@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const PatientReg = sequelize.define("patientRegistration", {
+  const PatientReg = sequelize.define("patientregistrations", {
     mr: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -132,6 +132,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+  },{
+    tablename :'patientregistrations'
   });
   return PatientReg;
 };

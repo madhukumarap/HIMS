@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const PatientPrescription = sequelize.define("patientPrecription", {
+  const PatientPrescription = sequelize.define("patientprecriptions", {
     prescriptionId: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -122,6 +122,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+  },{
+    tablename :'patientprecriptions'
   });
 
   return PatientPrescription;

@@ -462,24 +462,18 @@ function DiagnosticsBooking() {
     }
 
     const totalTestFeesUSD = selectedTests.reduce((acc, testName) => {
-      const selectedTest = testNames.find((test) => test.testName === testName);
-      const testPrice = selectedTest ? selectedTest.testPrice : 0;
+  const selectedTest = testNames.find((test) => test.testName === testName);
+  const testPrice = selectedTest ? selectedTest.testPrice : 0;
 
-      // const testPriceUSD2 = convertToUSD(
-      //   testPrice,
-      //   selectedTest.Currency,
-      //   exchangeRates
-      // );
+  const testPriceUSD = Number(
+    convertCurrency(testPrice, selectedTest.Currency, "USD")
+  );
 
-      const testPriceUSD = convertCurrency(
-        testPrice,
-        selectedTest.Currency,
-        "USD"
-      );
+  return acc + testPriceUSD;
+}, 0);
 
-      return acc + testPriceUSD;
-    }, 0);
-    const formattedTestFees = totalTestFeesUSD.toFixed(2);
+console.log(totalTestFeesUSD, "totalTestFeesUSD", typeof totalTestFeesUSD);
+const formattedTestFees = totalTestFeesUSD.toFixed(2);
 
     // Update state with selected tests and total test fees
     setSelectedTests(selectedOptions);
@@ -683,14 +677,15 @@ function DiagnosticsBooking() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
+    alert('hello')
+    console.log(e.target,"target");
     if (name === "selectedPatient") {
       // ← This should match the select name
       // Find the selected patient by its ID
       const selectedPatient = patients.find(
         (patient) => patient.id === parseInt(value)
       );
-
+      console.log(selectedPatient,"selectedPatient")
       if (selectedPatient) {
         setFormData((prevData) => ({
           ...prevData,
@@ -732,6 +727,7 @@ function DiagnosticsBooking() {
 
   const handleChange1 = (e) => {
     let patientid = JSON.parse(e.target.value);
+    // console.log(patientid,"patientid")
     // alert(parseInt(patientid));
     const foundPatient = hospitalBookings.find(
       (patient) => parseInt(patient.PatientID) === parseInt(patientid)
@@ -974,8 +970,8 @@ function DiagnosticsBooking() {
           toast.error("Please select test or package");
           return;
         }
-        console.log(formData, "formData");
-
+        console.log(formData, "formData121212");
+        console.log(selectedDoctor, "selectedDoctor");
         if (
           !formData.selectedPatient ||
           !selectedDoctor ||

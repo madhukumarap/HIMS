@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const BackupData = sequelize.define("BackupData", {
+    const BackupData = sequelize.define("backupdata", {
       filename: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -18,6 +18,8 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue : "not-restored"
       },
   
+    },{
+      tablename:'backupdata'
     });
     return BackupData;
   };

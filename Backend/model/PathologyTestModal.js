@@ -1,7 +1,7 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  const PathologyTest = sequelize.define("pathologytest", {
+  const PathologyTest = sequelize.define("pathologytests", {
     PatientName: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -140,7 +140,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: "Pathology",
     },
-  });
+  },
+  {
+    tablename :'pathologytests'
+  }
+);
 
   return PathologyTest;
 };

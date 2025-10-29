@@ -50,6 +50,8 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: null,
     },
+  },{
+    tablename :'dispensedmedicines'
   });
   return DispensedMedicine;
 };

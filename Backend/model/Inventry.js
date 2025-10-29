@@ -54,6 +54,8 @@ module.exports = (sequelize, DataTypes) => {
 
       allowNull: false,
     },
+  },{
+    tablename :'inventries'
   });
 
   return Inventry;

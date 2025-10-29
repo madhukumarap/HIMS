@@ -14,6 +14,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       allowNull: true,
     },
+  },{
+    tablename:'currencyrates'
   });
 
   return CurrencyRate;

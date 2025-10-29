@@ -1,7 +1,7 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  const LipidProfileModel = sequelize.define("LipidProfileModel", {
+  const LipidProfileModel = sequelize.define("lipidprofilemodel", {
     PatientID: {
       type: DataTypes.INTEGER,
       allowNull: false,

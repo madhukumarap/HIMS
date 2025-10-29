@@ -91,6 +91,8 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
 
+  },{
+    tableName: "doctors", // 👈 exact table name
   });
 
   return Doctor;

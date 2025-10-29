@@ -49,6 +49,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
     },
+  },{
+    tablename:'pathologytestreferrals'
   });
 
   return PathologyTestReferral;

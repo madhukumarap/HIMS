@@ -11,6 +11,30 @@ import { HospitalContext } from "../../context/HospitalDataProvider";
 import { CurrencyContext } from "../../context/CurrencyProvider";
 import { currencySymbols } from "../../utils.js";
 import AuthService from "../../services/auth.service.js";
+import { 
+  Chart as ChartJS, 
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  PointElement
+} from 'chart.js';
+import { Bar, Line } from 'react-chartjs-2';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const PerVisitConsultationEarning = () => {
   const currentUser = AuthService.getCurrentUser();
@@ -24,11 +48,14 @@ const PerVisitConsultationEarning = () => {
   }
   const [selectedPatientID, setSelectedPatientID] = useState(null);
   const [selectedCorporateType, setSelectedCorporateType] = useState("All");
+  const [selectedPeriod, setSelectedPeriod] = useState("1month");
   const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState("");
   const currentDate = new Date();
   const [searchValue, setSearchValue] = useState("");
+  const [chartData, setChartData] = useState({});
+  const [revenueData, setRevenueData] = useState([]);
 
   const [startDate, setStartDate] = useState(
     new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
@@ -36,6 +63,20 @@ const PerVisitConsultationEarning = () => {
   const [endDate, setEndDate] = useState(
     new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
   );
+
+  const { selectedGlobalCurrency, convertCurrency } = useContext(CurrencyContext);
+  const { hospitalData } = useContext(HospitalContext);
+
+  // Safe currency conversion function
+  const safeConvertCurrency = (amount, fromCurrency, toCurrency) => {
+    try {
+      const converted = convertCurrency(amount, fromCurrency, toCurrency);
+      return typeof converted === 'number' ? converted : parseFloat(converted) || 0;
+    } catch (error) {
+      console.error('Currency conversion error:', error);
+      return parseFloat(amount) || 0;
+    }
+  };
 
   const handleSearchChange = (event) => {
     setSearchValue(event.target.value);
@@ -45,44 +86,31 @@ const PerVisitConsultationEarning = () => {
     console.log("currentUser ", currentUser);
   }, [currentUser]);
 
-  const { selectedGlobalCurrency, convertCurrency } =
-    useContext(CurrencyContext);
-
-  const { hospitalData } = useContext(HospitalContext);
-
   const filteredPatients = bookings.filter((patient) => {
     const fullName = `${patient.PatientName}`.toLowerCase();
     const searchValueLower = searchValue.toLowerCase();
     const createdAt = new Date(patient.createdAt);
 
-    console.log("Phone Number:", patient.PatientPhone);
-    console.log("Search Value:", searchValueLower);
-
     const isNameMatch = fullName.includes(searchValueLower);
-    const isPhoneMatch = String(patient.PatientPhoneNo).includes(
-      searchValueLower
-    );
-
-    console.log("isNameMatch:", isNameMatch);
-    console.log("isPhoneMatch:", isPhoneMatch);
+    const isPhoneMatch = String(patient.PatientPhone).includes(searchValueLower);
 
     return isNameMatch || isPhoneMatch;
   });
 
   const [isMobile, setIsMobile] = useState(false);
-  // Function to check if the screen size is mobile
+
   const checkIsMobile = () => {
-    setIsMobile(window.innerWidth <= 200);
+    setIsMobile(window.innerWidth <= 768);
   };
 
   useEffect(() => {
-    // Add event listener on component mount
     window.addEventListener("resize", checkIsMobile);
     checkIsMobile();
     return () => {
       window.removeEventListener("resize", checkIsMobile);
     };
   }, []);
+
   useEffect(() => {
     fetchCompaniesData();
   }, []);
@@ -104,15 +132,18 @@ const PerVisitConsultationEarning = () => {
         console.error(error);
       });
   };
+
   useEffect(() => {
     setBookings([]);
     fetchBookings();
   }, [startDate, endDate, selectedCorporateType, selectedCompany]);
 
+  useEffect(() => {
+    prepareChartData();
+  }, [bookings, selectedPeriod, selectedGlobalCurrency]);
+
   const fetchBookings = () => {
-    const url = `${
-      import.meta.env.VITE_API_URL
-    }/api/getAllBookingsConsultationPerVisit`;
+    const url = `${import.meta.env.VITE_API_URL}/api/getAllBookingsConsultationPerVisit`;
     axios
       .get(url, {
         headers: {
@@ -136,38 +167,191 @@ const PerVisitConsultationEarning = () => {
   };
 
   const handleSetDate = (start, end) => {
-    // alert(start);
-
     setStartDate(start);
     setEndDate(end);
+    setSelectedPeriod("custom");
   };
 
   const handleClearDate = () => {
     setStartDate("");
     setEndDate("");
+    setSelectedPeriod("custom");
   };
 
-  //   const filteredBookings = bookings.filter((booking) => {
-  //     const bookingDate = new Date(booking.createdAt);
-  //     return bookingDate >= startDate && bookingDate <= endDate;
-  //   });
-  //   useEffect(() => {
-  //     // This will run whenever selectedPatientID changes
-  //     const filteredBookingsByPatient = filteredBookings.filter(
-  //       (booking) => booking.PatientID === selectedPatientID
-  //     );
-  //   }, [selectedPatientID, filteredBookings]);
+  // Handle period change
+  const handlePeriodChange = (period) => {
+    setSelectedPeriod(period);
+    const today = new Date();
+    let start = new Date();
+    
+    switch (period) {
+      case "15days":
+        start.setDate(today.getDate() - 15);
+        break;
+      case "1month":
+        start.setMonth(today.getMonth() - 1);
+        break;
+      case "3months":
+        start.setMonth(today.getMonth() - 3);
+        break;
+      case "6months":
+        start.setMonth(today.getMonth() - 6);
+        break;
+      case "1year":
+        start.setFullYear(today.getFullYear() - 1);
+        break;
+      case "custom":
+        return;
+      default:
+        return;
+    }
+    
+    start.setHours(0, 0, 0, 0);
+    today.setHours(23, 59, 59, 999);
+    
+    setStartDate(start);
+    setEndDate(today);
+  };
+
+  // Prepare chart data based on selected period
+  const prepareChartData = () => {
+    if (!bookings.length) {
+      setChartData({
+        labels: [],
+        datasets: [
+          {
+            label: `Revenue (${currencySymbols[selectedGlobalCurrency]})`,
+            data: [],
+            backgroundColor: 'rgba(153, 102, 255, 0.6)',
+            borderColor: 'rgba(153, 102, 255, 1)',
+            borderWidth: 2,
+            fill: true
+          }
+        ]
+      });
+      return;
+    }
+
+    const revenueByDate = {};
+    const sortedBookings = [...bookings].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    // Group revenue by date
+    sortedBookings.forEach(booking => {
+      const date = new Date(booking.createdAt).toLocaleDateString();
+      const revenue = safeConvertCurrency(
+        booking.amount || 0,
+        hospitalData?.baseCurrency || 'USD',
+        selectedGlobalCurrency
+      );
+      
+      if (revenueByDate[date]) {
+        revenueByDate[date] += revenue;
+      } else {
+        revenueByDate[date] = revenue;
+      }
+    });
+
+    const dates = Object.keys(revenueByDate);
+    const revenues = Object.values(revenueByDate);
+
+    setChartData({
+      labels: dates,
+      datasets: [
+        {
+          label: `Revenue (${currencySymbols[selectedGlobalCurrency]})`,
+          data: revenues,
+          backgroundColor: 'rgba(153, 102, 255, 0.6)',
+          borderColor: 'rgba(153, 102, 255, 1)',
+          borderWidth: 2,
+          fill: true
+        }
+      ]
+    });
+
+    setRevenueData(sortedBookings);
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Consultation Revenue Over Time'
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: `Revenue (${currencySymbols[selectedGlobalCurrency]})`
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Date'
+        }
+      }
+    }
+  };
+
+  // Calculate total revenue with safe conversion
+  const totalRevenue = filteredPatients.reduce((total, booking) => {
+    const revenue = safeConvertCurrency(
+      booking.amount || 0,
+      hospitalData?.baseCurrency || 'USD',
+      selectedGlobalCurrency
+    );
+    return total + revenue;
+  }, 0);
+
+  // Calculate average revenue per patient with safe conversion
+  const averageRevenue = filteredPatients.length > 0 
+    ? totalRevenue / filteredPatients.length 
+    : 0;
+
+  // Format numbers safely
+  const formatNumber = (num) => {
+    const number = parseFloat(num);
+    return isNaN(number) ? '0.00' : number.toFixed(2);
+  };
+
+  const periodOptions = [
+    { value: "15days", label: "Last 15 Days" },
+    { value: "1month", label: "Last 1 Month" },
+    { value: "3months", label: "Last 3 Months" },
+    { value: "6months", label: "Last 6 Months" },
+    { value: "1year", label: "Last 1 Year" },
+    { value: "custom", label: "Custom Range" },
+  ];
 
   const handlePatientSelect = (e) => {
-    setSelectedPatientID(parseInt(e.target.value)); // Parse the value to an integer
+    setSelectedPatientID(parseInt(e.target.value));
   };
 
   function formatDate2(inputDate) {
+    if (!inputDate) return 'N/A';
     const date = new Date(inputDate);
+    if (isNaN(date.getTime())) return 'Invalid Date';
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+  }
+
+  // Check if user has admin access
+  if (!currentUser || !currentUser.roles.includes("ROLE_ADMIN")) {
+    return (
+      <div className="container text-center mt-5">
+        <h3>Access Denied</h3>
+        <p>You don't have permission to access this page.</p>
+      </div>
+    );
   }
 
   return (
@@ -175,8 +359,9 @@ const PerVisitConsultationEarning = () => {
       style={{
         fontSize: "14px",
       }}
-      className="container "
+      className="container"
     >
+      {/* Navigation Buttons */}
       <div
         style={{
           display: "flex",
@@ -227,6 +412,7 @@ const PerVisitConsultationEarning = () => {
           Diagnostics
         </button>{" "}
       </div>
+
       <header
         className="header"
         style={{
@@ -236,26 +422,47 @@ const PerVisitConsultationEarning = () => {
         }}
       >
         <h2 style={{ fontSize: "18px" }}>
-          Patient Per Visit Revenue(Consultation)
+          Patient Per Visit Revenue (Consultation)
         </h2>
       </header>
       <br></br>
+
+      {/* Filters Section */}
       <div className="row mb-3">
         <div className="col-md-3">
-          <label className="form-label">Select Date Range:</label>
+          <label className="form-label" style={{ fontWeight: "bold", fontSize: "12px" }}>
+            Select Time Period
+          </label>
+          <select
+            style={{ fontSize: "14px" }}
+            className="form-select"
+            value={selectedPeriod}
+            onChange={(e) => handlePeriodChange(e.target.value)}
+          >
+            {periodOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
+        <div className="col-md-3">
+          <label className="form-label" style={{ fontWeight: "bold", fontSize: "12px" }}>
+            Select Date Range
+          </label>
           <Datepickrange
             onSetDate={handleSetDate}
             onClearDate={handleClearDate}
           />
         </div>
 
-        <div className="col-md-3">
-          <label className="form-label">Select Corporate Type:</label>
+        <div className="col-md-2">
+          <label className="form-label" style={{ fontWeight: "bold", fontSize: "12px" }}>
+            Select Corporate Type
+          </label>
           <select
-            style={{
-              fontSize: "14px",
-            }}
+            style={{ fontSize: "14px" }}
             className="form-select"
             value={selectedCorporateType}
             onChange={(e) => {
@@ -269,8 +476,11 @@ const PerVisitConsultationEarning = () => {
             <option value="NonCorporate">Non-Corporate</option>
           </select>
         </div>
-        <div className="col-md-3">
-          <label className="form-label">Select Company:</label>
+
+        <div className="col-md-2">
+          <label className="form-label" style={{ fontWeight: "bold", fontSize: "12px" }}>
+            Select Company
+          </label>
           <select
             style={{ fontSize: "14px" }}
             className="form-select"
@@ -293,7 +503,7 @@ const PerVisitConsultationEarning = () => {
           </select>
         </div>
 
-        <div className="col-md-3">
+        <div className="col-md-2">
           <Form.Label style={{ fontWeight: "bold", fontSize: "12px" }}>
             Search by name or phone number
           </Form.Label>
@@ -306,21 +516,91 @@ const PerVisitConsultationEarning = () => {
           />
         </div>
       </div>
+
       <hr />
-      {/* <Row>
-        <Col sm={3}>
-          <Form.Label style={{ fontWeight: "bold", fontSize: "12px" }}>
-            Search by name or phone number
-          </Form.Label>
-          <Form.Control
-            style={{ fontSize: "12px", marginBottom: "10px" }}
-            type="text"
-            placeholder="Search by name or phone number"
-            value={searchValue}
-            onChange={handleSearchChange}
-          />
-        </Col>
-      </Row> */}
+
+      {/* Revenue Summary Cards */}
+      <div className="row mb-4">
+        <div className="col-md-4">
+          <Card className="text-center">
+            <Card.Body>
+              <Card.Title style={{ fontSize: "14px", fontWeight: "bold" }}>
+                Total Revenue
+              </Card.Title>
+              <Card.Text style={{ fontSize: "18px", color: "#28a745", fontWeight: "bold" }}>
+                {currencySymbols[selectedGlobalCurrency]} {formatNumber(totalRevenue)}
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </div>
+        <div className="col-md-4">
+          <Card className="text-center">
+            <Card.Body>
+              <Card.Title style={{ fontSize: "14px", fontWeight: "bold" }}>
+                Total Patients
+              </Card.Title>
+              <Card.Text style={{ fontSize: "18px", color: "#007bff", fontWeight: "bold" }}>
+                {filteredPatients.length}
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </div>
+        <div className="col-md-4">
+          <Card className="text-center">
+            <Card.Body>
+              <Card.Title style={{ fontSize: "14px", fontWeight: "bold" }}>
+                Average Revenue Per Patient
+              </Card.Title>
+              <Card.Text style={{ fontSize: "18px", color: "#ffc107", fontWeight: "bold" }}>
+                {currencySymbols[selectedGlobalCurrency]} {formatNumber(averageRevenue)}
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </div>
+      </div>
+
+      {/* Chart Section */}
+      {bookings.length > 0 && (
+        <div className="row mb-4">
+          <div className="col-12">
+            <Card>
+              <Card.Body>
+                <Card.Title style={{ fontSize: "16px", fontWeight: "bold" }}>
+                  Consultation Revenue Trend
+                </Card.Title>
+                <div style={{ height: "400px", position: 'relative' }}>
+                  <Line 
+                    data={chartData} 
+                    options={chartOptions}
+                  />
+                </div>
+              </Card.Body>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Results Count */}
+      <div className="row mb-3">
+        <div className="col-12">
+          <Card>
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center">
+                <h6 className="mb-0" style={{ fontWeight: 'bold' }}>
+                  Results: {filteredPatients.length} patients found
+                </h6>
+                {startDate && endDate && (
+                  <small className="text-muted">
+                    Date Range: {formatDate2(startDate)} to {formatDate2(endDate)}
+                  </small>
+                )}
+              </div>
+            </Card.Body>
+          </Card>
+        </div>
+      </div>
+
+      {/* Patients Table */}
       <div className="table-responsive">
         <Table
           className="table-striped table-hover table-bordered"
@@ -333,7 +613,6 @@ const PerVisitConsultationEarning = () => {
             <Tr>
               <Th style={{ textAlign: "center" }}>Patient ID</Th>
               <Th style={{ textAlign: "center" }}>Patient Name</Th>
-
               <Th style={{ textAlign: "center" }}>Contact No</Th>
               <Th style={{ textAlign: "center" }}>Earned Revenue Fees</Th>
               <Th style={{ textAlign: "center" }}>Visit Date</Th>
@@ -348,17 +627,16 @@ const PerVisitConsultationEarning = () => {
                 <Td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                   {booking.PatientName}
                 </Td>
-
                 <Td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                   {booking.PatientPhone}
                 </Td>
                 <Td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                   {currencySymbols[selectedGlobalCurrency]}{" "}
-                  {convertCurrency(
+                  {formatNumber(safeConvertCurrency(
                     booking.amount,
-                    hospitalData.baseCurrency,
+                    hospitalData?.baseCurrency || 'USD',
                     selectedGlobalCurrency
-                  )}
+                  ))}
                 </Td>
                 <Td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                   {new Date(booking.createdAt).toLocaleString()}
@@ -368,6 +646,12 @@ const PerVisitConsultationEarning = () => {
           </Tbody>
         </Table>
       </div>
+
+      {filteredPatients.length === 0 && (
+        <div className="text-center py-4">
+          <p className="text-muted">No patients found for the selected criteria</p>
+        </div>
+      )}
     </div>
   );
 };

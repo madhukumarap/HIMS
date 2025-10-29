@@ -46,6 +46,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
       },
+    },
+      {
+      tableName: "hospitaladminregistrations", // 👈 exact table name
+      timestamps: false, // if your table doesn’t have updatedAt
     }
   );
 

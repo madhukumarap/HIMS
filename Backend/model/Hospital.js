@@ -81,7 +81,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       default: "INR",
     },
-  });
+  },
+    {
+      tableName: "hospitals", // 👈 exact table name
+      timestamps: false, // if your table doesn’t have updatedAt
+    });
 
   return Hospital;
 };

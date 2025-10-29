@@ -1,7 +1,7 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  const CommissionCodeData = sequelize.define("CommissionCodeData", {
+  const CommissionCodeData = sequelize.define("commissioncodedata", {
     codeType: {
       type: DataTypes.STRING, // Assuming codeType is a string, adjust the type if needed
       allowNull: false,
@@ -14,6 +14,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true,
     },
+  },
+  {
+    tablename:'commissioncodedata',
+    
   });
 
   return CommissionCodeData;

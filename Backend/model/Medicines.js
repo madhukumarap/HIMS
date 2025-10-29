@@ -46,6 +46,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+  },{
+    tablename:'medicines'
   });
 
   return Medicines;

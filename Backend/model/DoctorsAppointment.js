@@ -98,6 +98,8 @@ module.exports = (sequelize, DataTypes) => {
       field: "referralDoctorId", // match the actual DB column name exactly
       allowNull: true,
     },
+  },{
+    tablename :'doctorsappointments'
   });
 
   return DoctorsAppointment;

@@ -2,7 +2,7 @@ const { Sequelize, DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
   const BloodSugarForFastingModel = sequelize.define(
-    "BloodSugarForFastingModel",
+    "bloodsugarforfastingmodel",
     {
       PatientID: {
         type: DataTypes.INTEGER,

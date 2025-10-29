@@ -36,6 +36,8 @@ module.exports = (sequelize, DataTypes) => {
         },
 
 
+    },{
+        tabelname:'quantityoutreports'
     })
     return DailyQuantityOutReport;
 

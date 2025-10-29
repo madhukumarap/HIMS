@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const LabCategoryList = sequelize.define("LabCategoryList", {
+  const LabCategoryList = sequelize.define("labcategorylists", {
     CategoryName: {
       type: DataTypes.STRING,
     },
@@ -11,7 +11,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-  });
+  },
+{
+    tablename:'labcategorylists'
+});
 
   return LabCategoryList;
 };

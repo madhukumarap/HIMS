@@ -196,6 +196,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       allowNull: true,
     },
+  },{
+    tablename :'hospitaladmissions'
   });
 
   return HospitalAdmission;

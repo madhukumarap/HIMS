@@ -1,7 +1,7 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  const Pharmacist = sequelize.define("pharmacist", {
+  const Pharmacist = sequelize.define("pharmacists", {
     username: {
       type: DataTypes.STRING,
     },
@@ -39,7 +39,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
     },
-  });
+  },
+  {
+    tablename :'pharmacists'
+  }
+);
 
   return Pharmacist;
 };

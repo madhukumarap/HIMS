@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const SpecimenList = sequelize.define("SpecimenList", {
+  const SpecimenList = sequelize.define("specimenlists", {
     SpecimenName: {
       type: DataTypes.STRING,
     },
@@ -7,6 +7,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
+  },{
+    tablename :'specimenlists'
   });
 
   return SpecimenList;

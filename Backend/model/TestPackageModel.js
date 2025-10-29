@@ -1,7 +1,7 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  const TestPackageModel = sequelize.define("testpackagemodel", {
+  const TestPackageModel = sequelize.define("testpackagemodels", {
     packageName: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -22,6 +22,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
+  },{
+    tablename :'testpackagemodels'
   });
 
   return TestPackageModel;

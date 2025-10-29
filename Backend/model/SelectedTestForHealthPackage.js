@@ -2,7 +2,7 @@ const { Sequelize, DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
   const SelectedTestForHealthPackageModel = sequelize.define(
-    "SelectedTestForhealthPackageModel",
+    "selectedtestforhealthpackagemodels",
     {
       TestName: {
         type: DataTypes.STRING,
@@ -24,6 +24,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
+    },
+    {
+      tablename :'selectedtestforhealthpackagemodels'
     }
   );
 

@@ -44,6 +44,8 @@ module.exports = (sequelize, DataTypes) => {
         date: {
             type: DataTypes.DATEONLY,
         },
+    },{
+        tablename: 'medicationdays'
     });
 
     return MedicationDay;

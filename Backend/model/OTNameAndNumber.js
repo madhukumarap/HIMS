@@ -13,6 +13,8 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
 
+    },{
+        tablename: 'otnameandnumbers'
     });
 
     return OTNameAndNumber;

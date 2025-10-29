@@ -1,7 +1,7 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  const DiagnosticsBooking = sequelize.define("DiagnosticsBooking", {
+  const DiagnosticsBooking = sequelize.define("diagnosticsbookings", {
     PatientName: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -129,6 +129,9 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: "Diagnostic",
     },
+  },
+  {
+    tablename:'diagnosticsbookings'
   });
 
   return DiagnosticsBooking;

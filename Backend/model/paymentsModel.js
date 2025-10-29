@@ -1,7 +1,7 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  const Payments = sequelize.define("Payments", {
+  const Payments = sequelize.define("payments", {
     paymentID: {
       type: DataTypes.STRING,
     },
@@ -20,6 +20,8 @@ module.exports = (sequelize, DataTypes) => {
     currency: {
       type: DataTypes.STRING,
     }
+  },{
+    tablename :'payments'
   });
 
   return Payments;

@@ -29,9 +29,10 @@ const getEnterCodeList = async (req, res) => {
   const connectionList = await getConnectionList(database);
   const db = connectionList[database];
   const EnterCodeTypeValue = db.CommissionCodeData;
-
+  console.log(EnterCodeTypeValue,"Fetching Enter Code List");
   try {
     const enterCodeList = await EnterCodeTypeValue.findAll();
+    console.log(enterCodeList,"jsghjsgd");
     res.json(enterCodeList);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch EnterCodeTypeValues." });

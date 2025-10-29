@@ -2,7 +2,7 @@ const { Sequelize, DataTypes } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
   const StatusOfPathologyTestsForTestBooking = sequelize.define(
-    "StatusOfPathologyTestsForTestBooking",
+    "statusofpathologytestsfortestbookings",
     {
       testName: {
         type: DataTypes.STRING,
@@ -43,6 +43,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
         defaultValue: 0,
       },
+    }
+    ,
+    {
+      tablename :'statusofpathologytestsfortestbookings'
     }
   );
 
